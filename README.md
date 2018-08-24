@@ -133,7 +133,7 @@ read_data_wifi(READ_ITEM_SIZE);
 Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial`     
 **Note:** one or more of these packages may fail to install. Should that happen, perform a `sudo apt-get update` and try again. 
 
-2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the command line you can find the file by using the following commands: 
+2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the command line you can find the file by using the following commands:     
 `cd ~`     
 `ls -a`     
 **The lines to add are:**  
