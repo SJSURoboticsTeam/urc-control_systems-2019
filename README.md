@@ -188,6 +188,3 @@ You likely pressed the "clone" button at the top of this page and copied the com
 
 ##### "No such file or directory" and "No rule to make target" during menuconfig #####
 See above. Otherwise, check to make sure you have entered your paths correctly.
-
-
->>>>>>> a8dc9ea1a61355a522e5375d3bd3988330b159c6
