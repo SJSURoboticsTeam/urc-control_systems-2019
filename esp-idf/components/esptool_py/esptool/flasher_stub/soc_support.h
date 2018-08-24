@@ -21,6 +21,9 @@
 #define SPI_EXT2_REG(X) SPI_EXT2(X)
 #define SPI_RD_STATUS_REG(X) SPI_RD_STATUS(X)
 
+#define UART_CLKDIV_REG(X) UART_CLKDIV(X)
+#define UART_CLKDIV_M (UART_CLKDIV_CNT << UART_CLKDIV_S)
+
 #define SPI_ST 0x7 /* field in SPI_EXT2_REG */
 
 #define REG_READ READ_PERI_REG
@@ -37,4 +40,8 @@
 #include "soc/soc.h"
 #include "soc/uart_reg.h"
 #include "soc/gpio_reg.h"
+#include "soc/spi_reg.h"
+
+/* Harmonise register names between ESP8266 and ESP32 */
+
 #endif

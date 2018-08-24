@@ -16,6 +16,7 @@
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "esp_intr_alloc.h"
+#include "driver/periph_ctrl.h"
 #include "driver/timer.h"
 
 
@@ -230,7 +231,7 @@ TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[esp32]")
 }
 
 
-#include "soc/spi_struct.h"
+#include "soc/spi_periph.h"
 typedef struct {
     bool flag1;
     bool flag2;
@@ -266,15 +267,14 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[esp
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
 
-    //enable spi
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_CLK_EN );
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_RST);
+    //enable HSPI(spi2)
+    periph_module_enable(PERIPH_HSPI_MODULE);
 
     esp_err_t r;
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);
     TEST_ESP_OK(r);
     //try an invalid assign first
-    r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, NULL, int_handler2, NULL, &handle2);
+    r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, 0, int_handler2, NULL, &handle2);
     TEST_ASSERT_EQUAL_INT(r, ESP_ERR_NOT_FOUND );
     //assign shared then
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler2, &ctx, &handle2);

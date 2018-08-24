@@ -140,7 +140,7 @@ static IoT_Error_t _aws_iot_mqtt_deserialize_suback(uint16_t *pPacketId, uint32_
 	}
 
 	header.byte = aws_iot_mqtt_internal_read_char(&curData);
-	if(SUBACK != header.bits.type) {
+	if(SUBACK != MQTT_HEADER_FIELD_TYPE(header.byte)) {
 		FUNC_EXIT_RC(FAILURE);
 	}
 
@@ -192,11 +192,15 @@ static uint32_t _aws_iot_mqtt_get_free_message_handler_index(AWS_IoT_Client *pCl
  * subscribe API to perform the operation. Not meant to be called directly as
  * it doesn't do validations or client state changes
  * @note Call is blocking.  The call returns after the receipt of the SUBACK control packet.
+ * @warning pTopicName and pApplicationHandlerData need to be static in memory.
  *
  * @param pClient Reference to the IoT Client
- * @param pTopicName Topic Name to publish to
+ * @param pTopicName Topic Name to publish to. pTopicName needs to be static in memory since 
+ *     no malloc are performed by the SDK
  * @param topicNameLen Length of the topic name
  * @param pApplicationHandler_t Reference to the handler function for this subscription
+ * @param pApplicationHandlerData Point to data passed to the callback. 
+ *    pApplicationHandlerData also needs to be static in memory  since no malloc are performed by the SDK
  *
  * @return An IoT Error Type defining successful/failed subscription
  */
@@ -277,11 +281,15 @@ static IoT_Error_t _aws_iot_mqtt_internal_subscribe(AWS_IoT_Client *pClient, con
  * calls the internal subscribe above to perform the actual operation.
  * It is also responsible for client state changes
  * @note Call is blocking.  The call returns after the receipt of the SUBACK control packet.
+ * @warning pTopicName and pApplicationHandlerData need to be static in memory.
  *
  * @param pClient Reference to the IoT Client
- * @param pTopicName Topic Name to publish to
+ * @param pTopicName Topic Name to publish to. pTopicName needs to be static in memory since 
+ *     no malloc are performed by the SDK
  * @param topicNameLen Length of the topic name
  * @param pApplicationHandler_t Reference to the handler function for this subscription
+ * @param pApplicationHandlerData Point to data passed to the callback. 
+ *    pApplicationHandlerData also needs to be static in memory  since no malloc are performed by the SDK
  *
  * @return An IoT Error Type defining successful/failed subscription
  */
@@ -349,6 +357,10 @@ static IoT_Error_t _aws_iot_mqtt_internal_resubscribe(AWS_IoT_Client *pClient) {
 	existingSubCount = _aws_iot_mqtt_get_free_message_handler_index(pClient);
 
 	for(itr = 0; itr < existingSubCount; itr++) {
+		if(pClient->clientData.messageHandlers[itr].topicName == NULL) {
+			continue;
+		}
+
 		init_timer(&timer);
 		countdown_ms(&timer, pClient->clientData.commandTimeoutMs);
 

@@ -31,11 +31,16 @@ N/C           | WP          |         | optional, not used in the example
 
 This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
 
-With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. In SPI mode, pins can be customized. See the initialization of ``sdspi_slot_config_t`` structure in the example code.
+With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. 
+See document `sd_pullup_requirements.rst` in `docs/en/api-reference/peripherals/` for more details about pullup support and compatiblities about modules and devkits. 
+
+In SPI mode, pins can be customized. See the initialization of ``sdspi_slot_config_t`` structure in the example code.
 
 ### Note about GPIO2
 
 GPIO2 pin is used as a bootstrapping pin, and should be low to enter UART download mode. One way to do this is to connect GPIO0 and GPIO2 using a jumper, and then the auto-reset circuit on most development boards will pull GPIO2 low along with GPIO0, when entering download mode.
+
+- Some boards have pulldown and/or LED on GPIO2. LED is usually ok, but pulldown will interfere with D0 signals and must be removed. Check the schematic of your development board for anything connected to GPIO2. 
 
 ### Note about GPIO12
 

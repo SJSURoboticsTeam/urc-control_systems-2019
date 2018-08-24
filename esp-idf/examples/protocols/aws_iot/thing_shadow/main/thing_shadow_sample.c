@@ -37,6 +37,9 @@
 #include "esp_vfs_fat.h"
 #include "driver/sdmmc_host.h"
 
+#include "nvs.h"
+#include "nvs_flash.h"
+
 #include "aws_iot_config.h"
 #include "aws_iot_log.h"
 #include "aws_iot_version.h"
@@ -122,18 +125,6 @@ static const char * ROOT_CA_PATH = CONFIG_EXAMPLE_ROOT_CA_PATH;
 #error "Invalid method for loading certs"
 #endif
 
-/**
- * @brief Default MQTT HOST URL is pulled from the aws_iot_config.h which
- * uses menuconfig to find a default.
- */
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
-
-/**
- * @brief Default MQTT port is pulled from the aws_iot_config.h which
- * uses menuconfig to find a default.
- */
-uint32_t port = AWS_IOT_MQTT_PORT;
-
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -209,12 +200,14 @@ void aws_iot_task(void *param) {
     windowActuator.pData = &windowOpen;
     windowActuator.pKey = "windowOpen";
     windowActuator.type = SHADOW_JSON_BOOL;
+    windowActuator.dataLength = sizeof(bool);
 
     jsonStruct_t temperatureHandler;
     temperatureHandler.cb = NULL;
     temperatureHandler.pKey = "temperature";
     temperatureHandler.pData = &temperature;
     temperatureHandler.type = SHADOW_JSON_FLOAT;
+    temperatureHandler.dataLength = sizeof(float);
 
     ESP_LOGI(TAG, "AWS IoT SDK Version %d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
@@ -248,7 +241,7 @@ void aws_iot_task(void *param) {
     sdmmc_card_t* card;
     esp_err_t ret = esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to mount SD card VFAT filesystem.");
+        ESP_LOGE(TAG, "Failed to mount SD card VFAT filesystem. Error: %s", esp_err_to_name(ret));
         abort();
     }
 #endif
@@ -322,6 +315,8 @@ void aws_iot_task(void *param) {
             }
         }
         ESP_LOGI(TAG, "*****************************************************************************************");
+        ESP_LOGI(TAG, "Stack remaining for task '%s' is %d bytes", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+
         vTaskDelay(1000 / portTICK_RATE_MS);
     }
 
@@ -362,7 +357,14 @@ static void initialise_wifi(void)
 
 void app_main()
 {
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
     initialise_wifi();
     /* Temporarily pin task to core, due to FPU uncertainty */
-    xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 16384+1024, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(&aws_iot_task, "aws_iot_task", 9216, NULL, 5, NULL, 1);
 }

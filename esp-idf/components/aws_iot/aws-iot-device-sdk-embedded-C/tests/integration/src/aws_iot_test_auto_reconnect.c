@@ -26,29 +26,21 @@ char root_CA[PATH_MAX + 1];
 bool terminate_yield_with_rc_thread = false;
 IoT_Error_t yieldRC;
 bool captureYieldReturnCode = false;
-
+char * dummyLocation = "dummyLocation";
+char * savedLocation;
 /**
  * This function renames the rootCA.crt file to a temporary name to cause connect failure
  */
-int aws_iot_mqtt_tests_block_tls_connect() {
-	char replaceFileName[] = {"rootCATemp.crt"};
-	char *pFileNamePosition = NULL;
-
-	char mvCommand[2 * PATH_MAX + 10];
-	strcpy(ModifiedPathBuffer, root_CA);
-	pFileNamePosition = strstr(ModifiedPathBuffer, AWS_IOT_ROOT_CA_FILENAME);
-	strncpy(pFileNamePosition, replaceFileName, strlen(replaceFileName));
-	snprintf(mvCommand, 2 * PATH_MAX + 10, "mv %s %s", root_CA, ModifiedPathBuffer);
-	return system(mvCommand);
+void aws_iot_mqtt_tests_block_tls_connect(AWS_IoT_Client *pClient) {
+	savedLocation = pClient->networkStack.tlsConnectParams.pRootCALocation;
+	pClient->networkStack.tlsConnectParams.pRootCALocation = dummyLocation;
 }
 
 /**
  * Always ensure this function is called after block_tls_connect
  */
-int aws_iot_mqtt_tests_unblock_tls_connect() {
-	char mvCommand[2 * PATH_MAX + 10];
-	snprintf(mvCommand, 2 * PATH_MAX + 10, "mv %s %s", ModifiedPathBuffer, root_CA);
-	return system(mvCommand);
+void aws_iot_mqtt_tests_unblock_tls_connect(AWS_IoT_Client *pClient) {
+	pClient->networkStack.tlsConnectParams.pRootCALocation = savedLocation;
 }
 
 void *aws_iot_mqtt_tests_yield_with_rc(void *ptr) {
@@ -70,6 +62,8 @@ void *aws_iot_mqtt_tests_yield_with_rc(void *ptr) {
 			yieldRC = rc;
 		}
 	}
+
+	return NULL;
 }
 
 unsigned int disconnectedCounter = 0;
@@ -99,9 +93,9 @@ int aws_iot_mqtt_tests_auto_reconnect() {
 	snprintf(clientId, 50, "%s_%d", INTEGRATION_TEST_CLIENT_ID, rand() % 10000);
 
 	printf(" Root CA Path : %s\n clientCRT : %s\n clientKey : %s\n", root_CA, clientCRT, clientKey);
-	IoT_Client_Init_Params initParams;
+	IoT_Client_Init_Params initParams = IoT_Client_Init_Params_initializer;
 	initParams.pHostURL = AWS_IOT_MQTT_HOST;
-	initParams.port = 8883;
+	initParams.port = AWS_IOT_MQTT_PORT;
 	initParams.pRootCALocation = root_CA;
 	initParams.pDeviceCertLocation = clientCRT;
 	initParams.pDevicePrivateKeyLocation = clientKey;
@@ -135,20 +129,21 @@ int aws_iot_mqtt_tests_auto_reconnect() {
 	 * Test disconnect handler
 	 */
 	printf("1. Test Disconnect Handler\n");
-	aws_iot_mqtt_tests_block_tls_connect();
+	aws_iot_mqtt_tests_block_tls_connect(&client);
 	iot_tls_disconnect(&(client.networkStack));
 	sleep(connectParams.keepAliveIntervalInSec + 1);
 	if(disconnectedCounter == 1) {
 		printf("Success invoking Disconnect Handler\n");
 	} else {
-		aws_iot_mqtt_tests_unblock_tls_connect();
+		aws_iot_mqtt_tests_unblock_tls_connect(&client);
 		printf("Failure to invoke Disconnect Handler\n");
 		return -1;
 	}
-	aws_iot_mqtt_tests_unblock_tls_connect();
+
 	terminate_yield_with_rc_thread = true;
 	pthread_join(yield_thread, NULL);
-
+	aws_iot_mqtt_tests_unblock_tls_connect(&client);
+	
 	/*
 	 * Manual Reconnect Test
 	 */
@@ -175,7 +170,8 @@ int aws_iot_mqtt_tests_auto_reconnect() {
 		}
 	}
 	terminate_yield_with_rc_thread = true;
-
+	pthread_join(yield_thread, NULL);
+	
 	/*
 	 * Auto Reconnect Test
 	 */
@@ -191,7 +187,7 @@ int aws_iot_mqtt_tests_auto_reconnect() {
 	captureYieldReturnCode = true;
 
 	// Disconnect
-	aws_iot_mqtt_tests_block_tls_connect();
+	aws_iot_mqtt_tests_block_tls_connect(&client);
 	iot_tls_disconnect(&(client.networkStack));
 
 	terminate_yield_with_rc_thread = false;
@@ -212,7 +208,7 @@ int aws_iot_mqtt_tests_auto_reconnect() {
 		printf("Failure: disconnect handler not invoked on enabling auto-reconnect : %d\n", disconnectedCounter);
 		return -7;
 	}
-	aws_iot_mqtt_tests_unblock_tls_connect();
+	aws_iot_mqtt_tests_unblock_tls_connect(&client);
 	sleep(connectParams.keepAliveIntervalInSec + 1);
 	captureYieldReturnCode = true;
 	sleep(connectParams.keepAliveIntervalInSec + 1);
@@ -224,6 +220,10 @@ int aws_iot_mqtt_tests_auto_reconnect() {
 			return -6;
 		}
 	}
+	
+	terminate_yield_with_rc_thread = true;
+	pthread_join(yield_thread, NULL);
+	
 	if(true == aws_iot_mqtt_is_client_connected(&client)) {
 		printf("Success: is Mqtt connected api\n");
 	} else {

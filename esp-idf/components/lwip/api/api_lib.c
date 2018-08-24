@@ -72,13 +72,14 @@ static err_t netconn_close_shutdown(struct netconn *conn, u8_t how);
  * @param apimsg a struct containing the function to call and its parameters
  * @return ERR_OK if the function was called, another err_t if not
  */
-static err_t
+static err_t ESP_IRAM_ATTR
 tcpip_apimsg(struct api_msg *apimsg)
 {
-#ifdef LWIP_DEBUG
+#if LWIP_DEBUG
   /* catch functions that don't set err */
   apimsg->msg.err = ERR_VAL;
 #endif
+
 #if LWIP_NETCONN_SEM_PER_THREAD
   apimsg->msg.op_completed_sem = LWIP_NETCONN_THREAD_SEM_GET();
   LWIP_ASSERT("netconn semaphore not initialized",
@@ -135,6 +136,15 @@ netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto, netconn_cal
   return conn;
 }
 
+static inline bool is_created_by_socket(struct netconn *conn)
+{
+#if LWIP_SOCKET
+  if (conn && (conn->socket >= 0)) {
+    return true;
+  }
+#endif
+  return false;
+}
 /**
  * Close a netconn 'connection' and free its resources.
  * UDP and RAW connection are completely closed, TCP pcbs might still be in a waitstate
@@ -173,7 +183,12 @@ netconn_delete(struct netconn *conn)
     return err;
   }
 
-#if !ESP_THREAD_SAFE
+#if ESP_THREAD_SAFE
+  if (is_created_by_socket(conn) == false) {
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("netconn_delete - free conn\n"));
+    netconn_free(conn);
+  }
+#else
   LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("netconn_delete - free conn\n"));
   netconn_free(conn);
 #endif
@@ -392,9 +407,9 @@ netconn_accept(struct netconn *conn, struct netconn **new_conn)
 #if TCP_LISTEN_BACKLOG
   /* Let the stack know that we have accepted the connection. */
   API_MSG_VAR_ALLOC_DONTFAIL(msg);
-  API_MSG_VAR_REF(msg).msg.conn = conn;
-  /* don't care for the return value of lwip_netconn_do_recv */
-  TCPIP_APIMSG_NOERR(&API_MSG_VAR_REF(msg), lwip_netconn_do_recv);
+  API_MSG_VAR_REF(msg).msg.conn = newconn;
+  /* don't care for the return value of lwip_netconn_do_accepted */
+  TCPIP_APIMSG_NOERR(&API_MSG_VAR_REF(msg), lwip_netconn_do_accepted);
   API_MSG_VAR_FREE(msg);
 #endif /* TCP_LISTEN_BACKLOG */
 
@@ -417,7 +432,7 @@ netconn_accept(struct netconn *conn, struct netconn **new_conn)
  * @return ERR_OK if data has been received, an error code otherwise (timeout,
  *                memory error or another error)
  */
-static err_t
+static err_t ESP_IRAM_ATTR
 netconn_recv_data(struct netconn *conn, void **new_buf)
 {
   void *buf = NULL;
@@ -551,7 +566,7 @@ netconn_recv_tcp_pbuf(struct netconn *conn, struct pbuf **new_buf)
  * @return ERR_OK if data has been received, an error code otherwise (timeout,
  *                memory error or another error)
  */
-err_t
+err_t ESP_IRAM_ATTR
 netconn_recv(struct netconn *conn, struct netbuf **new_buf)
 {
 #if LWIP_TCP
@@ -663,7 +678,7 @@ netconn_sendto(struct netconn *conn, struct netbuf *buf, const ip_addr_t *addr, 
  * @param buf a netbuf containing the data to send
  * @return ERR_OK if data was sent, any other err_t on error
  */
-err_t
+err_t ESP_IRAM_ATTR
 netconn_send(struct netconn *conn, struct netbuf *buf)
 {
   API_MSG_VAR_DECLARE(msg);

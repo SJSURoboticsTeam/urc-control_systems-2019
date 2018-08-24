@@ -22,17 +22,17 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
 
-#include "bt_trace.h"
-#include "allocator.h"
+#include "common/bt_trace.h"
+#include "osi/allocator.h"
 
 //#include <stdio.h>
 #include <string.h>
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "btm_int.h"
 
 /********************************************************************************
@@ -64,7 +64,7 @@ BOOLEAN gatts_init_service_db (tGATT_SVC_DB *p_db, tBT_UUID *p_service,  BOOLEAN
                                UINT16 s_hdl, UINT16 num_handle)
 {
     if (p_db->svc_buffer == NULL) { //in case already alloc
-        p_db->svc_buffer = fixed_queue_new(SIZE_MAX);
+        p_db->svc_buffer = fixed_queue_new(QUEUE_SIZE_MAX);
     }
 
     if (!allocate_svc_db_buf(p_db)) {
@@ -794,7 +794,7 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                         *value = p_cur->p_value->attr_val.attr_val;
                         return GATT_SUCCESS;
                     } else {
-                        GATT_TRACE_ERROR("gatts_get_attribute_vaule failt:the value length is 0");
+                        GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
                         return GATT_INVALID_ATTR_LEN;
                     }
                     break;
@@ -805,7 +805,7 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                     *value = p_cur->p_value->attr_val.attr_val;
                     return GATT_SUCCESS;
                 } else {
-                    GATT_TRACE_ERROR("gatts_get_attribute_vaule failed:the value length is 0");
+                    GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
                     return GATT_INVALID_ATTR_LEN;
                 }
 

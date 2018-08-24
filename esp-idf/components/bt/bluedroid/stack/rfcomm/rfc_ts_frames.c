@@ -23,12 +23,15 @@
  ******************************************************************************/
 
 #include <stddef.h>
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "port_api.h"
-#include "l2c_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/port_api.h"
+#include "stack/l2c_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
+#include "osi/mutex.h"
+#include "osi/allocator.h"
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -895,3 +898,4 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
     }
 }
 
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

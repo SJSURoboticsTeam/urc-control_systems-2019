@@ -56,6 +56,7 @@ config ESP32_APPTRACE_PENDING_DATA_SIZE_MAX
         events will be discarded when main HW buffer is full.
 
 menu "FreeRTOS SystemView Tracing"
+    depends on ESP32_APPTRACE_ENABLE
 config SYSVIEW_ENABLE
     bool "SystemView Tracing Enable"
     depends on ESP32_APPTRACE_ENABLE
@@ -63,37 +64,40 @@ config SYSVIEW_ENABLE
     help
         Enables supporrt for SEGGER SystemView tracing functionality.
 
-if !FREERTOS_UNICORE
 choice SYSVIEW_TS_SOURCE
-    prompt "ESP32 timer to use as SystemView timestamp source"
+    prompt "Timer to use as timestamp source"
     depends on SYSVIEW_ENABLE
-    default SYSVIEW_TS_SOURCE_TIMER_00
+    default SYSVIEW_TS_SOURCE_CCOUNT if FREERTOS_UNICORE && !PM_ENABLE
+    default SYSVIEW_TS_SOURCE_TIMER_00 if !FREERTOS_UNICORE && !PM_ENABLE
+    default SYSVIEW_TS_SOURCE_ESP_TIMER if PM_ENABLE
     help
-        SystemView needs one source for timestamps when tracing events from both cores.
-        This option selects HW timer for it.
+        SystemView needs to use a hardware timer as the source of timestamps
+        when tracing. This option selects the timer for it.
+
+config SYSVIEW_TS_SOURCE_CCOUNT
+	bool "CPU cycle counter (CCOUNT)"
+	depends on FREERTOS_UNICORE && !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_00
     bool "Timer 0, Group 0"
-    help
-        Select this to use timer 0 of group 0
+    depends on !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_01
     bool "Timer 1, Group 0"
-    help
-        Select this to use timer 1 of group 0
+    depends on !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_10
     bool "Timer 0, Group 1"
-    help
-        Select this to use timer 0 of group 1
+    depends on !PM_ENABLE
 
 config SYSVIEW_TS_SOURCE_TIMER_11
     bool "Timer 1, Group 1"
-    help
-        Select this to use timer 1 of group 1
+    depends on !PM_ENABLE
+
+config SYSVIEW_TS_SOURCE_ESP_TIMER
+	bool "esp_timer high resolution timer"
 
 endchoice
-endif #FREERTOS_UNICORE
 
 config SYSVIEW_EVT_OVERFLOW_ENABLE
     bool "Trace Buffer Overflow Event"
@@ -187,4 +191,12 @@ config SYSVIEW_EVT_TIMER_EXIT_ENABLE
         Enables "Timer Exit" event.
 
 endmenu
+
+config ESP32_GCOV_ENABLE
+    bool "GCOV to Host Enable"
+    depends on ESP32_DEBUG_STUBS_ENABLE && ESP32_APPTRACE_ENABLE && !SYSVIEW_ENABLE
+    default y
+    help
+        Enables support for GCOV data transfer to host.
+
 endmenu

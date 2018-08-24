@@ -23,14 +23,17 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "bt_target.h"
-#include "rfcdefs.h"
-#include "btm_api.h"
+#include "common/bt_target.h"
+#include "stack/rfcdefs.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "port_api.h"
+#include "stack/port_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
-#include "bt_defs.h"
+#include "common/bt_defs.h"
+#include "osi/allocator.h"
+#include "osi/mutex.h"
+#if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
 
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -895,3 +898,4 @@ void rfc_set_port_state(tPORT_STATE *port_pars, MX_FRAME *p_frame)
     }
 }
 
+#endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

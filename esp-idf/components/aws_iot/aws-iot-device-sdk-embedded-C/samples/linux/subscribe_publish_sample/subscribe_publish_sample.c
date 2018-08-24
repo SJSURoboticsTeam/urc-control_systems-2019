@@ -37,6 +37,7 @@
 #include "aws_iot_version.h"
 #include "aws_iot_mqtt_client_interface.h"
 
+#define HOST_ADDRESS_SIZE 255
 /**
  * @brief Default cert location
  */
@@ -45,7 +46,7 @@ char certDirectory[PATH_MAX + 1] = "../../../certs";
 /**
  * @brief Default MQTT HOST URL is pulled from the aws_iot_config.h
  */
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
+char HostAddress[HOST_ADDRESS_SIZE] = AWS_IOT_MQTT_HOST;
 
 /**
  * @brief Default MQTT port is pulled from the aws_iot_config.h
@@ -62,7 +63,7 @@ void iot_subscribe_callback_handler(AWS_IoT_Client *pClient, char *topicName, ui
 	IOT_UNUSED(pData);
 	IOT_UNUSED(pClient);
 	IOT_INFO("Subscribe callback");
-	IOT_INFO("%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, params->payload);
+	IOT_INFO("%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *) params->payload);
 }
 
 void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
@@ -94,7 +95,7 @@ void parseInputArgsForConnectParams(int argc, char **argv) {
 	while(-1 != (opt = getopt(argc, argv, "h:p:c:x:"))) {
 		switch(opt) {
 			case 'h':
-				strcpy(HostAddress, optarg);
+				strncpy(HostAddress, optarg, HOST_ADDRESS_SIZE);
 				IOT_DEBUG("Host %s", optarg);
 				break;
 			case 'p':
@@ -102,7 +103,7 @@ void parseInputArgsForConnectParams(int argc, char **argv) {
 				IOT_DEBUG("arg %s", optarg);
 				break;
 			case 'c':
-				strcpy(certDirectory, optarg);
+				strncpy(certDirectory, optarg, PATH_MAX + 1);
 				IOT_DEBUG("cert root directory %s", optarg);
 				break;
 			case 'x':
@@ -176,7 +177,7 @@ int main(int argc, char **argv) {
 		return rc;
 	}
 
-	connectParams.keepAliveIntervalInSec = 10;
+	connectParams.keepAliveIntervalInSec = 600;
 	connectParams.isCleanSession = true;
 	connectParams.MQTTVersion = MQTT_3_1_1;
 	connectParams.pClientID = AWS_IOT_MQTT_CLIENT_ID;
@@ -240,6 +241,10 @@ int main(int argc, char **argv) {
 			publishCount--;
 		}
 
+		if(publishCount == 0 && !infinitePublishFlag) {
+			break;
+		}
+
 		sprintf(cPayload, "%s : %d ", "hello from SDK QOS1", i++);
 		paramsQOS1.payloadLen = strlen(cPayload);
 		rc = aws_iot_mqtt_publish(&client, "sdkTest/sub", 11, &paramsQOS1);
@@ -251,6 +256,9 @@ int main(int argc, char **argv) {
 			publishCount--;
 		}
 	}
+
+	// Wait for all the messages to be received
+	aws_iot_mqtt_yield(&client, 100);
 
 	if(SUCCESS != rc) {
 		IOT_ERROR("An error occurred in the loop.\n");

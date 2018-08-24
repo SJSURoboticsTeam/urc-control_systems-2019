@@ -21,19 +21,19 @@
  *  this file contains GATT interface functions
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 
 #if defined(BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE)
 
-#include "allocator.h"
+#include "osi/allocator.h"
 #include <string.h>
-#include "gatt_api.h"
+#include "stack/gatt_api.h"
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "btm_int.h"
-#include "sdpdefs.h"
-#include "sdp_api.h"
+#include "stack/sdpdefs.h"
+#include "stack/sdp_api.h"
 
 /*******************************************************************************
 **
@@ -567,7 +567,6 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
 
     tGATT_VALUE      indication;
     BT_HDR          *p_msg;
-    tGATT_VALUE     *p_buf;
     tGATT_IF         gatt_if = GATT_GET_GATT_IF(conn_id);
     UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
@@ -591,12 +590,16 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
     indication.auth_req = GATT_AUTH_REQ_NONE;
 
     if (GATT_HANDLE_IS_VALID(p_tcb->indicate_handle)) {
+        /* TODO: need to further check whether deleting pending queue here cause reducing transport performance */
+        /*
         GATT_TRACE_DEBUG ("Add a pending indication");
         if ((p_buf = gatt_add_pending_ind(p_tcb, &indication)) != NULL) {
             cmd_status = GATT_SUCCESS;
         } else {
             cmd_status = GATT_NO_RESOURCES;
         }
+        */
+        return GATT_BUSY;
     } else {
 
         if ( (p_msg = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_IND, (tGATT_SR_MSG *)&indication)) != NULL) {
@@ -723,7 +726,9 @@ tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *v
 
     GATT_TRACE_DEBUG("GATTS_SetAttributeValue: attr_handle: %u  length: %u \n",
                     attr_handle, length);
-
+    if (length <= 0){
+        return GATT_INVALID_ATTR_LEN;
+    }
     if ((p_decl = gatt_find_hdl_buffer_by_attr_handle(attr_handle)) == NULL) {
         GATT_TRACE_DEBUG("Service not created\n"); 
         return GATT_INVALID_HANDLE;
@@ -1332,12 +1337,13 @@ void GATT_StartIf (tGATT_IF gatt_if)
 **
 ** Parameters       gatt_if: applicaiton interface
 **                  bd_addr: peer device address.
+**                  bd_addr_type: peer device address type.
 **                  is_direct: is a direct conenection or a background auto connection
 **
 ** Returns          TRUE if connection started; FALSE if connection start failure.
 **
 *******************************************************************************/
-BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct, tBT_TRANSPORT transport)
+BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type, BOOLEAN is_direct, tBT_TRANSPORT transport)
 {
     tGATT_REG    *p_reg;
     BOOLEAN status = FALSE;
@@ -1351,7 +1357,7 @@ BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, BOOLEAN is_direct, tBT_
     }
 
     if (is_direct) {
-        status = gatt_act_connect (p_reg, bd_addr, transport);
+        status = gatt_act_connect (p_reg, bd_addr, bd_addr_type, transport);
     } else {
         if (transport == BT_TRANSPORT_LE) {
             status = gatt_update_auto_connect_dev(gatt_if, TRUE, bd_addr, TRUE);

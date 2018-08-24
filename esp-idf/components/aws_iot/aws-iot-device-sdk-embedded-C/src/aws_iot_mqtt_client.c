@@ -39,8 +39,17 @@
 extern "C" {
 #endif
 
+#include <string.h>
+
 #include "aws_iot_log.h"
 #include "aws_iot_mqtt_client_interface.h"
+#include "aws_iot_version.h"
+
+#if !DISABLE_METRICS
+#define SDK_METRICS_LEN 25
+#define SDK_METRICS_TEMPLATE "?SDK=C&Version=%d.%d.%d"
+static char pUsernameTemp[SDK_METRICS_LEN] = {0};
+#endif
 
 #ifdef _ENABLE_THREAD_SUPPORT_
 #include "threads_interface.h"
@@ -136,9 +145,17 @@ IoT_Error_t aws_iot_mqtt_set_connect_params(AWS_IoT_Client *pClient, const IoT_C
 	pClient->clientData.options.MQTTVersion = pNewConnectParams->MQTTVersion;
 	pClient->clientData.options.pClientID = pNewConnectParams->pClientID;
 	pClient->clientData.options.clientIDLen = pNewConnectParams->clientIDLen;
+#if !DISABLE_METRICS
+	if (0 == strlen(pUsernameTemp)) {
+		snprintf(pUsernameTemp, SDK_METRICS_LEN, SDK_METRICS_TEMPLATE, VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+	}
+	pClient->clientData.options.pUsername = (char*)&pUsernameTemp[0];
+	pClient->clientData.options.usernameLen = strlen(pUsernameTemp);
+#else
 	pClient->clientData.options.pUsername = pNewConnectParams->pUsername;
 	pClient->clientData.options.usernameLen = pNewConnectParams->usernameLen;
-	pClient->clientData.options.pPassword = pNewConnectParams->pUsername;
+#endif
+	pClient->clientData.options.pPassword = pNewConnectParams->pPassword;
 	pClient->clientData.options.passwordLen = pNewConnectParams->passwordLen;
 	pClient->clientData.options.will.pTopicName = pNewConnectParams->will.pTopicName;
 	pClient->clientData.options.will.topicNameLen = pNewConnectParams->will.topicNameLen;
@@ -150,6 +167,39 @@ IoT_Error_t aws_iot_mqtt_set_connect_params(AWS_IoT_Client *pClient, const IoT_C
 	pClient->clientData.options.isCleanSession = pNewConnectParams->isCleanSession;
 
 	FUNC_EXIT_RC(SUCCESS);
+}
+
+IoT_Error_t aws_iot_mqtt_free(AWS_IoT_Client *pClient)
+{
+    IoT_Error_t rc = SUCCESS;
+
+    if (NULL == pClient) {
+        rc = NULL_VALUE_ERROR;
+    }else
+	{
+	#ifdef _ENABLE_THREAD_SUPPORT_
+		if (rc == SUCCESS)
+		{
+			rc = aws_iot_thread_mutex_destroy(&(pClient->clientData.state_change_mutex));
+		}
+
+		if (rc == SUCCESS)
+		{
+			rc = aws_iot_thread_mutex_destroy(&(pClient->clientData.tls_read_mutex));
+		}else{
+			(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.tls_read_mutex));
+		}
+
+		if (rc == SUCCESS)
+		{
+			rc = aws_iot_thread_mutex_destroy(&(pClient->clientData.tls_write_mutex));
+		}else{
+			(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.tls_write_mutex));
+		}
+	#endif
+	}
+
+    FUNC_EXIT_RC(rc);
 }
 
 IoT_Error_t aws_iot_mqtt_init(AWS_IoT_Client *pClient, const IoT_Client_Init_Params *pInitParams) {
@@ -195,10 +245,13 @@ IoT_Error_t aws_iot_mqtt_init(AWS_IoT_Client *pClient, const IoT_Client_Init_Par
 	}
 	rc = aws_iot_thread_mutex_init(&(pClient->clientData.tls_read_mutex));
 	if(SUCCESS != rc) {
+		(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.state_change_mutex));
 		FUNC_EXIT_RC(rc);
 	}
 	rc = aws_iot_thread_mutex_init(&(pClient->clientData.tls_write_mutex));
 	if(SUCCESS != rc) {
+		(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.tls_read_mutex));
+		(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.state_change_mutex));
 		FUNC_EXIT_RC(rc);
 	}
 #endif
@@ -211,6 +264,11 @@ IoT_Error_t aws_iot_mqtt_init(AWS_IoT_Client *pClient, const IoT_Client_Init_Par
 					  pInitParams->tlsHandshakeTimeout_ms, pInitParams->isSSLHostnameVerify);
 
 	if(SUCCESS != rc) {
+		#ifdef _ENABLE_THREAD_SUPPORT_
+		(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.tls_read_mutex));
+		(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.state_change_mutex));
+		(void)aws_iot_thread_mutex_destroy(&(pClient->clientData.tls_write_mutex));
+		#endif
 		pClient->clientStatus.clientState = CLIENT_STATE_INVALID;
 		FUNC_EXIT_RC(rc);
 	}

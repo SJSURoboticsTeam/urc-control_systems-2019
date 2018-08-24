@@ -23,6 +23,7 @@
 
 #include "esp_panic.h"
 #include "esp_partition.h"
+#include "esp_clk.h"
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
 #define LOG_LOCAL_LEVEL CONFIG_ESP32_CORE_DUMP_LOG_LEVEL
@@ -126,6 +127,10 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
         if (tasks[i].pxTCB == xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID())) {
             // set correct stack top for current task
             tasks[i].pxTopOfStack = (StackType_t *)frame;
+            // This field is not initialized for crashed task, but stack frame has the structure of interrupt one,
+            // so make workaround to allow espcoredump to parse it properly.
+            if (frame->exit == 0)
+                frame->exit = -1;
             ESP_COREDUMP_LOG_PROCESS("Current task EXIT/PC/PS/A0/SP %x %x %x %x %x",
                 frame->exit, frame->pc, frame->ps, frame->a0, frame->a1);
         }
@@ -522,10 +527,11 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
 
     ESP_COREDUMP_LOGI("Press Enter to print core dump to UART...");
-    tm_end = xthal_get_ccount() / (XT_CLOCK_FREQ / 1000) + CONFIG_ESP32_CORE_DUMP_UART_DELAY;
+    const int cpu_ticks_per_ms = esp_clk_cpu_freq() / 1000;
+    tm_end = xthal_get_ccount() / cpu_ticks_per_ms + CONFIG_ESP32_CORE_DUMP_UART_DELAY;
     ch = esp_core_dump_uart_get_char();
     while (!(ch == '\n' || ch == '\r')) {
-        tm_cur = xthal_get_ccount() / (XT_CLOCK_FREQ / 1000);
+        tm_cur = xthal_get_ccount() / cpu_ticks_per_ms;
         if (tm_cur >= tm_end)
             break;
         ch = esp_core_dump_uart_get_char();

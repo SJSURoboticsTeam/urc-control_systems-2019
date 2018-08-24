@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#define EMAC_INTR_ENABLE_BIT (EMAC_TRANSMIT_INTERRUPT_ENABLE | EMAC_RECEIVE_INTERRUPT_ENABLE | EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE | EMAC_NORMAL_INTERRUPT_SUMMARY_ENABLE)
+#define EMAC_INTR_ENABLE_BIT (EMAC_DMAIN_TIE | EMAC_DMAIN_RIE | EMAC_DMAIN_RBUE | EMAC_DMAIN_NISE)
 
 struct dma_desc {
     uint32_t desc0;
@@ -40,8 +40,6 @@ struct dma_extended_desc {
 };
 
 void emac_enable_clk(bool enable);
-void emac_set_clk_rmii(void);
-void emac_set_clk_mii(void);
 void emac_reset(void);
 void emac_set_gpio_pin_rmii(void);
 void emac_set_gpio_pin_mii(void);
@@ -80,22 +78,22 @@ void inline emac_poll_rx_cmd(void)
 
 void inline emac_disable_rx_intr(void)
 {
-    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_INTERRUPT_ENABLE);
+    REG_CLR_BIT(EMAC_DMAIN_EN_REG, EMAC_DMAIN_RIE);
 }
 
 void inline emac_enable_rx_intr(void)
 {
-    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_INTERRUPT_ENABLE);
+    REG_SET_BIT(EMAC_DMAIN_EN_REG, EMAC_DMAIN_RIE);
 }
 
 void inline emac_disable_rx_unavail_intr(void)
 {
-    REG_CLR_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);
+    REG_CLR_BIT(EMAC_DMAIN_EN_REG, EMAC_DMAIN_RBUE);
 }
 
 void inline emac_enable_rx_unavail_intr(void)
 {
-    REG_SET_BIT(EMAC_DMAINTERRUPT_EN_REG, EMAC_RECEIVE_BUFFER_UNAVAILABLE_ENABLE);
+    REG_SET_BIT(EMAC_DMAIN_EN_REG, EMAC_DMAIN_RBUE);
 }
 
 void IRAM_ATTR inline emac_send_pause_frame_enable(void)
@@ -113,4 +111,3 @@ void inline emac_send_pause_zero_frame_enable(void)
 #endif
 
 #endif
-

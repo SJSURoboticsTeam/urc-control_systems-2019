@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sys/param.h>
+#include <string.h>
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -75,12 +76,20 @@ static LIST_HEAD(esp_timer_list, esp_timer) s_timers =
 // all the timers
 static LIST_HEAD(esp_inactive_timer_list, esp_timer) s_inactive_timers =
         LIST_HEAD_INITIALIZER(s_timers);
+// used to keep track of the timer when executing the callback
+static esp_timer_handle_t s_timer_in_callback;
 #endif
 // task used to dispatch timer callbacks
 static TaskHandle_t s_timer_task;
 // counting semaphore used to notify the timer task from ISR
 static SemaphoreHandle_t s_timer_semaphore;
-// lock protecting s_timers and s_inactive_timers
+
+#if CONFIG_SPIRAM_USE_MALLOC
+// memory for s_timer_semaphore
+static StaticQueue_t s_timer_semaphore_memory;
+#endif
+
+// lock protecting s_timers, s_inactive_timers, s_timer_in_callback
 static portMUX_TYPE s_timer_lock = portMUX_INITIALIZER_UNLOCKED;
 
 
@@ -108,7 +117,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     return ESP_OK;
 }
 
-esp_err_t esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
+esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
 {
     if (!is_initialized() || timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
@@ -121,7 +130,7 @@ esp_err_t esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
     return timer_insert(timer);
 }
 
-esp_err_t esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
+esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
 {
     if (!is_initialized() || timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
@@ -135,7 +144,7 @@ esp_err_t esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
     return timer_insert(timer);
 }
 
-esp_err_t esp_timer_stop(esp_timer_handle_t timer)
+esp_err_t IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
 {
     if (!is_initialized() || !timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
@@ -149,6 +158,9 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
         return ESP_ERR_INVALID_STATE;
     }
 #if WITH_PROFILING
+    if (timer == s_timer_in_callback) {
+        s_timer_in_callback = NULL;
+    }
     timer_remove_inactive(timer);
 #endif
     if (timer == NULL) {
@@ -158,7 +170,7 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
     return ESP_OK;
 }
 
-static esp_err_t timer_insert(esp_timer_handle_t timer)
+static IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer)
 {
     timer_list_lock();
 #if WITH_PROFILING
@@ -187,7 +199,7 @@ static esp_err_t timer_insert(esp_timer_handle_t timer)
     return ESP_OK;
 }
 
-static esp_err_t timer_remove(esp_timer_handle_t timer)
+static IRAM_ATTR esp_err_t timer_remove(esp_timer_handle_t timer)
 {
     timer_list_lock();
     LIST_REMOVE(timer, list_entry);
@@ -202,7 +214,7 @@ static esp_err_t timer_remove(esp_timer_handle_t timer)
 
 #if WITH_PROFILING
 
-static void timer_insert_inactive(esp_timer_handle_t timer)
+static IRAM_ATTR void timer_insert_inactive(esp_timer_handle_t timer)
 {
     /* May be locked or not, depending on where this is called from.
      * Lock recursively.
@@ -220,7 +232,7 @@ static void timer_insert_inactive(esp_timer_handle_t timer)
     timer_list_unlock();
 }
 
-static void timer_remove_inactive(esp_timer_handle_t timer)
+static IRAM_ATTR void timer_remove_inactive(esp_timer_handle_t timer)
 {
     timer_list_lock();
     LIST_REMOVE(timer, list_entry);
@@ -229,17 +241,17 @@ static void timer_remove_inactive(esp_timer_handle_t timer)
 
 #endif // WITH_PROFILING
 
-static bool timer_armed(esp_timer_handle_t timer)
+static IRAM_ATTR bool timer_armed(esp_timer_handle_t timer)
 {
     return timer->alarm > 0;
 }
 
-static void timer_list_lock()
+static IRAM_ATTR void timer_list_lock()
 {
     portENTER_CRITICAL(&s_timer_lock);
 }
 
-static void timer_list_unlock()
+static IRAM_ATTR void timer_list_unlock()
 {
     portEXIT_CRITICAL(&s_timer_lock);
 }
@@ -266,14 +278,21 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
         }
 #if WITH_PROFILING
         uint64_t callback_start = now;
+        s_timer_in_callback = it;
 #endif
         timer_list_unlock();
         (*it->callback)(it->arg);
         timer_list_lock();
         now = esp_timer_impl_get_time();
 #if WITH_PROFILING
-        it->times_triggered++;
-        it->total_callback_run_time += now - callback_start;
+        /* The callback might have deleted the timer.
+         * If this happens, esp_timer_delete will set s_timer_in_callback
+         * to NULL.
+         */
+        if (s_timer_in_callback) {
+            s_timer_in_callback->times_triggered++;
+            s_timer_in_callback->total_callback_run_time += now - callback_start;
+        }
 #endif
         it = LIST_FIRST(&s_timers);
     }
@@ -305,7 +324,7 @@ static void IRAM_ATTR timer_alarm_handler(void* arg)
     }
 }
 
-static bool is_initialized()
+static IRAM_ATTR bool is_initialized()
 {
     return s_timer_task != NULL;
 }
@@ -317,7 +336,12 @@ esp_err_t esp_timer_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#if CONFIG_SPIRAM_USE_MALLOC
+    memset(&s_timer_semaphore_memory, 0, sizeof(StaticQueue_t));
+    s_timer_semaphore = xSemaphoreCreateCountingStatic(TIMER_EVENT_QUEUE_SIZE, 0, &s_timer_semaphore_memory);
+#else
     s_timer_semaphore = xSemaphoreCreateCounting(TIMER_EVENT_QUEUE_SIZE, 0);
+#endif
     if (!s_timer_semaphore) {
         return ESP_ERR_NO_MEM;
     }
@@ -441,6 +465,18 @@ esp_err_t esp_timer_dump(FILE* stream)
 
     free(print_buf);
     return ESP_OK;
+}
+
+int64_t IRAM_ATTR esp_timer_get_next_alarm()
+{
+    int64_t next_alarm = INT64_MAX;
+    timer_list_lock();
+    esp_timer_handle_t it = LIST_FIRST(&s_timers);
+    if (it) {
+        next_alarm = it->alarm;
+    }
+    timer_list_unlock();
+    return next_alarm;
 }
 
 int64_t IRAM_ATTR esp_timer_get_time()

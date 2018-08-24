@@ -26,16 +26,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bt_trace.h"
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "l2c_api.h"
+#include "common/bt_trace.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/l2c_api.h"
 #include "l2c_int.h"
-#include "l2cdefs.h"
-#include "btm_api.h"
+#include "stack/l2cdefs.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "allocator.h"
+#include "stack/btu.h"
+#include "osi/allocator.h"
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -203,6 +203,21 @@ void l2c_fcr_stop_timer (tL2C_CCB *p_ccb)
 
 /*******************************************************************************
 **
+** Function         l2c_fcr_free_timer
+**
+** Description      This function releases the (monitor or transmission) timer.
+**
+** Returns          -
+**
+*******************************************************************************/
+void l2c_fcr_free_timer (tL2C_CCB *p_ccb)
+{
+    assert(p_ccb != NULL);
+    btu_free_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
+}
+
+/*******************************************************************************
+**
 ** Function         l2c_fcr_cleanup
 **
 ** Description      This function cleans up the variable used for flow-control/retrans.
@@ -232,9 +247,12 @@ void l2c_fcr_cleanup (tL2C_CCB *p_ccb)
     fixed_queue_free(p_fcrb->retrans_q, osi_free_func);
     p_fcrb->retrans_q = NULL;
 	
-    btu_stop_quick_timer (&p_fcrb->ack_timer);
-    btu_stop_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
-
+    btu_free_quick_timer (&p_fcrb->ack_timer);
+    memset(&p_fcrb->ack_timer, 0, sizeof(TIMER_LIST_ENT));
+    
+    btu_free_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
+    memset(&p_fcrb->mon_retrans_timer, 0, sizeof(TIMER_LIST_ENT));
+    
 #if (L2CAP_ERTM_STATS == TRUE)
     if ( (p_ccb->local_cid >= L2CAP_BASE_APPL_CID) && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) ) {
         UINT32  dur = osi_time_get_os_boottime_ms() - p_ccb->fcrb.connect_tick_count;
@@ -732,7 +750,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.srej_sent) &&
          (!fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q))) {
         fixed_queue_t *temp_q = p_ccb->fcrb.srej_rcv_hold_q;
-        p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(SIZE_MAX);
+        p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
         while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(temp_q)) != NULL) {
             if (p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {

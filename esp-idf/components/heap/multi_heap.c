@@ -45,7 +45,7 @@ size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
 multi_heap_handle_t multi_heap_register(void *start, size_t size)
     __attribute__((alias("multi_heap_register_impl")));
 
-void multi_get_heap_info(multi_heap_handle_t heap, multi_heap_info_t *info)
+void multi_heap_get_info(multi_heap_handle_t heap, multi_heap_info_t *info)
     __attribute__((alias("multi_heap_get_info_impl")));
 
 size_t multi_heap_free_size(multi_heap_handle_t heap)
@@ -53,6 +53,14 @@ size_t multi_heap_free_size(multi_heap_handle_t heap)
 
 size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
     __attribute__((alias("multi_heap_minimum_free_size_impl")));
+
+void *multi_heap_get_block_address(multi_heap_block_handle_t block)
+    __attribute__((alias("multi_heap_get_block_address_impl")));
+
+void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
+{
+    return NULL;
+}
 
 #endif
 
@@ -123,6 +131,12 @@ static inline bool is_free(const heap_block_t *block)
     return block->header & BLOCK_FREE_FLAG;
 }
 
+/* Return true if this block is the first in the heap */
+static inline bool is_first_block(const heap_t *heap, const heap_block_t *block)
+{
+    return (block == &heap->first_block);
+}
+
 /* Return true if this block is the last_block in the heap
    (the only block with no next pointer) */
 static inline bool is_last_block(const heap_block_t *block)
@@ -167,7 +181,7 @@ static void assert_valid_block(const heap_t *heap, const heap_block_t *block)
 */
 static heap_block_t *get_prev_free_block(heap_t *heap, const heap_block_t *block)
 {
-    assert(block != &heap->first_block); /* can't look for a block before first_block */
+    assert(!is_first_block(heap, block)); /* can't look for a block before first_block */
 
     for (heap_block_t *b = &heap->first_block; b != NULL && b < block; b = b->next_free) {
         MULTI_HEAP_ASSERT(is_free(b), b); // Block should be free
@@ -198,7 +212,7 @@ static heap_block_t *merge_adjacent(heap_t *heap, heap_block_t *a, heap_block_t 
     if (is_last_block(b)) {
         return a;
     }
-    if (a == &heap->first_block) {
+    if (is_first_block(heap, a)) {
         return b;
     }
 
@@ -250,33 +264,57 @@ static heap_block_t *merge_adjacent(heap_t *heap, heap_block_t *a, heap_block_t 
 */
 static void split_if_necessary(heap_t *heap, heap_block_t *block, size_t size, heap_block_t *prev_free_block)
 {
+    const size_t block_size = block_data_size(block);
     MULTI_HEAP_ASSERT(!is_free(block), block); // split block shouldn't be free
-    MULTI_HEAP_ASSERT(size <= block_data_size(block), block); // size should be valid
+    MULTI_HEAP_ASSERT(size <= block_size, block); // size should be valid
     size = ALIGN_UP(size);
 
     /* can't split the head or tail block */
-    assert(block != &heap->first_block);
+    assert(!is_first_block(heap, block));
     assert(!is_last_block(block));
 
-    if (block_data_size(block) < size + sizeof(heap_block_t)) {
-        /* Can't split 'block' if we're not going to get a usable free block afterwards */
-        return;
-    }
-
-    /* Block is larger than it needs to be, insert a new free block after it */
     heap_block_t *new_block = (heap_block_t *)(block->data + size);
-    new_block->header = block->header | BLOCK_FREE_FLAG;
-    block->header = (intptr_t)new_block;
+    heap_block_t *next_block = get_next_block(block);
 
-    if (prev_free_block == NULL) {
-        prev_free_block = get_prev_free_block(heap, block);
+    if (is_free(next_block) && !is_last_block(next_block)) {
+        /* The next block is free, just extend it upwards. */
+        new_block->header = next_block->header;
+        new_block->next_free = next_block->next_free;
+        if (prev_free_block == NULL) {
+            prev_free_block = get_prev_free_block(heap, block);
+        }
+        /* prev_free_block should point to the next block (which we found to be free). */
+        MULTI_HEAP_ASSERT(prev_free_block->next_free == next_block,
+                          &prev_free_block->next_free); // free blocks should be in order
+        /* Note: We have not introduced a new block header, hence the simple math. */
+        heap->free_bytes += block_size - size;
+#ifdef MULTI_HEAP_POISONING_SLOW
+        /* next_block header needs to be replaced with a fill pattern */
+        multi_heap_internal_poison_fill_region(next_block, sizeof(heap_block_t), true /* free */);
+#endif
+    } else {
+        /* Insert a free block between the current and the next one. */
+        if (block_data_size(block) < size + sizeof(heap_block_t)) {
+            /* Can't split 'block' if we're not going to get a usable free block afterwards */
+            return;
+        }
+        if (prev_free_block == NULL) {
+            prev_free_block = get_prev_free_block(heap, block);
+        }
+        new_block->header = block->header | BLOCK_FREE_FLAG;
+        new_block->next_free = prev_free_block->next_free;
+        /* prev_free_block should point to a free block after new_block */
+        MULTI_HEAP_ASSERT(prev_free_block->next_free > new_block,
+                          &prev_free_block->next_free); // free blocks should be in order
+        heap->free_bytes += block_data_size(new_block);
     }
-    /* prev_free_block should point to a free block after new_block */
-    MULTI_HEAP_ASSERT(prev_free_block->next_free > new_block,
-                      &prev_free_block->next_free); // free blocks should be in order
-    new_block->next_free = prev_free_block->next_free;
+    block->header = (intptr_t)new_block;
     prev_free_block->next_free = new_block;
-    heap->free_bytes += block_data_size(new_block);
+}
+
+void *multi_heap_get_block_address_impl(multi_heap_block_handle_t block)
+{
+    return ((char *)block + offsetof(heap_block_t, data));
 }
 
 size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
@@ -284,7 +322,7 @@ size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
     heap_block_t *pb = get_block(p);
 
     assert_valid_block(heap, pb);
-    MULTI_HEAP_ASSERT(!is_free(pb), pb); // block should be free
+    MULTI_HEAP_ASSERT(!is_free(pb), pb); // block shouldn't be free
     return block_data_size(pb);
 }
 
@@ -329,6 +367,37 @@ void multi_heap_set_lock(multi_heap_handle_t heap, void *lock)
     heap->lock = lock;
 }
 
+void inline multi_heap_internal_lock(multi_heap_handle_t heap)
+{
+    MULTI_HEAP_LOCK(heap->lock);
+}
+
+void inline multi_heap_internal_unlock(multi_heap_handle_t heap)
+{
+    MULTI_HEAP_UNLOCK(heap->lock);
+}
+
+multi_heap_block_handle_t multi_heap_get_first_block(multi_heap_handle_t heap)
+{
+    return &heap->first_block;
+}
+
+multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, multi_heap_block_handle_t block)
+{
+    heap_block_t *next = get_next_block(block);
+    /* check for valid free last block to avoid assert in assert_valid_block */
+    if (next == heap->last_block && is_last_block(next) && is_free(next)) {
+        return NULL;
+    }
+    assert_valid_block(heap, next);
+    return next;
+}
+
+bool multi_heap_is_free(multi_heap_block_handle_t block)
+{
+    return is_free(block);
+}
+
 void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
 {
     heap_block_t *best_block = NULL;
@@ -337,11 +406,21 @@ void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
     size_t best_size = SIZE_MAX;
     size = ALIGN_UP(size);
 
-    if (size == 0 || heap == NULL || heap->free_bytes < size) {
+    if (size == 0 || heap == NULL) {
         return NULL;
     }
 
-    MULTI_HEAP_LOCK(heap->lock);
+    multi_heap_internal_lock(heap);
+
+    /* Note: this check must be done while holding the lock as both
+       malloc & realloc may temporarily shrink the free_bytes value
+       before they split a large block. This can result in false negatives,
+       especially if the heap is unfragmented.
+    */
+    if (heap->free_bytes < size) {
+        MULTI_HEAP_UNLOCK(heap->lock);
+        return NULL;
+    }
 
     /* Find best free block to perform the allocation in */
     prev = &heap->first_block;
@@ -361,7 +440,7 @@ void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
     }
 
     if (best_block == NULL) {
-        MULTI_HEAP_UNLOCK(heap->lock);
+        multi_heap_internal_unlock(heap);
         return NULL; /* No room in heap */
     }
 
@@ -376,7 +455,7 @@ void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
         heap->minimum_free_bytes = heap->free_bytes;
     }
 
-    MULTI_HEAP_UNLOCK(heap->lock);
+    multi_heap_internal_unlock(heap);
 
     return best_block->data;
 }
@@ -389,12 +468,12 @@ void multi_heap_free_impl(multi_heap_handle_t heap, void *p)
         return;
     }
 
-    MULTI_HEAP_LOCK(heap->lock);
+    multi_heap_internal_lock(heap);
 
     assert_valid_block(heap, pb);
     MULTI_HEAP_ASSERT(!is_free(pb), pb); // block should not be free
     MULTI_HEAP_ASSERT(!is_last_block(pb), pb); // block should not be last block
-    MULTI_HEAP_ASSERT(pb != &heap->first_block, pb); // block should not be first block
+    MULTI_HEAP_ASSERT(!is_first_block(heap, pb), pb); // block should not be first block
 
     heap_block_t *next = get_next_block(pb);
 
@@ -420,7 +499,7 @@ void multi_heap_free_impl(multi_heap_handle_t heap, void *p)
         pb = merge_adjacent(heap, pb, next);
     }
 
-    MULTI_HEAP_UNLOCK(heap->lock);
+    multi_heap_internal_unlock(heap);
 }
 
 
@@ -451,7 +530,7 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
         return NULL;
     }
 
-    MULTI_HEAP_LOCK(heap->lock);
+    multi_heap_internal_lock(heap);
     result = NULL;
 
     if (size <= block_data_size(pb)) {
@@ -461,7 +540,7 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
     }
     else if (heap->free_bytes < size - block_data_size(pb)) {
         // Growing, but there's not enough total free space in the heap
-        MULTI_HEAP_UNLOCK(heap->lock);
+        multi_heap_internal_unlock(heap);
         return NULL;
     }
 
@@ -512,7 +591,7 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
         heap->minimum_free_bytes = heap->free_bytes;
     }
 
-    MULTI_HEAP_UNLOCK(heap->lock);
+    multi_heap_internal_unlock(heap);
     return result;
 }
 
@@ -530,7 +609,7 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
     size_t total_free_bytes = 0;
     assert(heap != NULL);
 
-    MULTI_HEAP_LOCK(heap->lock);
+    multi_heap_internal_lock(heap);
 
     heap_block_t *prev = NULL;
     heap_block_t *prev_free = NULL;
@@ -550,19 +629,21 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
             FAIL_PRINT("CORRUPT HEAP: Block %p is outside heap (last valid block %p)\n", b, prev);
             goto done;
         }
-        prev = b;
-
         if (is_free(b)) {
+            if (prev != NULL && is_free(prev) && !is_first_block(heap, prev) && !is_last_block(b)) {
+                FAIL_PRINT("CORRUPT HEAP: Two adjacent free blocks found, %p and %p\n", prev, b);
+            }
             if (expected_free != NULL && expected_free != b) {
                 FAIL_PRINT("CORRUPT HEAP: Prev free block %p pointed to next free %p but this free block is %p\n",
                        prev_free, expected_free, b);
             }
             prev_free = b;
             expected_free = b->next_free;
-            if (b != &heap->first_block) {
+            if (!is_first_block(heap, b)) {
                 total_free_bytes += block_data_size(b);
             }
         }
+        prev = b;
 
 #ifdef MULTI_HEAP_POISONING
         if (!is_last_block(b)) {
@@ -593,7 +674,7 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
     }
 
  done:
-    MULTI_HEAP_UNLOCK(heap->lock);
+    multi_heap_internal_unlock(heap);
 
     return valid;
 }
@@ -602,17 +683,17 @@ void multi_heap_dump(multi_heap_handle_t heap)
 {
     assert(heap != NULL);
 
-    MULTI_HEAP_LOCK(heap->lock);
-    printf("Heap start %p end %p\nFirst free block %p\n", &heap->first_block, heap->last_block, heap->first_block.next_free);
+    multi_heap_internal_lock(heap);
+    MULTI_HEAP_STDERR_PRINTF("Heap start %p end %p\nFirst free block %p\n", &heap->first_block, heap->last_block, heap->first_block.next_free);
     for(heap_block_t *b = &heap->first_block; b != NULL; b = get_next_block(b)) {
-        printf("Block %p data size 0x%08zx bytes next block %p", b, block_data_size(b), get_next_block(b));
+        MULTI_HEAP_STDERR_PRINTF("Block %p data size 0x%08x bytes next block %p", b, block_data_size(b), get_next_block(b));
         if (is_free(b)) {
-            printf(" FREE. Next free %p\n", b->next_free);
+            MULTI_HEAP_STDERR_PRINTF(" FREE. Next free %p\n", b->next_free);
         } else {
-            printf("\n");
+            MULTI_HEAP_STDERR_PRINTF("%s", "\n"); /* C macros & optional __VA_ARGS__ */
         }
     }
-    MULTI_HEAP_UNLOCK(heap->lock);
+    multi_heap_internal_unlock(heap);
 }
 
 size_t multi_heap_free_size_impl(multi_heap_handle_t heap)
@@ -639,7 +720,7 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
         return;
     }
 
-    MULTI_HEAP_LOCK(heap->lock);
+    multi_heap_internal_lock(heap);
     for(heap_block_t *b = get_next_block(&heap->first_block); !is_last_block(b); b = get_next_block(b)) {
         info->total_blocks++;
         if (is_free(b)) {
@@ -659,6 +740,6 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
     // heap has wrong total size (address printed here is not indicative of the real error)
     MULTI_HEAP_ASSERT(info->total_free_bytes == heap->free_bytes, heap);
 
-    MULTI_HEAP_UNLOCK(heap->lock);
+    multi_heap_internal_unlock(heap);
 
 }

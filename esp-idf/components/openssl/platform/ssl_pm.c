@@ -153,6 +153,13 @@ int ssl_pm_new(SSL *ssl)
         mbedtls_ssl_conf_min_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_0);
     }
 
+    if (ssl->ctx->ssl_alpn.alpn_status == ALPN_ENABLE) {
+#ifdef MBEDTLS_SSL_ALPN
+        mbedtls_ssl_conf_alpn_protocols( &ssl_pm->conf, ssl->ctx->ssl_alpn.alpn_list );
+#else
+        SSL_DEBUG(SSL_PLATFORM_ERROR_LEVEL, "CONFIG_MBEDTLS_SSL_ALPN must be enabled to use ALPN", -1);
+#endif // MBEDTLS_SSL_ALPN
+    }
     mbedtls_ssl_conf_rng(&ssl_pm->conf, mbedtls_ctr_drbg_random, &ssl_pm->ctr_drbg);
 
 #ifdef CONFIG_OPENSSL_LOWLEVEL_DEBUG
@@ -213,11 +220,11 @@ static int ssl_pm_reload_crt(SSL *ssl)
     struct pkey_pm *pkey_pm = (struct pkey_pm *)ssl->cert->pkey->pkey_pm;
     struct x509_pm *crt_pm = (struct x509_pm *)ssl->cert->x509->x509_pm;
 
-    if (ssl->verify_mode == SSL_VERIFY_PEER)
+    if (ssl->verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
         mode = MBEDTLS_SSL_VERIFY_REQUIRED;
-    else if (ssl->verify_mode == SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
+    else if (ssl->verify_mode & SSL_VERIFY_PEER)
         mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
-    else if (ssl->verify_mode == SSL_VERIFY_CLIENT_ONCE)
+    else if (ssl->verify_mode & SSL_VERIFY_CLIENT_ONCE)
         mode = MBEDTLS_SSL_VERIFY_UNSET;
     else
         mode = MBEDTLS_SSL_VERIFY_NONE;
@@ -362,6 +369,13 @@ void ssl_pm_set_fd(SSL *ssl, int fd, int mode)
     struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
 
     ssl_pm->fd.fd = fd;
+}
+
+void ssl_pm_set_hostname(SSL *ssl, const char *hostname)
+{
+    struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+
+    mbedtls_ssl_set_hostname(&ssl_pm->ssl, hostname);
 }
 
 int ssl_pm_get_fd(const SSL *ssl, int mode)
@@ -658,4 +672,33 @@ long ssl_pm_get_verify_result(const SSL *ssl)
         verify_result = X509_V_OK;
 
     return verify_result;
+}
+
+/**
+ * @brief set expected hostname on peer cert CN
+ */
+int X509_VERIFY_PARAM_set1_host(X509_VERIFY_PARAM *param,
+                                const char *name, size_t namelen)
+{
+    SSL *ssl = (SSL *)((char *)param - offsetof(SSL, param));
+    struct ssl_pm *ssl_pm = (struct ssl_pm *)ssl->ssl_pm;
+    char *name_cstr = NULL;
+
+    if (namelen) {
+        name_cstr = malloc(namelen + 1);
+        if (!name_cstr) {
+            return 0;
+        }
+        memcpy(name_cstr, name, namelen);
+        name_cstr[namelen] = '\0';
+        name = name_cstr;
+    }
+
+    mbedtls_ssl_set_hostname(&ssl_pm->ssl, name);
+
+    if (namelen) {
+        free(name_cstr);
+    }
+
+    return 1;
 }

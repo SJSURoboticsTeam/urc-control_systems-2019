@@ -21,30 +21,42 @@
 extern "C" {
 #endif
 
-#define ESP_ERR_PING_BASE      0x5000
+#define ESP_ERR_PING_BASE               0x6000
 
-#define ESP_ERR_PING_INVALID_PARAMS     ESP_ERR_PING_BASE + 0x00
-#define ESP_ERR_PING_NO_MEM             ESP_ERR_PING_BASE + 0x01
+#define ESP_ERR_PING_INVALID_PARAMS     ESP_ERR_PING_BASE + 0x01
+#define ESP_ERR_PING_NO_MEM             ESP_ERR_PING_BASE + 0x02
 
 #define ESP_PING_CHECK_OPTLEN(optlen, opttype) do { if ((optlen) < sizeof(opttype)) { return ESP_ERR_PING_INVALID_PARAMS; }}while(0)
 
 typedef struct _ping_found {
     uint32_t resp_time;
     uint32_t timeout_count;
+    uint32_t send_count;
+    uint32_t recv_count;
+    uint32_t err_count;
     uint32_t bytes;
     uint32_t total_bytes;
     uint32_t total_time;
+    uint32_t min_time;
+    uint32_t max_time;
     int8_t  ping_err;
 } esp_ping_found;
 
 typedef enum {
     PING_TARGET_IP_ADDRESS          = 50,   /**< target IP address */
     PING_TARGET_IP_ADDRESS_COUNT    = 51,   /**< target IP address total counter */
-    PING_TARGET_RCV_TIMEO           = 52,   /**< receive timeout */
-    PING_TARGET_DELAY_TIME          = 53,   /**< delay time */
+    PING_TARGET_RCV_TIMEO           = 52,   /**< receive timeout in milliseconds */
+    PING_TARGET_DELAY_TIME          = 53,   /**< delay time in milliseconds */
     PING_TARGET_ID                  = 54,   /**< identifier */
-    PING_TARGET_RES_FN              = 55
+    PING_TARGET_RES_FN              = 55,   /**< ping result callback function */
+    PING_TARGET_RES_RESET           = 56    /**< ping result statistic reset */
 } ping_target_id_t;
+
+typedef enum {
+    PING_RES_TIMEOUT = 0,
+    PING_RES_OK      = 1, 
+    PING_RES_FINISH  = 2,
+} ping_res_t;
 
 typedef void (* esp_ping_found_fn)(ping_target_id_t found_id, esp_ping_found *found_val);
 

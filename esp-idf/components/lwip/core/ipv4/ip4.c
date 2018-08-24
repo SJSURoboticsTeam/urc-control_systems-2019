@@ -115,47 +115,65 @@ ip4_set_default_multicast_netif(struct netif* default_multicast_netif)
 #endif /* LWIP_MULTICAST_TX_OPTIONS */
 
 #ifdef LWIP_HOOK_IP4_ROUTE_SRC
+bool ip4_netif_exist(const ip4_addr_t *src, const ip4_addr_t *dest)
+{
+  struct netif *netif = NULL;
+  
+  for (netif = netif_list; netif != NULL; netif = netif->next) {
+    /* is the netif up, does it have a link and a valid address? */
+    if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
+      /* source netif and dest netif match? */
+      if (ip4_addr_netcmp(src, netif_ip4_addr(netif), netif_ip4_netmask(netif)) || ip4_addr_netcmp(dest, netif_ip4_addr(netif), netif_ip4_netmask(netif))) {
+        /* return false when both netif don't match */
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 /**
- * Source based IPv4 routing hook function. This function works only
- * when destination IP is broadcast IP.
+ * Source based IPv4 routing hook function. 
  */
-struct netif *
+struct netif * ESP_IRAM_ATTR
 ip4_route_src_hook(const ip4_addr_t *dest, const ip4_addr_t *src)
 {
-    struct netif *netif = NULL;
+  struct netif *netif = NULL;
 
-    /* destination IP is broadcast IP? */
-    if ((src != NULL) && (dest->addr == IPADDR_BROADCAST)) {
-      /* iterate through netifs */
-      for (netif = netif_list; netif != NULL; netif = netif->next) {
-        /* is the netif up, does it have a link and a valid address? */
-        if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
-          /* source IP matches? */
-          if (ip4_addr_cmp(src, netif_ip4_addr(netif))) {
-            /* return netif on which to forward IP packet */
-            return netif;
-          }
+  if ((src != NULL) && !ip4_addr_isany(src)) {
+    /* iterate through netifs */
+    for (netif = netif_list; netif != NULL; netif = netif->next) {
+      /* is the netif up, does it have a link and a valid address? */
+      if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
+        /* source IP matches? */
+        if (ip4_addr_cmp(src, netif_ip4_addr(netif))) {
+          /* return netif on which to forward IP packet */
+          return netif;
         }
       }
     }
-
-    return netif;
+  }
+  return netif;
 }
 
 /**
  * Source based IPv4 routing must be fully implemented in
  * LWIP_HOOK_IP4_ROUTE_SRC(). This function only provides the parameters.
  */
-struct netif *
+struct netif * ESP_IRAM_ATTR
 ip4_route_src(const ip4_addr_t *dest, const ip4_addr_t *src)
 {
   if (src != NULL) {
+    if (!ip4_addr_isany(src) && (ip4_netif_exist(src,dest) == false)) {
+      return NULL;
+    }
     /* when src==NULL, the hook is called from ip4_route(dest) */
     struct netif *netif = LWIP_HOOK_IP4_ROUTE_SRC(dest, src);
     if (netif != NULL) {
       return netif;
     }
   }
+
   return ip4_route(dest);
 }
 #endif /* LWIP_HOOK_IP4_ROUTE_SRC */
@@ -169,7 +187,7 @@ ip4_route_src(const ip4_addr_t *dest, const ip4_addr_t *src)
  * @param dest the destination IP address for which to find the route
  * @return the netif on which to send to reach dest
  */
-struct netif *
+struct netif * ESP_IRAM_ATTR
 ip4_route(const ip4_addr_t *dest)
 {
   struct netif *netif;
@@ -390,7 +408,7 @@ return_noroute:
  * @return ERR_OK if the packet was processed (could return ERR_* if it wasn't
  *         processed, but currently always returns ERR_OK)
  */
-err_t
+err_t ESP_IRAM_ATTR
 ip4_input(struct pbuf *p, struct netif *inp)
 {
   struct ip_hdr *iphdr;
@@ -798,7 +816,7 @@ ip4_output_if_opt(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
  * Same as ip_output_if() but 'src' address is not replaced by netif address
  * when it is 'any'.
  */
-err_t
+err_t ESP_IRAM_ATTR
 ip4_output_if_src(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
              u8_t ttl, u8_t tos,
              u8_t proto, struct netif *netif)
@@ -811,7 +829,7 @@ ip4_output_if_src(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
  * Same as ip_output_if_opt() but 'src' address is not replaced by netif address
  * when it is 'any'.
  */
-err_t
+err_t ESP_IRAM_ATTR
 ip4_output_if_opt_src(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *dest,
        u8_t ttl, u8_t tos, u8_t proto, struct netif *netif, void *ip_options,
        u16_t optlen)

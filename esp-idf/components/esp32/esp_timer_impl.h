@@ -52,6 +52,24 @@ void esp_timer_impl_deinit();
 void esp_timer_impl_set_alarm(uint64_t timestamp);
 
 /**
+ * @brief Notify esp_timer implementation that APB frequency has changed
+ *
+ * Called by the frequency switching code.
+ *
+ * @param apb_ticks_per_us new number of APB clock ticks per microsecond
+ */
+void esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us);
+
+/**
+ * @brief Adjust current esp_timer time by a certain value
+ *
+ * Called from light sleep code to synchronize esp_timer time with RTC time.
+ *
+ * @param time_us  adjustment to apply to esp_timer time, in microseconds
+ */
+void esp_timer_impl_advance(int64_t time_us);
+
+/**
  * @brief Get time, in microseconds, since esp_timer_impl_init was called
  * @return timestamp in microseconds
  */
@@ -66,3 +84,18 @@ uint64_t esp_timer_impl_get_time();
  * @return minimal period of periodic timer, in microseconds
  */
 uint64_t esp_timer_impl_get_min_period_us();
+
+/**
+ * @brief obtain internal critical section used esp_timer implementation
+ * This can be used when a sequence of calls to esp_timer has to be made,
+ * and it is necessary that the state of the timer is consistent between
+ * the calls. Should be treated in the same way as a spinlock.
+ * Call esp_timer_impl_unlock to release the lock
+ */
+void esp_timer_impl_lock();
+
+
+/**
+ * @brief counterpart of esp_timer_impl_lock
+ */
+void esp_timer_impl_unlock();

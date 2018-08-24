@@ -194,10 +194,10 @@ static void insert_vector_desc(vector_desc_t *to_insert)
         prev=vd;
         vd=vd->next;
     }
-    if (vd==NULL && prev==NULL) {
+    if ((vector_desc_head==NULL) || (prev==NULL)) {
         //First item
+        to_insert->next = vd;
         vector_desc_head=to_insert;
-        vector_desc_head->next=NULL;
     } else {
         prev->next=to_insert;
         to_insert->next=vd;
@@ -685,6 +685,25 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
     return esp_intr_alloc_intrstatus(source, flags, 0, 0, handler, arg, ret_handle);
 }
 
+esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
+{
+    if (!handle) return ESP_ERR_INVALID_ARG;
+    vector_desc_t *vd = handle->vector_desc;
+    if (vd->flags & VECDESC_FL_SHARED) {
+      return ESP_ERR_INVALID_ARG;
+    }
+    portENTER_CRITICAL(&spinlock);
+    uint32_t mask = (1 << vd->intno);
+    if (is_in_iram) {
+        vd->flags |= VECDESC_FL_INIRAM;
+        non_iram_int_mask[vd->cpu] &= ~mask;
+    } else {
+        vd->flags &= ~VECDESC_FL_INIRAM;
+        non_iram_int_mask[vd->cpu] |= mask;
+    }
+    portEXIT_CRITICAL(&spinlock);
+    return ESP_OK;
+}
 
 esp_err_t esp_intr_free(intr_handle_t handle)
 {

@@ -26,11 +26,12 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "btc_util.h"
+#include "btc/btc_util.h"
 #if (BTA_AV_INCLUDED == TRUE)
-#include "bta_av_api.h"
+#include "bta/bta_av_api.h"
 #endif  ///BTA_AV_INCLUDED == TRUE
-#include "bt_defs.h"
+#include "common/bt_defs.h"
+#include "stack/btm_api.h"
 
 /************************************************************************************
 **  Constants & Macros
@@ -129,6 +130,7 @@ UINT32 devclass2uint(DEV_CLASS dev_class)
     }
     return cod;
 }
+
 void uint2devclass(UINT32 cod, DEV_CLASS dev_class)
 {
     dev_class[2] = (UINT8)cod;
@@ -136,44 +138,28 @@ void uint2devclass(UINT32 cod, DEV_CLASS dev_class)
     dev_class[0] = (UINT8)(cod >> 16);
 }
 
-static const UINT8  sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
-                                       0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                      };
+static const UINT8  base_uuid_be[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
+                                      0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
 
-void uuid16_to_uuid128(uint16_t uuid16, bt_uuid_t *uuid128)
+void uuid128_be_to_esp_uuid(esp_bt_uuid_t *u, uint8_t* uuid128)
 {
-    uint16_t uuid16_bo;
-    memset(uuid128, 0, sizeof(bt_uuid_t));
-
-    memcpy(uuid128->uu, sdp_base_uuid, MAX_UUID_SIZE);
-    uuid16_bo = ntohs(uuid16);
-    memcpy(uuid128->uu + 2, &uuid16_bo, sizeof(uint16_t));
-}
-
-void string_to_uuid(char *str, bt_uuid_t *p_uuid)
-{
-    uint32_t uuid0, uuid4;
-    uint16_t uuid1, uuid2, uuid3, uuid5;
-
-    sscanf(str, "%08x-%04hx-%04hx-%04hx-%08x%04hx",
-           &uuid0, &uuid1, &uuid2, &uuid3, &uuid4, &uuid5);
-
-    uuid0 = htonl(uuid0);
-    uuid1 = htons(uuid1);
-    uuid2 = htons(uuid2);
-    uuid3 = htons(uuid3);
-    uuid4 = htonl(uuid4);
-    uuid5 = htons(uuid5);
-
-    memcpy(&(p_uuid->uu[0]), &uuid0, 4);
-    memcpy(&(p_uuid->uu[4]), &uuid1, 2);
-    memcpy(&(p_uuid->uu[6]), &uuid2, 2);
-    memcpy(&(p_uuid->uu[8]), &uuid3, 2);
-    memcpy(&(p_uuid->uu[10]), &uuid4, 4);
-    memcpy(&(p_uuid->uu[14]), &uuid5, 2);
+    if (memcmp(base_uuid_be+4, uuid128 + 4, 12) != 0) {
+        u->len = ESP_UUID_LEN_128;
+        uint8_t *p_i = uuid128 + ESP_UUID_LEN_128 - 1;
+        uint8_t *p_o = u->uuid.uuid128;
+        uint8_t *p_end = p_o + ESP_UUID_LEN_128;
+        for (; p_o != p_end; *p_o++ = *p_i--)
+            ;
+    } else if (uuid128[0] == 0 && uuid128[1] == 0) {
+        u->len = 2;
+        u->uuid.uuid16 = (uuid128[2] << 8) + uuid128[3];
+    } else {
+        u->len = 4;
+        u->uuid.uuid32 = (uuid128[2] << 8) + uuid128[3];
+        u->uuid.uuid32 += (uuid128[0] << 24) + (uuid128[1] << 16);
+    }
 
     return;
-
 }
 
 void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str)
@@ -193,4 +179,70 @@ void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str)
             ntohs(uuid2), ntohs(uuid3),
             ntohl(uuid4), ntohs(uuid5));
     return;
+}
+
+esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
+{
+    esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
+    switch(hci_status) {
+        case HCI_SUCCESS:
+            esp_status = ESP_BT_STATUS_SUCCESS;
+            break;
+        case HCI_ERR_HOST_TIMEOUT:
+            esp_status = ESP_BT_STATUS_TIMEOUT;
+            break;
+        case HCI_ERR_ILLEGAL_COMMAND:
+            esp_status = ESP_BT_STATUS_PENDING;
+            break;
+        case HCI_ERR_UNACCEPT_CONN_INTERVAL:
+            esp_status = ESP_BT_STATUS_UNACCEPT_CONN_INTERVAL;
+            break;
+        case HCI_ERR_PARAM_OUT_OF_RANGE:
+            esp_status = ESP_BT_STATUS_PARAM_OUT_OF_RANGE;
+            break;
+        case HCI_ERR_ILLEGAL_PARAMETER_FMT:
+            esp_status = ESP_BT_STATUS_ERR_ILLEGAL_PARAMETER_FMT;
+            break;
+        default:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
+    }
+
+    return esp_status;
+}
+
+esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
+{
+    esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
+    switch(btm_status){
+        case BTM_SUCCESS:
+            esp_status = ESP_BT_STATUS_SUCCESS;
+            break;
+        case BTM_BUSY:
+            esp_status = ESP_BT_STATUS_BUSY;
+            break;
+        case BTM_NO_RESOURCES:
+            esp_status = ESP_BT_STATUS_NOMEM;
+            break;
+        case BTM_ERR_PROCESSING:
+            esp_status = ESP_BT_STATUS_PENDING;
+            break;
+        case BTM_PEER_LE_DATA_LEN_UNSUPPORTED:
+            esp_status = ESP_BT_STATUS_PEER_LE_DATA_LEN_UNSUPPORTED;
+            break;
+        case BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED:
+            esp_status = ESP_BT_STATUS_CONTROL_LE_DATA_LEN_UNSUPPORTED;
+            break;
+        case BTM_SET_PRIVACY_SUCCESS:
+            esp_status = ESP_BT_STATUS_SUCCESS;
+            break;
+        case BTM_SET_PRIVACY_FAIL:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
+        default:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
+    }
+
+    return esp_status;
 }

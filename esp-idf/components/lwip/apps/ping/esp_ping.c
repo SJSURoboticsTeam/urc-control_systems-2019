@@ -49,11 +49,11 @@ esp_err_t esp_ping_set_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
         break;
     case PING_TARGET_RCV_TIMEO:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
-        ping_option_info->ping_rcv_timeout = (*(uint32_t *)opt_val) * 1000;
+        ping_option_info->ping_rcv_timeout = (*(uint32_t *)opt_val);
         break;
     case PING_TARGET_DELAY_TIME:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
-        ping_option_info->ping_delay = (*(uint32_t *)opt_val) * 1000;
+        ping_option_info->ping_delay = (*(uint32_t *)opt_val);
         break;
     case PING_TARGET_ID:
         ESP_PING_CHECK_OPTLEN(opt_len, uint16_t);
@@ -61,6 +61,9 @@ esp_err_t esp_ping_set_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
         break;
     case PING_TARGET_RES_FN:
         ping_option_info->ping_res_fn = opt_val;
+        break;
+    case PING_TARGET_RES_RESET:
+        memset(&ping_option_info->ping_res, 0, sizeof(ping_option_info->ping_res));
         break;
     default:
         ret = ESP_ERR_PING_INVALID_PARAMS;
@@ -111,21 +114,38 @@ esp_err_t esp_ping_result(uint8_t res_val, uint16_t ping_len, uint32_t ping_time
 {
     esp_err_t ret = ESP_OK;
 
-    ping_option_info->ping_res.bytes = ping_len;
     ping_option_info->ping_res.ping_err = res_val;
-    ping_option_info->ping_res.resp_time = ping_time;
-    ping_option_info->ping_res.total_time += ping_time;
-    ping_option_info->ping_res.total_bytes += ping_len;
 
-    if (res_val == 0) {
-        ping_option_info->ping_res.timeout_count ++;
+    if (res_val != PING_RES_FINISH) {
+        ping_option_info->ping_res.bytes = ping_len;
+        ping_option_info->ping_res.resp_time = ping_time;
+        ping_option_info->ping_res.total_bytes += ping_len;
+        ping_option_info->ping_res.send_count ++;
+
+        if (res_val == PING_RES_TIMEOUT) {
+            ping_option_info->ping_res.timeout_count ++;
+        } else {
+            if (!ping_option_info->ping_res.min_time || (ping_time < ping_option_info->ping_res.min_time)) {
+                ping_option_info->ping_res.min_time = ping_time;
+            }
+
+            if (ping_time > ping_option_info->ping_res.max_time) {
+                ping_option_info->ping_res.max_time = ping_time;
+            }
+
+
+            ping_option_info->ping_res.total_time += ping_time;
+            ping_option_info->ping_res.recv_count ++;
+        }
     }
 
-    if (--ping_option_info->ping_count != 0 && ping_option_info->ping_res_fn) {
+    if (ping_option_info->ping_res_fn) {
         ping_option_info->ping_res_fn(PING_TARGET_RES_FN, &ping_option_info->ping_res);
-    } else {
-        memset(&ping_option_info->ping_res, 0, sizeof(esp_ping_found));
+        if (res_val == PING_RES_FINISH) {
+            memset(&ping_option_info->ping_res, 0, sizeof(esp_ping_found));
+        }
     }
 
     return ret;
 }
+

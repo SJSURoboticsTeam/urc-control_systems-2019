@@ -68,26 +68,17 @@ typedef enum msgTypes {
 	DISCONNECT = 14
 } MessageTypes;
 
+/* Macros for parsing header fields from incoming MQTT frame. */
+#define MQTT_HEADER_FIELD_TYPE(_byte)	((_byte >> 4) & 0x0F)
+#define MQTT_HEADER_FIELD_DUP(_byte)	((_byte & (1 << 3)) >> 3)
+#define MQTT_HEADER_FIELD_QOS(_byte)	((_byte & (3 << 1)) >> 1)
+#define MQTT_HEADER_FIELD_RETAIN(_byte)	((_byte & (1 << 0)) >> 0)
+
 /**
  * Bitfields for the MQTT header byte.
  */
 typedef union {
 	unsigned char byte;				/**< the whole byte */
-#if defined(REVERSED)
-	struct {
-		unsigned int type : 4;		/**< message type nibble */
-		unsigned int dup : 1;		/**< DUP flag bit */
-		unsigned int qos : 2;		/**< QoS value, 0, 1 or 2 */
-		unsigned int retain : 1;	/**< retained flag bit */
-	} bits;
-#else
-	struct {
-		unsigned int retain : 1;	/**< retained flag bit */
-		unsigned int qos : 2;		/**< QoS value, 0, 1 or 2 */
-		unsigned int dup : 1;		/**< DUP flag bit */
-		unsigned int type : 4;		/**< message type nibble */
-	} bits;
-#endif
 } MQTTHeader;
 
 IoT_Error_t aws_iot_mqtt_internal_init_header(MQTTHeader *pHeader, MessageTypes message_type,
@@ -112,6 +103,7 @@ unsigned char aws_iot_mqtt_internal_read_char(unsigned char **pptr);
 void aws_iot_mqtt_internal_write_char(unsigned char **pptr, unsigned char c);
 void aws_iot_mqtt_internal_write_utf8_string(unsigned char **pptr, const char *string, uint16_t stringLen);
 
+IoT_Error_t aws_iot_mqtt_internal_flushBuffers( AWS_IoT_Client *pClient );
 IoT_Error_t aws_iot_mqtt_internal_send_packet(AWS_IoT_Client *pClient, size_t length, Timer *pTimer);
 IoT_Error_t aws_iot_mqtt_internal_cycle_read(AWS_IoT_Client *pClient, Timer *pTimer, uint8_t *pPacketType);
 IoT_Error_t aws_iot_mqtt_internal_wait_for_read(AWS_IoT_Client *pClient, uint8_t packetType, Timer *pTimer);

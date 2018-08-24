@@ -11,7 +11,7 @@ SECTIONS
     . = ALIGN(4);
     *(.rtc.literal .rtc.text)
     *rtc_wake_stub*.o(.literal .text .literal.* .text.*)
-  } >rtc_iram_seg
+  } > rtc_iram_seg
 
   /* RTC slow memory holds RTC wake stub
      data/rodata, including from any source file
@@ -35,9 +35,24 @@ SECTIONS
     _rtc_bss_end = ABSOLUTE(.);
   } > rtc_slow_seg
 
+  /* This section holds data that should not be initialized at power up 
+     and will be retained during deep sleep. The section located in 
+     RTC SLOW Memory area. User data marked with RTC_NOINIT_ATTR will be placed
+     into this section. See the file "esp_attr.h" for more information.
+  */
+  .rtc_noinit (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_noinit_start = ABSOLUTE(.);
+    *(.rtc_noinit .rtc_noinit.*)
+    . = ALIGN(4) ;
+    _rtc_noinit_end = ABSOLUTE(.);
+  } > rtc_slow_seg
+
   /* Send .iram0 code to iram */
   .iram0.vectors :
   {
+    _iram_start = ABSOLUTE(.);
     /* Vectors go to IRAM */
     _init_start = ABSOLUTE(.);
     /* Vectors according to builds/RF-2015.2-win32/esp108_v1_2_s5_512int_2/config.html */
@@ -71,11 +86,7 @@ SECTIONS
     *(.init.literal)
     *(.init)
     _init_end = ABSOLUTE(.);
-
-    /* This goes here, not at top of linker script, so addr2line finds it last,
-       and uses it in preference to the first symbol in IRAM */
-    _iram_start = ABSOLUTE(0);
-  } > iram0_0_seg
+} > iram0_0_seg
 
   .iram0.text :
   {
@@ -89,20 +100,29 @@ SECTIONS
     *libesp32.a:core_dump.o(.literal .text .literal.* .text.*)
     *libapp_trace.a:(.literal .text .literal.* .text.*)
     *libxtensa-debug-module.a:eri.o(.literal .text .literal.* .text.*)
-    *libphy.a:(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
-    *libsoc.a:(.literal .text .literal.* .text.*)
+    *libsoc.a:rtc_*.o(.literal .text .literal.* .text.*)
+    *libsoc.a:cpu_util.o(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.o(.literal .text .literal.* .text.*)
     *libspi_flash.a:spi_flash_rom_patch.o(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     INCLUDE esp32.spiram.rom-functions-iram.ld
     _iram_text_end = ABSOLUTE(.);
+    _iram_end = ABSOLUTE(.);
   } > iram0_0_seg
 
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
+    _bt_data_start = ABSOLUTE(.);
+    *libbt.a:(.data .data.*)
+    . = ALIGN (4);
+    _bt_data_end = ABSOLUTE(.);
+    _btdm_data_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.data .data.*)
+    . = ALIGN (4);
+    _btdm_data_end = ABSOLUTE(.);
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -117,6 +137,7 @@ SECTIONS
     *(.dram1 .dram1.*)
     *libesp32.a:panic.o(.rodata .rodata.*)
     *libphy.a:(.rodata .rodata.*)
+    *libsoc.a:rtc_clk.o(.rodata .rodata.*)
     *libapp_trace.a:(.rodata .rodata.*)
     *libgcov.a:(.rodata .rodata.*)
     *libheap.a:multi_heap.o(.rodata .rodata.*)
@@ -124,13 +145,35 @@ SECTIONS
     INCLUDE esp32.spiram.rom-functions-dram.ld
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
-  } >dram0_0_seg
+  } > dram0_0_seg
+
+  /*This section holds data that should not be initialized at power up.
+    The section located in Internal SRAM memory region. The macro _NOINIT
+    can be used as attribute to place data into this section.
+    See the esp_attr.h file for more information.
+  */
+  .noinit (NOLOAD):
+  {
+    . = ALIGN(4);
+    _noinit_start = ABSOLUTE(.);
+    *(.noinit .noinit.*) 
+    . = ALIGN(4) ;
+    _noinit_end = ABSOLUTE(.);
+  } > dram0_0_seg
 
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
+    _bt_bss_start = ABSOLUTE(.);
+    *libbt.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_bss_end = ABSOLUTE(.);
+    _btdm_bss_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _btdm_bss_end = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -147,8 +190,9 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
+    /* The heap starts right after end of this section */
     _heap_start = ABSOLUTE(.);
-  } >dram0_0_seg
+  } > dram0_0_seg
 
   .flash.rodata :
   {
@@ -186,6 +230,11 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
+    /* Addresses of memory regions reserved via
+       SOC_RESERVE_MEMORY_REGION() */
+    soc_reserved_memory_region_start = ABSOLUTE(.);
+    KEEP (*(.reserved_memory_address))
+    soc_reserved_memory_region_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -193,6 +242,13 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
+    . = ALIGN(4);
+    _thread_local_start = ABSOLUTE(.);
+    *(.tdata)
+    *(.tdata.*)
+    *(.tbss)
+    *(.tbss.*)
+    _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
   } >drom0_0_seg
 

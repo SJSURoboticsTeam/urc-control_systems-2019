@@ -22,9 +22,11 @@
  *
  ******************************************************************************/
 
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "bta/bta_api.h"
+#include "bta/bta_sys.h"
 #include "bta_dm_int.h"
+#include "osi/allocator.h"
+#include <string.h>
 
 
 /*****************************************************************************
@@ -35,6 +37,10 @@
 tBTA_DM_CB  bta_dm_cb;
 tBTA_DM_SEARCH_CB bta_dm_search_cb;
 tBTA_DM_DI_CB       bta_dm_di_cb;
+#else
+tBTA_DM_CB  *bta_dm_cb_ptr;
+tBTA_DM_SEARCH_CB *bta_dm_search_cb_ptr;
+tBTA_DM_DI_CB       *bta_dm_di_cb_ptr;
 #endif
 
 
@@ -60,20 +66,23 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_bond_cancel,                     /* 12  BTA_DM_API_BOND_CANCEL_EVT */
     bta_dm_pin_reply,                       /* 13 BTA_DM_API_PIN_REPLY_EVT */
 #endif  ///SMP_INCLUDED == TRUE
-#if (BTM_SSR_INCLUDED == TRUE)
+#if (BTA_DM_PM_INCLUDED == TRUE)
     /* power manger events */
     bta_dm_pm_btm_status,                   /* 16 BTA_DM_PM_BTM_STATUS_EVT */
     bta_dm_pm_timer,                        /* 17 BTA_DM_PM_TIMER_EVT*/
-#endif  ///BTM_SSR_INCLUDED == TRUE
+#endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
     /* simple pairing events */
 #if (SMP_INCLUDED == TRUE)
     bta_dm_confirm,                         /* 18 BTA_DM_API_CONFIRM_EVT */
+#if (BT_SSP_INCLUDED == TRUE)
+    bta_dm_key_req,                         /* 19 BTA_DM_API_KEY_REQ_EVT */
+#endif ///BT_SSP_INCLUDED == TRUE
     bta_dm_set_encryption,                  /* BTA_DM_API_SET_ENCRYPTION_EVT */
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
-    bta_dm_loc_oob,                         /* 20 BTA_DM_API_LOC_OOB_EVT */
-    bta_dm_ci_io_req_act,                   /* 21 BTA_DM_CI_IO_REQ_EVT */
-    bta_dm_ci_rmt_oob_act,                  /* 22 BTA_DM_CI_RMT_OOB_EVT */
+    bta_dm_loc_oob,                         /* 21 BTA_DM_API_LOC_OOB_EVT */
+    bta_dm_ci_io_req_act,                   /* 22 BTA_DM_CI_IO_REQ_EVT */
+    bta_dm_ci_rmt_oob_act,                  /* 23 BTA_DM_CI_RMT_OOB_EVT */
 #endif /* BTM_OOB_INCLUDED */
 
 
@@ -91,6 +100,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_set_scan_params,             /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
     bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT*/
+    bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
     bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
     /* This handler function added by
        Yulong at 2016/9/9 to support the
@@ -104,6 +114,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if BLE_PRIVACY_SPT == TRUE
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
+    bta_dm_ble_config_local_icon,           /* BTA_DM_API_LOCAL_ICON_EVT */
     bta_dm_ble_set_adv_params,              /* BTA_DM_API_BLE_ADV_PARAM_EVT */
     bta_dm_ble_set_adv_params_all,          /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
     bta_dm_ble_set_adv_config,              /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */
@@ -111,7 +122,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
        data to HCI */
     bta_dm_ble_set_adv_config_raw,          /* BTA_DM_API_BLE_SET_ADV_CONFIG_RAW_EVT */
     bta_dm_ble_set_scan_rsp,                /* BTA_DM_API_BLE_SET_SCAN_RSP_EVT */
-    /* New function to allow set raw scan 
+    /* New function to allow set raw scan
        response data to HCI */
     bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
     bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */
@@ -343,6 +354,18 @@ const tBTA_DM_ST_TBL bta_dm_search_st_tbl[] = {
 void bta_dm_sm_disable( )
 {
     bta_sys_deregister( BTA_ID_DM );
+}
+
+void bta_dm_sm_deinit(void)
+{
+    memset(&bta_dm_cb, 0, sizeof(tBTA_DM_CB));
+    memset(&bta_dm_search_cb, 0, sizeof(tBTA_DM_SEARCH_CB));
+    memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
+#if BTA_DYNAMIC_MEMORY
+    FREE_AND_RESET(bta_dm_cb_ptr);
+    FREE_AND_RESET(bta_dm_search_cb_ptr);
+    FREE_AND_RESET(bta_dm_di_cb_ptr);
+#endif /* #if BTA_DYNAMIC_MEMORY */
 }
 
 

@@ -20,24 +20,20 @@ env:
   ESP32_BINDIR="${TOOLCHAIN_DIR}/xtensa-esp32-elf/bin"
 
   SDKS_DIR="${HOME}/sdks"
-  SDK_PATH="${SDKS_DIR}/ESP8266_NONOS_SDK"
-  ESP8266_SDK_URL="http://bbs.espressif.com/download/file.php?id=1690"
+  SDK_PATH="${SDKS_DIR}/ESP8266_NONOS_SDK-2.2.0"
+  ESP8266_SDK_URL="https://github.com/espressif/ESP8266_NONOS_SDK/archive/v2.2.0.zip"
   IDF_PATH="${SDKS_DIR}/esp-idf"
-  ESP32_IDF_URL="https://github.com/espressif/esp-idf/archive/v1.0.zip"
+  ESP32_IDF_URL="https://github.com/espressif/esp-idf/archive/v2.1.zip"
   PATH="${PATH}:${ESP8266_BINDIR}:${ESP32_BINDIR}"
-
-cache:
-  directories:
-    - ${TOOLCHAIN_DIR}
-    - ${SDKS_DIR}
 
 python:
   - "2.7"
   - "3.4"
   - "3.5"
+  - "3.6"
 
 before_install:
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then ./.travis_setup_build_env.sh; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then ./.travis_setup_build_env.sh; fi
 
 script:
   # test python components (fast)
@@ -54,6 +50,6 @@ script:
   - ( cd / && espefuse.py --help )
   - ( cd / && espsecure.py --help )
   # build stub (Python 3 only)
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then make -C flasher_stub V=1; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then make -C flasher_stub V=1; fi
   # check the just-built stub matches the one in esptool.py
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then cd flasher_stub && python ./compare_stubs.py; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then cd flasher_stub && python ./compare_stubs.py; fi

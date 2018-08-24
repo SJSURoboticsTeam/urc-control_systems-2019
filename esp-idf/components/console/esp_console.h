@@ -13,6 +13,11 @@
 // limitations under the License.
 #pragma once
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <stddef.h>
 #include "esp_err.h"
 
@@ -107,6 +112,8 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
  * @param[out] cmd_ret return code from the command (set if command was run)
  * @return
  *      - ESP_OK, if command was run
+ *      - ESP_ERR_INVALID_ARG, if the command line is empty, or only contained
+ *        whitespace
  *      - ESP_ERR_NOT_FOUND, if command with given name wasn't registered
  *      - ESP_ERR_INVALID_STATE, if esp_console_init wasn't called
  */
@@ -179,3 +186,7 @@ const char *esp_console_get_hint(const char *buf, int *color, int *bold);
  *      - ESP_ERR_INVALID_STATE, if esp_console_init wasn't called
  */
 esp_err_t esp_console_register_help_command();
+
+#ifdef __cplusplus
+}
+#endif

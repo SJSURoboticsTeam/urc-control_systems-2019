@@ -23,17 +23,17 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "bt_types.h"
-#include "bt_target.h"
-#include "bt_utils.h"
-#include "avdt_api.h"
-#include "avdtc_api.h"
+#include "stack/bt_types.h"
+#include "common/bt_target.h"
+#include "common/bt_defs.h"
+#include "stack/avdt_api.h"
+#include "stack/avdtc_api.h"
 #include "avdt_int.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
-#include "btm_api.h"
+#include "stack/l2c_api.h"
+#include "stack/l2cdefs.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
 
@@ -412,6 +412,7 @@ void avdt_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
 {
     tAVDT_TC_TBL    *p_tbl;
     UINT16          disc_rsn = AVDT_DISC_RSN_NORMAL;
+    tAVDT_CCB       *p_ccb;
     AVDT_TRACE_DEBUG("avdt_l2c_disconnect_ind_cback lcid: %d, ack_needed: %d\n",
                      lcid, ack_needed);
     /* look up info for this channel */
@@ -420,7 +421,13 @@ void avdt_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
             /* send L2CAP disconnect response */
             L2CA_DisconnectRsp(lcid);
         } else {
-            disc_rsn = AVDT_DISC_RSN_ABNORMAL;
+            if ((p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx)) != NULL) {
+                UINT16 rsn = L2CA_GetDisconnectReason(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
+                if (rsn != 0 && rsn != HCI_ERR_PEER_USER) {
+                    disc_rsn = AVDT_DISC_RSN_ABNORMAL;
+                    AVDT_TRACE_EVENT("avdt link disc rsn 0x%x", rsn);
+                }
+            }
         }
 
         avdt_ad_tc_close_ind(p_tbl, disc_rsn);

@@ -40,7 +40,7 @@ static const char* NEC_TAG = "NEC";
 #endif
 
 #define RMT_TX_CHANNEL    1     /*!< RMT channel for transmitter */
-#define RMT_TX_GPIO_NUM  16     /*!< GPIO number for transmitter signal */
+#define RMT_TX_GPIO_NUM  18     /*!< GPIO number for transmitter signal */
 #define RMT_RX_CHANNEL    0     /*!< RMT channel for receiver */
 #define RMT_RX_GPIO_NUM  19     /*!< GPIO number for receiver */
 #define RMT_CLK_DIV      100    /*!< RMT counter clock divider */
@@ -338,7 +338,7 @@ static void rmt_example_nec_tx_task()
         int i, offset = 0;
         while(1) {
             //To build a series of waveforms.
-            i = nec_build_items(channel, item + offset, item_num - offset, ((~addr) << 8) | addr, cmd);
+            i = nec_build_items(channel, item + offset, item_num - offset, ((~addr) << 8) | addr, ((~cmd) << 8) |  cmd);
             if(i < 0) {
                 break;
             }

@@ -22,21 +22,20 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE)
 
 #include <string.h>
 
-#include "bdaddr.h"
+#include "device/bdaddr.h"
 // #include "btif/include/btif_util.h"
-#include "utl.h"
-#include "bta_sys.h"
+#include "bta/utl.h"
+#include "bta/bta_sys.h"
 #include "bta_gattc_int.h"
-#include "l2c_api.h"
-#include "allocator.h"
+#include "stack/l2c_api.h"
+#include "osi/allocator.h"
 
-#define LOG_TAG "bt_bta_gattc"
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -47,6 +46,8 @@ static const UINT8  base_uuid[LEN_UUID_128] = {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x0
                                               };
 
 static const BD_ADDR dummy_bda = {0, 0, 0, 0, 0, 0};
+
+#define GATTC_COMMAND_QUEUE_SIZE_MAX    30
 
 /*******************************************************************************
 **
@@ -230,7 +231,9 @@ tBTA_GATTC_CLCB *bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bd
             bdcpy(p_clcb->bda, remote_bda);
 
             p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
-
+            if (p_clcb->p_cmd_list == NULL) {
+                p_clcb->p_cmd_list = list_new(osi_free_func);
+            }
             if ((p_clcb->p_srcb = bta_gattc_find_srcb(remote_bda)) == NULL) {
                 p_clcb->p_srcb      = bta_gattc_srcb_alloc(remote_bda);
             }
@@ -305,6 +308,10 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
         }
         osi_free(p_clcb->p_q_cmd);
         p_clcb->p_q_cmd = NULL;
+        // don't forget to clear the command queue before dealloc the clcb.
+        list_clear(p_clcb->p_cmd_list);
+        osi_free((void *)p_clcb->p_cmd_list);
+        p_clcb->p_cmd_list = NULL;
         //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
         memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
     } else {
@@ -421,6 +428,24 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
     }
     return p_tcb;
 }
+
+static BOOLEAN bta_gattc_has_prepare_command_in_queue(tBTA_GATTC_CLCB *p_clcb)
+{
+    assert(p_clcb != NULL);
+
+    for(list_node_t *sn = list_begin(p_clcb->p_cmd_list);
+        sn != list_end(p_clcb->p_cmd_list); sn = list_next(sn)) {
+
+        tBTA_GATTC_DATA *cmd_data = (tBTA_GATTC_DATA *)list_node(sn);
+        if (cmd_data != NULL && ((cmd_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+            cmd_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE) ||
+            cmd_data->hdr.event == BTA_GATTC_API_EXEC_EVT)) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
 /*******************************************************************************
 **
 ** Function         bta_gattc_enqueue
@@ -432,15 +457,70 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
 *******************************************************************************/
 BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
+    tBTA_GATTC cb_data = {0};
 
-    if (p_clcb->p_q_cmd == NULL)
-    {
+    if (p_clcb->p_q_cmd == NULL) {
         p_clcb->p_q_cmd = p_data;
         return TRUE;
+    } else if ((p_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+               p_data->api_write.write_type == BTA_GATTC_WRITE_PREPARE) &&
+               ((p_clcb->p_q_cmd->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+               p_clcb->p_q_cmd->api_write.write_type == BTA_GATTC_WRITE_PREPARE) ||
+               bta_gattc_has_prepare_command_in_queue(p_clcb))) {
+        APPL_TRACE_DEBUG("%s(), prepare offset = %d", __func__, p_data->api_write.offset);
+        cb_data.write.status = BTA_GATT_CONGESTED;
+        cb_data.write.handle = p_data->api_write.handle;
+        cb_data.write.conn_id = p_clcb->bta_conn_id;
+        cb_data.write.offset = p_data->api_write.offset;
+        /* write complete, callback */
+        if (p_clcb->p_rcb->p_cback != NULL) {
+            ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_PREP_WRITE_EVT, (tBTA_GATTC *)&cb_data);
+        }
+        return FALSE;
+    }
+    else if (p_clcb->p_cmd_list) {
+        UINT16 len = 0;
+        tBTA_GATTC_DATA *cmd_data = NULL;
+
+        if (list_length(p_clcb->p_cmd_list) >= GATTC_COMMAND_QUEUE_SIZE_MAX) {
+
+            APPL_TRACE_ERROR("%s(), the gattc command queue is full.", __func__);
+            cb_data.status = GATT_BUSY;
+            cb_data.queue_full.conn_id = p_clcb->bta_conn_id;
+            cb_data.queue_full.is_full = TRUE;
+            p_clcb->is_full = TRUE;
+            if (p_clcb->p_rcb->p_cback != NULL) {
+                ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_QUEUE_FULL_EVT, (tBTA_GATTC *)&cb_data);
+            }
+            return FALSE;
+        }
+
+        if (p_data->hdr.event == BTA_GATTC_API_WRITE_EVT) {
+            len = p_data->api_write.len;
+            if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA) + len)) != NULL) {
+                memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA) + len);
+			    memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+                cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
+			    memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
+            } else {
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memery.", __func__, __LINE__);
+                return FALSE;
+            }
+        } else {
+            if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
+                memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
+                memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_DATA));
+            } else {
+                APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memery.", __func__, __LINE__);
+                return FALSE;
+            }
+        }
+
+        //store the command to the command list.
+        list_append(p_clcb->p_cmd_list, (void *)cmd_data);
+        return FALSE;
     }
 
-    APPL_TRACE_ERROR ("%s: already has a pending command!!", __func__);
-    /* skip the callback now. ----- need to send callback ? */
     return FALSE;
 }
 
@@ -628,6 +708,7 @@ void bta_gattc_send_open_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status
                                 BD_ADDR remote_bda, UINT16 conn_id,
                                 tBTA_TRANSPORT transport, UINT16 mtu)
 {
+
     tBTA_GATTC      cb_data;
 
     if (p_clreg->p_cback) {
@@ -653,15 +734,13 @@ void bta_gattc_send_open_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status
 ** Returns
 **
 *******************************************************************************/
-void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
-                                BD_ADDR remote_bda, UINT16 conn_id)
+void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, BD_ADDR remote_bda, UINT16 conn_id)
 {
     tBTA_GATTC      cb_data;
 
     if (p_clreg->p_cback) {
         memset(&cb_data, 0, sizeof(tBTA_GATTC));
 
-        cb_data.connect.status = status;
         cb_data.connect.client_if = p_clreg->client_if;
         cb_data.connect.conn_id = conn_id;
         bdcpy(cb_data.connect.remote_bda, remote_bda);
@@ -679,7 +758,7 @@ void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS sta
 ** Returns
 **
 *******************************************************************************/
-void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status,
+void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tGATT_DISCONN_REASON reason,
                                 BD_ADDR remote_bda, UINT16 conn_id)
 {
     tBTA_GATTC      cb_data;
@@ -687,7 +766,7 @@ void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS 
     if (p_clreg->p_cback) {
         memset(&cb_data, 0, sizeof(tBTA_GATTC));
 
-        cb_data.disconnect.status = status;
+        cb_data.disconnect.reason = reason;
         cb_data.disconnect.client_if = p_clreg->client_if;
         cb_data.disconnect.conn_id = conn_id;
         bdcpy(cb_data.disconnect.remote_bda, remote_bda);
@@ -883,7 +962,7 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
             break;
 
         default:
-            LOG_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
+            APPL_TRACE_ERROR("%s: Unknown UUID length %d!", __FUNCTION__, p_src->len);
             break;
     }
 }

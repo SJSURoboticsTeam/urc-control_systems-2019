@@ -19,6 +19,7 @@
 #include "rom/gpio.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
+#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/dport_reg.h"
@@ -36,6 +37,7 @@
 #include "esp_log.h"
 #include "esp_eth.h"
 #include "esp_intr_alloc.h"
+#include "esp_pm.h"
 
 #include "driver/periph_ctrl.h"
 
@@ -71,6 +73,9 @@ static SemaphoreHandle_t emac_rx_xMutex = NULL;
 static SemaphoreHandle_t emac_tx_xMutex = NULL;
 static const char *TAG = "emac";
 static bool pause_send = false;
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_pm_lock;
+#endif
 
 static esp_err_t emac_ioctl(emac_sig_t sig, emac_par_t par);
 esp_err_t emac_post(emac_sig_t sig, emac_par_t par);
@@ -83,6 +88,16 @@ static void emac_macaddr_init(void)
 void esp_eth_get_mac(uint8_t mac[6])
 {
     memcpy(mac, &(emac_config.macaddr[0]), 6);
+}
+
+esp_err_t esp_eth_set_mac(const uint8_t mac[6])
+{
+    if((mac[0] & 0x01) == 0) {
+        memcpy(&(emac_config.macaddr[0]),mac, 6);
+        return ESP_OK;
+    } else {
+        return ESP_ERR_INVALID_MAC;
+    }
 }
 
 static void emac_setup_tx_desc(struct dma_extended_desc *tx_desc , uint32_t size)
@@ -126,10 +141,10 @@ static void emac_set_rx_base_reg(void)
 *
 * (1) Initializing the Linked List. Connect the numerable nodes to a circular linked list, appoint one of the nodes as the head node, mark* the dirty_rx and cur_rx into the node, and mount the node on the hardware base address. Initialize cnt_rx into 0.
 *
-* (2) When hardware receives packets, nodes of linked lists will be fed with data packets from the base address by turns, marks the node 
+* (2) When hardware receives packets, nodes of linked lists will be fed with data packets from the base address by turns, marks the node
 * of linked lists as “HARDWARE UNUSABLE” and reports interrupts.
 *
-* (3) When the software receives the interrupts, it will handle the linked lists by turns from dirty_rx, send data packets to protocol 
+* (3) When the software receives the interrupts, it will handle the linked lists by turns from dirty_rx, send data packets to protocol
 * stack. dirty_rx will deviate backwards by turns and cnt_rx will by turns ++.
 *
 * (4) After the protocol stack handles all the data and calls the free function, it will deviate backwards by turns from cur_rx, mark the * node of linked lists as “HARDWARE USABLE” and cnt_rx will by turns --.
@@ -199,13 +214,13 @@ void esp_eth_smi_write(uint32_t reg_num, uint16_t value)
 {
     uint32_t phy_num = emac_config.phy_addr;
 
-    while (REG_GET_BIT(EMAC_GMACGMIIADDR_REG, EMAC_GMIIBUSY) == 1 ) {
+    while (REG_GET_BIT(EMAC_GMIIADDR_REG, EMAC_MIIBUSY) == 1 ) {
     }
 
-    REG_WRITE(EMAC_GMACGMIIDATA_REG, value);
-    REG_WRITE(EMAC_GMACGMIIADDR_REG, 0x3 | ((reg_num & 0x1f) << 6) | ((phy_num & 0x1f) << 11) | ((0x3) << 2));
+    REG_WRITE(EMAC_MIIDATA_REG, value);
+    REG_WRITE(EMAC_GMIIADDR_REG, 0x3 | ((reg_num & 0x1f) << 6) | ((phy_num & 0x1f) << 11) | ((0x3) << 2));
 
-    while (REG_GET_BIT(EMAC_GMACGMIIADDR_REG, EMAC_GMIIBUSY) == 1 ) {
+    while (REG_GET_BIT(EMAC_GMIIADDR_REG, EMAC_MIIBUSY) == 1 ) {
     }
 }
 
@@ -214,13 +229,13 @@ uint16_t esp_eth_smi_read(uint32_t reg_num)
     uint32_t phy_num = emac_config.phy_addr;
     uint16_t value = 0;
 
-    while (REG_GET_BIT(EMAC_GMACGMIIADDR_REG, EMAC_GMIIBUSY) == 1 ) {
+    while (REG_GET_BIT(EMAC_GMIIADDR_REG, EMAC_MIIBUSY) == 1 ) {
     }
 
-    REG_WRITE(EMAC_GMACGMIIADDR_REG, 0x1 | ((reg_num & 0x1f) << 6) | ((phy_num & 0x1f) << 11) | (0x3 << 2));
-    while (REG_GET_BIT(EMAC_GMACGMIIADDR_REG, EMAC_GMIIBUSY) == 1 ) {
+    REG_WRITE(EMAC_GMIIADDR_REG, 0x1 | ((reg_num & 0x1f) << 6) | ((phy_num & 0x1f) << 11) | (0x3 << 2));
+    while (REG_GET_BIT(EMAC_GMIIADDR_REG, EMAC_MIIBUSY) == 1 ) {
     }
-    value = (REG_READ(EMAC_GMACGMIIDATA_REG) & 0xffff);
+    value = (REG_READ(EMAC_MIIDATA_REG) & 0xffff);
 
     return value;
 }
@@ -248,6 +263,7 @@ static void emac_set_user_config_data(eth_config_t *config )
 {
     emac_config.phy_addr = config->phy_addr;
     emac_config.mac_mode = config->mac_mode;
+    emac_config.clock_mode = config->clock_mode;
     emac_config.phy_init = config->phy_init;
     emac_config.emac_tcpip_input = config->tcpip_input;
     emac_config.emac_gpio_config = config->gpio_config;
@@ -269,12 +285,12 @@ static void emac_set_user_config_data(eth_config_t *config )
 
 static void emac_enable_intr()
 {
-    REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, EMAC_INTR_ENABLE_BIT);
+    REG_WRITE(EMAC_DMAIN_EN_REG, EMAC_INTR_ENABLE_BIT);
 }
 
 static void emac_disable_intr()
 {
-    REG_WRITE(EMAC_DMAINTERRUPT_EN_REG, 0);
+    REG_WRITE(EMAC_DMAIN_EN_REG, 0);
 }
 
 static esp_err_t emac_verify_args(void)
@@ -287,7 +303,12 @@ static esp_err_t emac_verify_args(void)
     }
 
     if (emac_config.mac_mode != ETH_MODE_RMII) {
-        ESP_LOGE(TAG, "mac mode err,now only support RMII");
+        ESP_LOGE(TAG, "mac mode err, currently only support for RMII");
+        ret = ESP_FAIL;
+    }
+
+    if (emac_config.clock_mode > ETH_CLOCK_GPIO17_OUT) {
+        ESP_LOGE(TAG, "emac clock mode err");
         ret = ESP_FAIL;
     }
 
@@ -337,16 +358,6 @@ static esp_err_t emac_verify_args(void)
     }
 
     return ret;
-}
-
-//TODO for mac filter
-void emac_set_mac_addr(void)
-{
-}
-
-//TODO
-void emac_check_mac_addr(void)
-{
 }
 
 static void emac_process_tx(void)
@@ -403,7 +414,7 @@ static uint32_t IRAM_ATTR emac_get_rxbuf_count_in_intr(void)
     uint32_t cur_rx_desc = emac_read_rx_cur_reg();
     struct dma_extended_desc *cur_desc = (struct dma_extended_desc *)cur_rx_desc;
 
-    while (cur_desc->basic.desc0 == EMAC_DESC_RX_OWN) {
+    while (cur_desc->basic.desc0 == EMAC_DESC_RX_OWN && cnt < DMA_RX_BUF_NUM) {
         cnt++;
         cur_desc = (struct dma_extended_desc *)cur_desc->basic.desc3;
     }
@@ -470,13 +481,17 @@ static void emac_process_rx_unavail(void)
 
     while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
+        if (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 == EMAC_DESC_RX_OWN) {
+            break;
+        }
+
         emac_config.cnt_rx++;
         if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
             ESP_LOGE(TAG, "emac rx unavail buf err !!\n");
         }
         uint32_t tmp_dirty = emac_config.dirty_rx;
         emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
- 
+
         //copy data to lwip
         emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[tmp_dirty].basic.desc2),
                                      (((emac_config.dma_erx[tmp_dirty].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
@@ -519,13 +534,17 @@ static void emac_process_rx(void)
             if ((emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 & EMAC_DESC_RX_OWN) == 0) {
                 while (emac_config.cnt_rx < DMA_RX_BUF_NUM) {
 
+                    if (emac_config.dma_erx[emac_config.dirty_rx].basic.desc0 == EMAC_DESC_RX_OWN) {
+                        break;
+                    }
+
                     emac_config.cnt_rx++;
                     if (emac_config.cnt_rx > DMA_RX_BUF_NUM) {
                         ESP_LOGE(TAG, "emac rx buf err!!!\n");
                     }
                     uint32_t tmp_dirty = emac_config.dirty_rx;
                     emac_config.dirty_rx = (emac_config.dirty_rx + 1) % DMA_RX_BUF_NUM;
- 
+
                     //copy data to lwip
                     emac_config.emac_tcpip_input((void *)(emac_config.dma_erx[tmp_dirty].basic.desc2),
                                                  (((emac_config.dma_erx[tmp_dirty].basic.desc0) >> EMAC_DESC_FRAME_LENGTH_S) & EMAC_DESC_FRAME_LENGTH) , NULL);
@@ -571,22 +590,22 @@ static void IRAM_ATTR emac_process_intr(void *arg)
 
 static void emac_set_macaddr_reg(void)
 {
-    REG_SET_FIELD(EMAC_GMACADDR0HIGH_REG, EMAC_MAC_ADDRESS0_HI, (emac_config.macaddr[0] << 8) | (emac_config.macaddr[1]));
-    REG_WRITE(EMAC_GMACADDR0LOW_REG, (emac_config.macaddr[2] << 24) |  (emac_config.macaddr[3] << 16) | (emac_config.macaddr[4] << 8) | (emac_config.macaddr[5]));
+    REG_SET_FIELD(EMAC_ADDR0HIGH_REG, EMAC_ADDRESS0_HI, (emac_config.macaddr[0] << 8) | (emac_config.macaddr[1]));
+    REG_WRITE(EMAC_ADDR0LOW_REG, (emac_config.macaddr[2] << 24) |  (emac_config.macaddr[3] << 16) | (emac_config.macaddr[4] << 8) | (emac_config.macaddr[5]));
 }
 
 static void emac_check_phy_init(void)
 {
     emac_config.emac_phy_check_init();
     if (emac_config.emac_phy_get_duplex_mode() == ETH_MODE_FULLDUPLEX) {
-        REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
+        REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACDUPLEX);
     } else {
-        REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACDUPLEX);
+        REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACDUPLEX);
     }
     if (emac_config.emac_phy_get_speed_mode() == ETH_SPEED_MODE_100M) {
-        REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
+        REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACFESPEED);
     } else {
-        REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_GMACFESPEED);
+        REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACFESPEED);
     }
 #if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
     emac_disable_flowctrl();
@@ -750,11 +769,7 @@ static void emac_start(void *param)
     emac_enable_clk(true);
 
     emac_reset();
-    emac_macaddr_init();
 
-    emac_check_mac_addr();
-
-    emac_set_mac_addr();
     emac_set_macaddr_reg();
 
     emac_set_tx_base_reg();
@@ -804,13 +819,31 @@ esp_err_t esp_eth_enable(void)
         return open_cmd.err;
     }
 
+#ifdef CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "ethernet", &s_pm_lock);
+    if (err != ESP_OK) {
+        return err;
+    }
+    esp_pm_lock_acquire(s_pm_lock);
+#endif //CONFIG_PM_ENABLE
+
     if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
         if (emac_ioctl(SIG_EMAC_START, (emac_par_t)(&post_cmd)) != 0) {
             open_cmd.err = EMAC_CMD_FAIL;
+            goto cleanup;
         }
     } else {
         open_cmd.err = EMAC_CMD_FAIL;
+        goto cleanup;
     }
+    return EMAC_CMD_OK;
+
+cleanup:
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif //CONFIG_PM_ENABLE
     return open_cmd.err;
 }
 
@@ -853,6 +886,12 @@ esp_err_t esp_eth_disable(void)
         close_cmd.err = EMAC_CMD_OK;
         return close_cmd.err;
     }
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_lock);
+    esp_pm_lock_delete(s_pm_lock);
+    s_pm_lock = NULL;
+#endif // CONFIG_PM_ENABLE
 
     if (emac_config.emac_status == EMAC_RUNTIME_START) {
         if (emac_ioctl(SIG_EMAC_STOP, (emac_par_t)(&post_cmd)) != 0) {
@@ -1008,20 +1047,52 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 
     //before set emac reg must enable clk
     periph_module_enable(PERIPH_EMAC_MODULE);
+
+    if (emac_config.clock_mode != ETH_CLOCK_GPIO0_IN) {
+        // 50 MHz = 40MHz * (6 + 4) / (2 * (2 + 2) = 400MHz / 8
+        rtc_clk_apll_enable(1, 0, 0, 6, 2);
+        // the next to values have to be set AFTER "periph_module_enable" is called
+        REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_H_DIV_NUM, 0);
+        REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_DIV_NUM, 0);
+
+        if (emac_config.clock_mode == ETH_CLOCK_GPIO0_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
+            REG_WRITE(PIN_CTRL, 6);
+            ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO0");
+        } else if (emac_config.clock_mode == ETH_CLOCK_GPIO16_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO16_U, FUNC_GPIO16_EMAC_CLK_OUT);
+            ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO16");
+        } else if (emac_config.clock_mode == ETH_CLOCK_GPIO17_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO17_U, FUNC_GPIO17_EMAC_CLK_OUT_180);
+            ESP_LOGD(TAG, "EMAC 50MHz inverted clock output on GPIO17");
+        }
+    }
+
     emac_enable_clk(true);
     REG_SET_FIELD(EMAC_EX_PHYINF_CONF_REG, EMAC_EX_PHY_INTF_SEL, EMAC_EX_PHY_INTF_RMII);
-
     emac_dma_init();
-    if (emac_config.mac_mode == ETH_MODE_RMII) {
-        emac_set_clk_rmii();
+
+    if (emac_config.clock_mode == ETH_CLOCK_GPIO0_IN) {
+        // external clock on GPIO0
+        REG_SET_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_EXT_OSC_EN);
+        REG_CLR_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_INT_OSC_EN);
+        REG_SET_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
+        ESP_LOGD(TAG, "External clock input 50MHz on GPIO0");
+        if (emac_config.mac_mode == ETH_MODE_MII) {
+            REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_RX_EN);
+            REG_SET_BIT(EMAC_EX_CLK_CTRL_REG, EMAC_EX_MII_CLK_TX_EN);
+        }
     } else {
-        emac_set_clk_mii();
+        // internal clock by APLL
+        REG_CLR_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_EXT_OSC_EN);
+        REG_SET_BIT(EMAC_EX_CLK_CTRL_REG,    EMAC_EX_INT_OSC_EN);
+        REG_CLR_BIT(EMAC_EX_OSCCLK_CONF_REG, EMAC_EX_OSC_CLK_SEL);
     }
 
     emac_config.emac_gpio_config();
 
-    ESP_LOGI(TAG, "mac version %04xa", emac_read_mac_version());
     emac_hw_init();
+    emac_macaddr_init();
 
     //watchdog  TODO
 
@@ -1040,4 +1111,3 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 _exit:
     return ret;
 }
-

@@ -17,7 +17,7 @@
 #include "esp_log.h"
 #include "sys/lock.h"
 #include "soc/sdmmc_reg.h"
-#include "soc/sdmmc_struct.h"
+#include "soc/sdmmc_periph.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
 #include "driver/sdmmc_host.h"
@@ -36,7 +36,7 @@ static uint8_t sdspi_msg_crc7(sdspi_hw_cmd_t* hw_cmd)
     return sdspi_crc7((const uint8_t *)hw_cmd, bytes_to_crc);
 }
 
-void make_hw_cmd(uint32_t opcode, uint32_t arg, sdspi_hw_cmd_t *hw_cmd)
+void make_hw_cmd(uint32_t opcode, uint32_t arg, int timeout_ms, sdspi_hw_cmd_t *hw_cmd)
 {
     hw_cmd->start_bit = 0;
     hw_cmd->transmission_bit = 1;
@@ -48,6 +48,35 @@ void make_hw_cmd(uint32_t opcode, uint32_t arg, sdspi_hw_cmd_t *hw_cmd)
     uint32_t arg_s = __builtin_bswap32(arg);
     memcpy(hw_cmd->arguments, &arg_s, sizeof(arg_s));
     hw_cmd->crc7 = sdspi_msg_crc7(hw_cmd);
+    hw_cmd->timeout_ms = timeout_ms;
+}
+
+static void r1_response_to_err(uint8_t r1, int cmd, esp_err_t *out_err)
+{
+    if (r1 & SD_SPI_R1_NO_RESPONSE) {
+        ESP_LOGD(TAG, "cmd=%d, R1 response not found", cmd);
+        *out_err = ESP_ERR_TIMEOUT;
+    } else if (r1 & SD_SPI_R1_CMD_CRC_ERR) {
+        ESP_LOGD(TAG, "cmd=%d, R1 response: command CRC error", cmd);
+        *out_err = ESP_ERR_INVALID_CRC;
+    } else if (r1 & SD_SPI_R1_ILLEGAL_CMD) {
+        ESP_LOGD(TAG, "cmd=%d, R1 response: command not supported", cmd);
+        *out_err = ESP_ERR_NOT_SUPPORTED;
+    } else if (r1 & SD_SPI_R1_ADDR_ERR) {
+        ESP_LOGD(TAG, "cmd=%d, R1 response: alignment error", cmd);
+        *out_err = ESP_ERR_INVALID_ARG;
+    } else if (r1 & SD_SPI_R1_PARAM_ERR) {
+        ESP_LOGD(TAG, "cmd=%d, R1 response: size error", cmd);
+        *out_err = ESP_ERR_INVALID_SIZE;
+    } else if ((r1 & SD_SPI_R1_ERASE_RST) ||
+               (r1 & SD_SPI_R1_ERASE_SEQ_ERR)) {
+        *out_err = ESP_ERR_INVALID_STATE;
+    } else if (r1 & SD_SPI_R1_IDLE_STATE) {
+        // Idle state is handled at command layer
+    } else if (r1 != 0) {
+        ESP_LOGD(TAG, "cmd=%d, R1 response: unexpected value 0x%02x", cmd, r1);
+        *out_err = ESP_ERR_INVALID_RESPONSE;
+    }
 }
 
 esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
@@ -55,7 +84,7 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
     _lock_acquire(&s_lock);
     // Convert the command to wire format
     sdspi_hw_cmd_t hw_cmd;
-    make_hw_cmd(cmdinfo->opcode, cmdinfo->arg, &hw_cmd);
+    make_hw_cmd(cmdinfo->opcode, cmdinfo->arg, cmdinfo->timeout_ms, &hw_cmd);
 
     // Flags indicate which of the transfer types should be used
     int flags = 0;
@@ -78,6 +107,10 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
         flags |= SDSPI_CMD_FLAG_RSP_R3;
     } else if (s_app_cmd && cmdinfo->opcode == SD_APP_SD_STATUS) {
         flags |= SDSPI_CMD_FLAG_RSP_R2;
+    } else if (!s_app_cmd && cmdinfo->opcode == MMC_GO_IDLE_STATE &&
+            !(cmdinfo->flags & SCF_RSP_R1)) {
+        /* used to send CMD0 without expecting a response */
+        flags |= SDSPI_CMD_FLAG_NORSP;
     } else {
         flags |= SDSPI_CMD_FLAG_RSP_R1;
     }
@@ -92,21 +125,11 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
         // Some errors should be reported using return code
         if (flags & SDSPI_CMD_FLAG_RSP_R1) {
             cmdinfo->response[0] = hw_cmd.r1;
-            if (hw_cmd.r1 == 0xff) {
-                // No response received at all
-            } else if (hw_cmd.r1 & SD_SPI_R1_CMD_CRC_ERR) {
-                ret = ESP_ERR_INVALID_CRC;
-            } else if (hw_cmd.r1 & SD_SPI_R1_IDLE_STATE) {
-                // Idle state is handled at command layer
-            } else if (hw_cmd.r1 != 0) {
-                ESP_LOGD(TAG, "Unexpected R1 response: 0x%02x", hw_cmd.r1);
-            }
+            r1_response_to_err(hw_cmd.r1, cmdinfo->opcode, &ret);
         } else if (flags & SDSPI_CMD_FLAG_RSP_R2) {
             cmdinfo->response[0] = (((uint32_t)hw_cmd.r1) << 8) | (hw_cmd.response[0] >> 24);
         } else if (flags & (SDSPI_CMD_FLAG_RSP_R3 | SDSPI_CMD_FLAG_RSP_R7)) {
-            // Drop r1 response, only copy the other 4 bytes of data
-            // TODO: can we somehow preserve r1 response and keep upper layer
-            // same as in SD mode?
+            r1_response_to_err(hw_cmd.r1, cmdinfo->opcode, &ret);
             cmdinfo->response[0] = __builtin_bswap32(hw_cmd.response[0]);
         }
     }

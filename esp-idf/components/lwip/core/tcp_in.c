@@ -568,6 +568,7 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
     }
 #if TCP_LISTEN_BACKLOG
     pcb->accepts_pending++;
+    npcb->flags |= TF_BACKLOGPEND;
 #endif /* TCP_LISTEN_BACKLOG */
     /* Set up the new PCB. */
     ip_addr_copy(npcb->local_ip, *ip_current_dest_addr());
@@ -582,6 +583,10 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
 #if LWIP_CALLBACK_API
     npcb->accept = pcb->accept;
 #endif /* LWIP_CALLBACK_API */
+
+#if LWIP_CALLBACK_API || TCP_LISTEN_BACKLOG
+    npcb->listener = pcb;
+#endif
     /* inherit socket options */
     npcb->so_options = pcb->so_options & SOF_INHERITED;
     /* Register the new PCB so that we can begin receiving segments
@@ -721,54 +726,56 @@ tcp_process(struct tcp_pcb *pcb)
   /* Do different things depending on the TCP state. */
   switch (pcb->state) {
   case SYN_SENT:
-    LWIP_DEBUGF(TCP_INPUT_DEBUG, ("SYN-SENT: ackno %"U32_F" pcb->snd_nxt %"U32_F" unacked %"U32_F"\n", ackno,
-     pcb->snd_nxt, ntohl(pcb->unacked->tcphdr->seqno)));
-    /* received SYN ACK with expected sequence number? */
-    if ((flags & TCP_ACK) && (flags & TCP_SYN)
+    if (pcb->unacked) {
+      LWIP_DEBUGF(TCP_INPUT_DEBUG, ("SYN-SENT: ackno %"U32_F" pcb->snd_nxt %"U32_F" unacked %"U32_F"\n", ackno,
+        pcb->snd_nxt, ntohl(pcb->unacked->tcphdr->seqno)));
+      /* received SYN ACK with expected sequence number? */
+      if ((flags & TCP_ACK) && (flags & TCP_SYN)
         && ackno == ntohl(pcb->unacked->tcphdr->seqno) + 1) {
-      pcb->snd_buf++;
-      pcb->rcv_nxt = seqno + 1;
-      pcb->rcv_ann_right_edge = pcb->rcv_nxt;
-      pcb->lastack = ackno;
-      pcb->snd_wnd = SND_WND_SCALE(pcb, tcphdr->wnd);
-      pcb->snd_wnd_max = pcb->snd_wnd;
-      pcb->snd_wl1 = seqno - 1; /* initialise to seqno - 1 to force window update */
-      pcb->state = ESTABLISHED;
+        pcb->snd_buf++;
+        pcb->rcv_nxt = seqno + 1;
+        pcb->rcv_ann_right_edge = pcb->rcv_nxt;
+        pcb->lastack = ackno;
+        pcb->snd_wnd = SND_WND_SCALE(pcb, tcphdr->wnd);
+        pcb->snd_wnd_max = pcb->snd_wnd;
+        pcb->snd_wl1 = seqno - 1; /* initialise to seqno - 1 to force window update */
+        pcb->state = ESTABLISHED;
 
 #if TCP_CALCULATE_EFF_SEND_MSS
-      pcb->mss = tcp_eff_send_mss(pcb->mss, &pcb->local_ip, &pcb->remote_ip);
-#endif /* TCP_CALCULATE_EFF_SEND_MSS */
+        pcb->mss = tcp_eff_send_mss(pcb->mss, &pcb->local_ip, &pcb->remote_ip);
+#endif  /* TCP_CALCULATE_EFF_SEND_MSS */
 
-      /* Set ssthresh again after changing 'mss' and 'snd_wnd' */
-      pcb->ssthresh = LWIP_TCP_INITIAL_SSTHRESH(pcb);
+        /* Set ssthresh again after changing 'mss' and 'snd_wnd' */
+        pcb->ssthresh = LWIP_TCP_INITIAL_SSTHRESH(pcb);
 
-      pcb->cwnd = LWIP_TCP_CALC_INITIAL_CWND(pcb->mss);
-      LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_process (SENT): cwnd %"TCPWNDSIZE_F
-                                   " ssthresh %"TCPWNDSIZE_F"\n",
-                                   pcb->cwnd, pcb->ssthresh));
-      LWIP_ASSERT("pcb->snd_queuelen > 0", (pcb->snd_queuelen > 0));
-      --pcb->snd_queuelen;
-      LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_process: SYN-SENT --queuelen %"TCPWNDSIZE_F"\n", (tcpwnd_size_t)pcb->snd_queuelen));
-      rseg = pcb->unacked;
-      pcb->unacked = rseg->next;
-      tcp_seg_free(rseg);
+        pcb->cwnd = LWIP_TCP_CALC_INITIAL_CWND(pcb->mss);
+        LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_process (SENT): cwnd %"TCPWNDSIZE_F
+                                     " ssthresh %"TCPWNDSIZE_F"\n",
+                                     pcb->cwnd, pcb->ssthresh));
+        LWIP_ASSERT("pcb->snd_queuelen > 0", (pcb->snd_queuelen > 0));
+        --pcb->snd_queuelen;
+        LWIP_DEBUGF(TCP_QLEN_DEBUG, ("tcp_process: SYN-SENT --queuelen %"TCPWNDSIZE_F"\n", (tcpwnd_size_t)pcb->snd_queuelen));
+        rseg = pcb->unacked;
+        pcb->unacked = rseg->next;
+        tcp_seg_free(rseg);
 
-      /* If there's nothing left to acknowledge, stop the retransmit
-         timer, otherwise reset it to start again */
-      if (pcb->unacked == NULL) {
-        pcb->rtime = -1;
-      } else {
-        pcb->rtime = 0;
-        pcb->nrtx = 0;
+        /* If there's nothing left to acknowledge, stop the retransmit
+           timer, otherwise reset it to start again */
+        if (pcb->unacked == NULL) {
+          pcb->rtime = -1;
+        } else {
+          pcb->rtime = 0;
+          pcb->nrtx = 0;
+        }
+
+        /* Call the user specified function to call when successfully
+         * connected. */
+        TCP_EVENT_CONNECTED(pcb, ERR_OK, err);
+        if (err == ERR_ABRT) {
+          return ERR_ABRT;
+        }
+        tcp_ack_now(pcb);
       }
-
-      /* Call the user specified function to call when successfully
-       * connected. */
-      TCP_EVENT_CONNECTED(pcb, ERR_OK, err);
-      if (err == ERR_ABRT) {
-        return ERR_ABRT;
-      }
-      tcp_ack_now(pcb);
     }
     /* received ACK? possibly a half-open connection */
     else if (flags & TCP_ACK) {
@@ -783,11 +790,19 @@ tcp_process(struct tcp_pcb *pcb)
       if (TCP_SEQ_BETWEEN(ackno, pcb->lastack+1, pcb->snd_nxt)) {
         pcb->state = ESTABLISHED;
         LWIP_DEBUGF(TCP_DEBUG, ("TCP connection established %"U16_F" -> %"U16_F".\n", inseg.tcphdr->src, inseg.tcphdr->dest));
+#if LWIP_CALLBACK_API || TCP_LISTEN_BACKLOG
 #if LWIP_CALLBACK_API
         LWIP_ASSERT("pcb->accept != NULL", pcb->accept != NULL);
 #endif
-        /* Call the accept function. */
-        TCP_EVENT_ACCEPT(pcb, ERR_OK, err);
+
+        if (pcb->listener == NULL) {
+          err = ERR_VAL;
+        } else {
+#endif
+          tcp_backlog_accepted(pcb);
+          /* Call the accept function. */
+          TCP_EVENT_ACCEPT(pcb, ERR_OK, err);
+        }
         if (err != ERR_OK) {
           /* If the accept function returns with an error, we abort
            * the connection. */

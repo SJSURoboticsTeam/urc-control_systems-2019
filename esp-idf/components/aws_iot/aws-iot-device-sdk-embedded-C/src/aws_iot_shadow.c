@@ -36,7 +36,9 @@ const ShadowInitParameters_t ShadowInitParametersDefault = {(char *) AWS_IOT_MQT
 															NULL, false, NULL};
 
 const ShadowConnectParameters_t ShadowConnectParametersDefault = {(char *) AWS_IOT_MY_THING_NAME,
-																  (char *) AWS_IOT_MQTT_CLIENT_ID, 0, NULL};
+								  (char *) AWS_IOT_MQTT_CLIENT_ID, 0, NULL};
+
+static char deleteAcceptedTopic[MAX_SHADOW_TOPIC_LENGTH_BYTES];
 
 void aws_iot_shadow_reset_last_received_version(void) {
 	shadowJsonVersionNum = 0;
@@ -54,8 +56,22 @@ void aws_iot_shadow_disable_discard_old_delta_msgs(void) {
 	shadowDiscardOldDeltaFlag = false;
 }
 
+IoT_Error_t aws_iot_shadow_free(AWS_IoT_Client *pClient)
+{
+    IoT_Error_t rc;
+
+    if (NULL == pClient) {
+        FUNC_EXIT_RC(NULL_VALUE_ERROR);
+    }
+
+    rc = aws_iot_mqtt_free(pClient);
+
+    FUNC_EXIT_RC(rc);
+}
+
 IoT_Error_t aws_iot_shadow_init(AWS_IoT_Client *pClient, const ShadowInitParameters_t *pParams) {
-	IoT_Client_Init_Params mqttInitParams;
+	IoT_Client_Init_Params mqttInitParams = IoT_Client_Init_Params_initializer;
+
 	IoT_Error_t rc;
 
 	FUNC_ENTRY;
@@ -70,6 +86,7 @@ IoT_Error_t aws_iot_shadow_init(AWS_IoT_Client *pClient, const ShadowInitParamet
 	mqttInitParams.pRootCALocation = pParams->pRootCA;
 	mqttInitParams.pDeviceCertLocation = pParams->pClientCRT;
 	mqttInitParams.pDevicePrivateKeyLocation = pParams->pClientKey;
+	mqttInitParams.mqttPacketTimeout_ms = 5000;
 	mqttInitParams.mqttCommandTimeout_ms = 20000;
 	mqttInitParams.tlsHandshakeTimeout_ms = 5000;
 	mqttInitParams.isSSLHostnameVerify = true;
@@ -89,7 +106,6 @@ IoT_Error_t aws_iot_shadow_init(AWS_IoT_Client *pClient, const ShadowInitParamet
 
 IoT_Error_t aws_iot_shadow_connect(AWS_IoT_Client *pClient, const ShadowConnectParameters_t *pParams) {
 	IoT_Error_t rc = SUCCESS;
-	char deleteAcceptedTopic[MAX_SHADOW_TOPIC_LENGTH_BYTES];
 	uint16_t deleteAcceptedTopicLen;
 	IoT_Client_Connect_Params ConnectParams = iotClientConnectParamsDefault;
 
@@ -102,7 +118,7 @@ IoT_Error_t aws_iot_shadow_connect(AWS_IoT_Client *pClient, const ShadowConnectP
 	snprintf(myThingName, MAX_SIZE_OF_THING_NAME, "%s", pParams->pMyThingName);
 	snprintf(mqttClientID, MAX_SIZE_OF_UNIQUE_CLIENT_ID_BYTES, "%s", pParams->pMqttClientId);
 
-	ConnectParams.keepAliveIntervalInSec = 10;
+	ConnectParams.keepAliveIntervalInSec = 600; // NOTE: Temporary fix
 	ConnectParams.MQTTVersion = MQTT_3_1_1;
 	ConnectParams.isCleanSession = true;
 	ConnectParams.isWillMsgPresent = false;
@@ -113,9 +129,11 @@ IoT_Error_t aws_iot_shadow_connect(AWS_IoT_Client *pClient, const ShadowConnectP
 
 	rc = aws_iot_mqtt_connect(pClient, &ConnectParams);
 
-	if(SUCCESS == rc) {
-		initializeRecords(pClient);
+	if(SUCCESS != rc) {
+		FUNC_EXIT_RC(rc);
 	}
+
+	initializeRecords(pClient);
 
 	if(NULL != pParams->deleteActionHandler) {
 		snprintf(deleteAcceptedTopic, MAX_SHADOW_TOPIC_LENGTH_BYTES,
@@ -166,7 +184,7 @@ IoT_Error_t aws_iot_shadow_update(AWS_IoT_Client *pClient, const char *pThingNam
 		FUNC_EXIT_RC(MQTT_CONNECTION_ERROR);
 	}
 
-	rc = aws_iot_shadow_internal_action(pThingName, SHADOW_UPDATE, pJsonString, callback, pContextData,
+	rc = aws_iot_shadow_internal_action(pThingName, SHADOW_UPDATE, pJsonString, strlen(pJsonString), callback, pContextData,
 										timeout_seconds, isPersistentSubscribe);
 
 	FUNC_EXIT_RC(rc);
@@ -187,8 +205,12 @@ IoT_Error_t aws_iot_shadow_delete(AWS_IoT_Client *pClient, const char *pThingNam
 		FUNC_EXIT_RC(MQTT_CONNECTION_ERROR);
 	}
 
-	aws_iot_shadow_internal_delete_request_json(deleteRequestJsonBuf);
-	rc = aws_iot_shadow_internal_action(pThingName, SHADOW_DELETE, deleteRequestJsonBuf, callback, pContextData,
+	rc = aws_iot_shadow_internal_delete_request_json(deleteRequestJsonBuf, MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE );
+    if ( SUCCESS != rc ) {
+        FUNC_EXIT_RC( rc );
+    }
+
+	rc = aws_iot_shadow_internal_action(pThingName, SHADOW_DELETE, deleteRequestJsonBuf, MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE, callback, pContextData,
 										timeout_seconds, isPersistentSubscribe);
 
 	FUNC_EXIT_RC(rc);
@@ -209,8 +231,12 @@ IoT_Error_t aws_iot_shadow_get(AWS_IoT_Client *pClient, const char *pThingName, 
 		FUNC_EXIT_RC(MQTT_CONNECTION_ERROR);
 	}
 
-	aws_iot_shadow_internal_get_request_json(getRequestJsonBuf);
-	rc = aws_iot_shadow_internal_action(pThingName, SHADOW_GET, getRequestJsonBuf, callback, pContextData,
+    rc = aws_iot_shadow_internal_get_request_json(getRequestJsonBuf, MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE );
+    if (SUCCESS != rc) {
+        FUNC_EXIT_RC(rc);
+    }
+
+	rc = aws_iot_shadow_internal_action(pThingName, SHADOW_GET, getRequestJsonBuf, MAX_SIZE_CLIENT_TOKEN_CLIENT_SEQUENCE, callback, pContextData,
 										timeout_seconds, isPersistentSubscribe);
 	FUNC_EXIT_RC(rc);
 }

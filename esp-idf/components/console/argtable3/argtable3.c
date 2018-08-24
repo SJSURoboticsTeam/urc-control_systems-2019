@@ -30,6 +30,8 @@
 
 #include "argtable3.h"
 
+#pragma GCC diagnostic ignored "-Wclobbered"
+
 /*******************************************************************************
  * This file is part of the argtable3 library.
  *
@@ -270,7 +272,7 @@ extern   char *suboptarg;               /* getsubopt(3) external variable */
  */
 
 #ifndef lint
-static const char rcsid[]="$Id: getopt_long.c,v 1.1 2009/10/16 19:50:28 rodney Exp rodney $";
+//static const char rcsid[]="$Id: getopt_long.c,v 1.1 2009/10/16 19:50:28 rodney Exp rodney $";
 #endif /* lint */
 /*-
  * Copyright (c) 2000 The NetBSD Foundation, Inc.
@@ -3071,6 +3073,7 @@ static int trex_charnode(TRex *exp,TRexBool isclass)
 					exp->_p++;
 					return node;
 				} //else default
+				/* falls through */
 			default:
 				t = *exp->_p; exp->_p++;
 				return trex_newnode(exp,t);
@@ -4535,9 +4538,9 @@ static
 void arg_print_gnuswitch(FILE *fp, struct arg_hdr * *table)
 {
     int tabindex;
-    char *format1 = " -%c";
-    char *format2 = " [-%c";
-    char *suffix = "";
+    const char *format1 = " -%c";
+    const char *format2 = " [-%c";
+    const char *suffix = "";
 
     /* print all mandatory switches that are without argument values */
     for(tabindex = 0;

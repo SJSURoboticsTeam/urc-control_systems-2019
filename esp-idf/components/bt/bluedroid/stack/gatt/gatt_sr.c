@@ -22,13 +22,13 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-#include "allocator.h"
+#include "common/bt_target.h"
+#include "osi/allocator.h"
 
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
 #include <string.h>
 #include "gatt_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "l2c_int.h"
 #define GATT_MTU_REQ_MIN_LEN        2
 
@@ -167,7 +167,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
     GATT_TRACE_DEBUG ("process_read_multi_rsp status=%d mtu=%d", status, mtu);
 
 	if (p_cmd->multi_rsp_q == NULL) {
-        p_cmd->multi_rsp_q = fixed_queue_new(SIZE_MAX);
+        p_cmd->multi_rsp_q = fixed_queue_new(QUEUE_SIZE_MAX);
 	}
 
     /* Enqueue the response */
@@ -359,6 +359,7 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
     tGATT_IF gatt_if;
     UINT16  conn_id;
     UINT16  queue_num = 0;
+    BOOLEAN is_first = TRUE;
     BOOLEAN is_prepare_write_valid = FALSE;
     BOOLEAN is_need_dequeue_sr_cmd = FALSE;
     tGATT_PREPARE_WRITE_RECORD *prepare_record = NULL;
@@ -420,7 +421,14 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
         queue_data = fixed_queue_dequeue(prepare_record->queue);
         if (is_prepare_write_valid){
             if((queue_data->p_attr->p_value != NULL) && (queue_data->p_attr->p_value->attr_val.attr_val != NULL)){
+                if(is_first) {
+                    //clear attr_val.attr_len before handle prepare write data
+                    queue_data->p_attr->p_value->attr_val.attr_len = 0;
+                    is_first = FALSE;
+                }
                 memcpy(queue_data->p_attr->p_value->attr_val.attr_val+queue_data->offset, queue_data->value, queue_data->len);
+                //don't forget to increase the attribute value length in the gatts database.
+                queue_data->p_attr->p_value->attr_val.attr_len += queue_data->len;
             }
         }
         osi_free(queue_data);
@@ -947,7 +955,10 @@ static void gatts_process_mtu_req (tGATT_TCB *p_tcb, UINT16 len, UINT8 *p_data)
             p_tcb->payload_size = mtu;
         }
 
-        l2cble_set_fixed_channel_tx_data_length(p_tcb->peer_bda, L2CAP_ATT_CID, p_tcb->payload_size);
+        /* host will set packet data length to 251 automatically if remote device support set packet data length,
+            so l2cble_set_fixed_channel_tx_data_length() is not necessary.
+            l2cble_set_fixed_channel_tx_data_length(p_tcb->peer_bda, L2CAP_ATT_CID, p_tcb->payload_size);
+        */
 
         if ((p_buf = attp_build_sr_msg(p_tcb, GATT_RSP_MTU, (tGATT_SR_MSG *) &p_tcb->payload_size)) != NULL) {
             attp_send_sr_msg (p_tcb, p_buf);
@@ -1249,7 +1260,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
                             is_need_prepare_write_rsp = TRUE;
                             is_need_queue_data = TRUE;
                         } else if (p_attr->p_value == NULL) {
-                            LOG_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
+                            GATT_TRACE_ERROR("Error in %s, attribute of handle 0x%x not allocate value buffer\n",
                                         __func__, handle);
                             status = GATT_UNKNOWN_ERROR;
                         } else {
@@ -1279,7 +1290,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             queue_data->offset = offset;
             memcpy(queue_data->value, p, len);
             if (prepare_record->queue == NULL) {
-                prepare_record->queue = fixed_queue_new(SIZE_MAX);
+                prepare_record->queue = fixed_queue_new(QUEUE_SIZE_MAX);
             }
             fixed_queue_enqueue(prepare_record->queue, queue_data);
         }
@@ -1295,11 +1306,11 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             gatt_dequeue_sr_cmd(p_tcb);
             
             if (rsp_send_status != GATT_SUCCESS){
-                LOG_ERROR("Error in %s, line=%d, fail to send prepare_write_rsp, status=0x%x\n",
+                GATT_TRACE_ERROR("Error in %s, line=%d, fail to send prepare_write_rsp, status=0x%x\n",
                             __func__, __LINE__, rsp_send_status);
             }
         } else{
-            LOG_ERROR("Error in %s, line=%d, queue_data should not be NULL here, fail to send prepare_write_rsp\n",
+            GATT_TRACE_ERROR("Error in %s, line=%d, queue_data should not be NULL here, fail to send prepare_write_rsp\n",
                         __func__, __LINE__);
         }
     }

@@ -55,19 +55,6 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
     return (void *)(iptr + 1);
 }
 
-/* return all possible capabilities (across all priorities) for a given heap */
-inline static uint32_t get_all_caps(const heap_t *heap)
-{
-    if (heap->heap == NULL) {
-        return 0;
-    }
-    uint32_t all_caps = 0;
-    for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
-        all_caps |= heap->caps[prio];
-    }
-    return all_caps;
-}
-
 bool heap_caps_match(const heap_t *heap, uint32_t caps)
 {
     return heap->heap != NULL && ((get_all_caps(heap) & caps) == caps);
@@ -79,7 +66,6 @@ Routine to allocate a bit of memory with certain capabilities. caps is a bitfiel
 IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
 {
     void *ret = NULL;
-    uint32_t remCaps;
 
     if (caps & MALLOC_CAP_EXEC) {
         //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this as well as the following
@@ -89,9 +75,16 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
         if ((caps & MALLOC_CAP_8BIT) || (caps & MALLOC_CAP_DMA)) {
             return NULL;
         }
-        //If any, EXEC memory should be 32-bit aligned, so round up to the next multiple of 4.
+        caps |= MALLOC_CAP_32BIT; // IRAM is 32-bit accessible RAM
+    }
+
+    if (caps & MALLOC_CAP_32BIT) {
+        /* 32-bit accessible RAM should allocated in 4 byte aligned sizes
+         * (Future versions of ESP-IDF should possibly fail if an invalid size is requested)
+         */
         size = (size + 3) & (~3);
     }
+
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
         heap_t *heap;
@@ -102,13 +95,7 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
             if ((heap->caps[prio] & caps) != 0) {
                 //Heap has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
-                remCaps = caps & (~heap->caps[prio]); //Remaining caps to be fulfilled
-                int j = prio + 1;
-                while (remCaps != 0 && j < SOC_MEMORY_TYPE_NO_PRIOS) {
-                    remCaps = remCaps & (~heap->caps[j]);
-                    j++;
-                }
-                if (remCaps == 0) {
+                if ((get_all_caps(heap) & caps) == caps) {
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
                     if ((caps & MALLOC_CAP_EXEC) && heap->start >= SOC_DIRAM_DRAM_LOW && heap->start < SOC_DIRAM_DRAM_HIGH) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
@@ -188,6 +175,60 @@ IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
     }
 }
 
+/*
+ Memory allocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_malloc( size, caps );
+        if (r != NULL) {
+            break;
+        }
+    }
+    va_end( argp );
+    return r;
+}
+
+/*
+ Memory reallocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_realloc_prefer( void *ptr, size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_realloc( ptr, size, caps );
+        if (r != NULL || size == 0) {
+            break;
+        }
+    }
+    va_end( argp );
+    return r;
+}
+
+/*
+ Memory callocation as preference in decreasing order.
+ */
+IRAM_ATTR void *heap_caps_calloc_prefer( size_t n, size_t size, size_t num, ... )
+{
+    va_list argp;
+    va_start( argp, num );
+    void *r = NULL;
+    while (num--) {
+        uint32_t caps = va_arg( argp, uint32_t );
+        r = heap_caps_calloc( n, size, caps );
+        if (r != NULL) break;
+    }
+    va_end( argp );
+    return r;
+}
 
 /* Find the heap which belongs to ptr, or return NULL if it's
    not in any heap.
@@ -262,11 +303,27 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
     if (new_p != NULL) {
         size_t old_size = multi_heap_get_allocated_size(heap->heap, ptr);
         assert(old_size > 0);
-        memcpy(new_p, ptr, old_size);
+        memcpy(new_p, ptr, MIN(size, old_size));
         heap_caps_free(ptr);
         return new_p;
     }
     return NULL;
+}
+
+IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
+{
+    void *result;
+    size_t size_bytes;
+
+    if (__builtin_mul_overflow(n, size, &size_bytes)) {
+        return NULL;
+    }
+
+    result = heap_caps_malloc(size_bytes, caps);
+    if (result != NULL) {
+        bzero(result, size_bytes);
+    }
+    return result;
 }
 
 size_t heap_caps_get_free_size( uint32_t caps )
@@ -358,4 +415,35 @@ bool heap_caps_check_integrity(uint32_t caps, bool print_errors)
     }
 
     return valid;
+}
+
+bool heap_caps_check_integrity_all(bool print_errors)
+{
+    return heap_caps_check_integrity(MALLOC_CAP_INVALID, print_errors);
+}
+
+bool heap_caps_check_integrity_addr(intptr_t addr, bool print_errors)
+{
+    heap_t *heap = find_containing_heap((void *)addr);
+    if (heap == NULL) {
+        return false;
+    }
+    return multi_heap_check(heap->heap, print_errors);
+}
+
+void heap_caps_dump(uint32_t caps)
+{
+    bool all_heaps = caps & MALLOC_CAP_INVALID;
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap->heap != NULL
+            && (all_heaps || (get_all_caps(heap) & caps) == caps)) {
+            multi_heap_dump(heap->heap);
+        }
+    }
+}
+
+void heap_caps_dump_all()
+{
+    heap_caps_dump(MALLOC_CAP_INVALID);
 }

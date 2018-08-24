@@ -41,7 +41,6 @@ extern "C" {
 #endif
 
 #include <aws_iot_mqtt_client.h>
-#include <unistd.h>
 #include "aws_iot_mqtt_client_common_internal.h"
 
 /* Max length of packet header */
@@ -194,72 +193,73 @@ IoT_Error_t aws_iot_mqtt_internal_init_header(MQTTHeader *pHeader, MessageTypes 
 
 	/* Set all bits to zero */
 	pHeader->byte = 0;
+	uint8_t type = 0;
 	switch(message_type) {
 		case UNKNOWN:
 			/* Should never happen */
 			return FAILURE;
 		case CONNECT:
-			pHeader->bits.type = 0x01;
+			type = 0x01;
 			break;
 		case CONNACK:
-			pHeader->bits.type = 0x02;
+			type = 0x02;
 			break;
 		case PUBLISH:
-			pHeader->bits.type = 0x03;
+			type = 0x03;
 			break;
 		case PUBACK:
-			pHeader->bits.type = 0x04;
+			type = 0x04;
 			break;
 		case PUBREC:
-			pHeader->bits.type = 0x05;
+			type = 0x05;
 			break;
 		case PUBREL:
-			pHeader->bits.type = 0x06;
+			type = 0x06;
 			break;
 		case PUBCOMP:
-			pHeader->bits.type = 0x07;
+			type = 0x07;
 			break;
 		case SUBSCRIBE:
-			pHeader->bits.type = 0x08;
+			type = 0x08;
 			break;
 		case SUBACK:
-			pHeader->bits.type = 0x09;
+			type = 0x09;
 			break;
 		case UNSUBSCRIBE:
-			pHeader->bits.type = 0x0A;
+			type = 0x0A;
 			break;
 		case UNSUBACK:
-			pHeader->bits.type = 0x0B;
+			type = 0x0B;
 			break;
 		case PINGREQ:
-			pHeader->bits.type = 0x0C;
+			type = 0x0C;
 			break;
 		case PINGRESP:
-			pHeader->bits.type = 0x0D;
+			type = 0x0D;
 			break;
 		case DISCONNECT:
-			pHeader->bits.type = 0x0E;
+			type = 0x0E;
 			break;
 		default:
 			/* Should never happen */
 		FUNC_EXIT_RC(FAILURE);
 	}
 
-	pHeader->bits.dup = (1 == dup) ? 0x01 : 0x00;
+	pHeader->byte = type << 4;
+	pHeader->byte |= dup << 3;
+
 	switch(qos) {
 		case QOS0:
-			pHeader->bits.qos = 0x00;
 			break;
 		case QOS1:
-			pHeader->bits.qos = 0x01;
+			pHeader->byte |= 1 << 1;
 			break;
 		default:
 			/* Using QOS0 as default */
-			pHeader->bits.qos = 0x00;
 			break;
 	}
 
-	pHeader->bits.retain = (1 == retained) ? 0x01 : 0x00;
+	pHeader->byte |= (1 == retained) ? 0x01 : 0x00;
 
 	FUNC_EXIT_RC(SUCCESS);
 }
@@ -290,8 +290,11 @@ IoT_Error_t aws_iot_mqtt_internal_send_packet(AWS_IoT_Client *pClient, size_t le
 	sent = 0;
 
 	while(sent < length && !has_timer_expired(pTimer)) {
-		rc = pClient->networkStack.write(&(pClient->networkStack), &pClient->clientData.writeBuf[sent], length - sent, pTimer,
-										 &sentLen);
+		rc = pClient->networkStack.write(&(pClient->networkStack),
+						 &pClient->clientData.writeBuf[sent],
+						 (length - sent),
+						 pTimer,
+						 &sentLen);
 		if(SUCCESS != rc) {
 			/* there was an error writing the data */
 			break;
@@ -312,14 +315,44 @@ IoT_Error_t aws_iot_mqtt_internal_send_packet(AWS_IoT_Client *pClient, size_t le
 		FUNC_EXIT_RC(SUCCESS);
 	}
 
-	FUNC_EXIT_RC(FAILURE);
+	FUNC_EXIT_RC(rc);
 }
 
-static IoT_Error_t _aws_iot_mqtt_internal_decode_packet_remaining_len(AWS_IoT_Client *pClient,
+static IoT_Error_t _aws_iot_mqtt_internal_readWrapper( AWS_IoT_Client *pClient, size_t offset, size_t size, Timer *pTimer, size_t * read_len ) {
+    IoT_Error_t rc;
+    int byteToRead;
+    size_t byteRead = 0;
+
+    byteToRead = ( offset + size ) - pClient->clientData.readBufIndex;
+
+    if ( byteToRead > 0 )
+    {
+        rc = pClient->networkStack.read( &( pClient->networkStack ),
+            pClient->clientData.readBuf + pClient->clientData.readBufIndex,
+            (size_t)byteToRead,
+            pTimer,
+            &byteRead );
+        pClient->clientData.readBufIndex += byteRead;
+
+        /* refresh byte to read */
+        byteToRead = ( offset + size ) - ((int)pClient->clientData.readBufIndex);
+        *read_len = size - (size_t)byteToRead;
+    }
+    else
+    {
+        *read_len = size;
+        rc = SUCCESS;
+    }
+
+ 
+
+    return rc;
+}
+static IoT_Error_t _aws_iot_mqtt_internal_decode_packet_remaining_len(AWS_IoT_Client *pClient, size_t * offset,
 																	  size_t *rem_len, Timer *pTimer) {
-	unsigned char encodedByte;
 	size_t multiplier, len;
 	IoT_Error_t rc;
+    size_t read_len;
 
 	FUNC_ENTRY;
 
@@ -332,34 +365,34 @@ static IoT_Error_t _aws_iot_mqtt_internal_decode_packet_remaining_len(AWS_IoT_Cl
 			/* bad data */
 			FUNC_EXIT_RC(MQTT_DECODE_REMAINING_LENGTH_ERROR);
 		}
+        rc = _aws_iot_mqtt_internal_readWrapper( pClient, len, 1, pTimer, &read_len );
 
-		rc = pClient->networkStack.read(&(pClient->networkStack), &encodedByte, 1, pTimer, &len);
 		if(SUCCESS != rc) {
 			FUNC_EXIT_RC(rc);
 		}
 
-		*rem_len += ((encodedByte & 127) * multiplier);
+		*rem_len += (( pClient->clientData.readBuf[len] & 127) * multiplier);
 		multiplier *= 128;
-	} while((encodedByte & 128) != 0);
-
+	} while(( pClient->clientData.readBuf[len] & 128) != 0);
+    *offset = len + 1;
 	FUNC_EXIT_RC(rc);
 }
 
 static IoT_Error_t _aws_iot_mqtt_internal_read_packet(AWS_IoT_Client *pClient, Timer *pTimer, uint8_t *pPacketType) {
-	size_t len, rem_len, total_bytes_read, bytes_to_be_read, read_len;
+	size_t rem_len, total_bytes_read, bytes_to_be_read, read_len;
 	IoT_Error_t rc;
+    size_t offset = 0;
 	MQTTHeader header = {0};
 	Timer packetTimer;
 	init_timer(&packetTimer);
 	countdown_ms(&packetTimer, pClient->clientData.packetTimeoutMs);
 
-	len = 0;
 	rem_len = 0;
 	total_bytes_read = 0;
 	bytes_to_be_read = 0;
 	read_len = 0;
 
-	rc = pClient->networkStack.read(&(pClient->networkStack), pClient->clientData.readBuf, 1, pTimer, &read_len);
+    rc = _aws_iot_mqtt_internal_readWrapper( pClient, offset, 1, pTimer, &read_len );
 	/* 1. read the header byte.  This has the packet type in it */
 	if(NETWORK_SSL_NOTHING_TO_READ == rc) {
 		return MQTT_NOTHING_TO_READ;
@@ -367,22 +400,14 @@ static IoT_Error_t _aws_iot_mqtt_internal_read_packet(AWS_IoT_Client *pClient, T
 		return rc;
 	}
 
-	len = 1;
-
-	/* Use the constant packet receive timeout, instead of the variable (remaining) pTimer time, to
-	 * determine packet receiving timeout. This is done so we don't prematurely time out packet receiving
-	 * if the remaining time in pTimer is too short.
-	 */
-	pTimer = &packetTimer;
-
 	/* 2. read the remaining length.  This is variable in itself */
-	rc = _aws_iot_mqtt_internal_decode_packet_remaining_len(pClient, &rem_len, pTimer);
+	rc = _aws_iot_mqtt_internal_decode_packet_remaining_len(pClient, &offset, &rem_len, pTimer);
 	if(SUCCESS != rc) {
 		return rc;
-	}
-
+	} 
+     
 	/* if the buffer is too short then the message will be dropped silently */
-	if(rem_len >= pClient->clientData.readBufSize) {
+	if((rem_len + offset) >= pClient->clientData.readBufSize) {
 		bytes_to_be_read = pClient->clientData.readBufSize;
 		do {
 			rc = pClient->networkStack.read(&(pClient->networkStack), pClient->clientData.readBuf, bytes_to_be_read,
@@ -396,23 +421,31 @@ static IoT_Error_t _aws_iot_mqtt_internal_read_packet(AWS_IoT_Client *pClient, T
 				}
 			}
 		} while(total_bytes_read < rem_len && SUCCESS == rc);
-		return MQTT_RX_BUFFER_TOO_SHORT_ERROR;
-	}
 
-	/* put the original remaining length into the read buffer */
-	len += aws_iot_mqtt_internal_write_len_to_buffer(pClient->clientData.readBuf + 1, (uint32_t) rem_len);
+        /* Check buffer was correctly emptied, otherwise, return error message. */
+        if ( total_bytes_read == rem_len )
+        {
+            aws_iot_mqtt_internal_flushBuffers( pClient );
+            return MQTT_RX_BUFFER_TOO_SHORT_ERROR;
+        }
+        else
+        {
+            return rc;
+        }
+	}
 
 	/* 3. read the rest of the buffer using a callback to supply the rest of the data */
 	if(rem_len > 0) {
-		rc = pClient->networkStack.read(&(pClient->networkStack), pClient->clientData.readBuf + len, rem_len, pTimer,
-										&read_len);
+        rc = _aws_iot_mqtt_internal_readWrapper( pClient, offset, rem_len, pTimer, &read_len );
 		if(SUCCESS != rc || read_len != rem_len) {
 			return FAILURE;
 		}
 	}
 
+    /* Pack has been received, we can flush the buffers for next call. */
+    aws_iot_mqtt_internal_flushBuffers( pClient );
 	header.byte = pClient->clientData.readBuf[0];
-	*pPacketType = header.bits.type;
+	*pPacketType = MQTT_HEADER_FIELD_TYPE(header.byte);
 
 	FUNC_EXIT_RC(rc);
 }
@@ -420,12 +453,12 @@ static IoT_Error_t _aws_iot_mqtt_internal_read_packet(AWS_IoT_Client *pClient, T
 // assume topic filter and name is in correct format
 // # can only be at end
 // + and # can only be next to separator
-static char _aws_iot_mqtt_internal_is_topic_matched(char *pTopicFilter, char *pTopicName, uint16_t topicNameLen) {
+static bool _aws_iot_mqtt_internal_is_topic_matched(char *pTopicFilter, char *pTopicName, uint16_t topicNameLen) {
 
 	char *curf, *curn, *curn_end;
 
 	if(NULL == pTopicFilter || NULL == pTopicName) {
-		return NULL_VALUE_ERROR;
+		return false;
 	}
 
 	curf = pTopicFilter;
@@ -473,7 +506,7 @@ static IoT_Error_t _aws_iot_mqtt_internal_deliver_message(AWS_IoT_Client *pClien
 	 * But while callback return is in progress, Yield should not be called.
 	 * The state for CB_RETURN accomplishes that, as yield cannot be called while in that state */
 	clientState = aws_iot_mqtt_get_client_state(pClient);
-	rc = aws_iot_mqtt_set_client_state(pClient, clientState, CLIENT_STATE_CONNECTED_WAIT_FOR_CB_RETURN);
+	aws_iot_mqtt_set_client_state(pClient, clientState, CLIENT_STATE_CONNECTED_WAIT_FOR_CB_RETURN);
 
 	/* Find the right message handler - indexed by topic */
 	for(itr = 0; itr < AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS; ++itr) {
@@ -611,6 +644,11 @@ IoT_Error_t aws_iot_mqtt_internal_cycle_read(AWS_IoT_Client *pClient, Timer *pTi
 	return rc;
 }
 
+IoT_Error_t aws_iot_mqtt_internal_flushBuffers( AWS_IoT_Client *pClient ) {
+    pClient->clientData.readBufIndex = 0;
+    return SUCCESS;
+}
+
 /* only used in single-threaded mode where one command at a time is in process */
 IoT_Error_t aws_iot_mqtt_internal_wait_for_read(AWS_IoT_Client *pClient, uint8_t packetType, Timer *pTimer) {
 	IoT_Error_t rc;
@@ -629,13 +667,10 @@ IoT_Error_t aws_iot_mqtt_internal_wait_for_read(AWS_IoT_Client *pClient, uint8_t
 			break;
 		}
 		rc = aws_iot_mqtt_internal_cycle_read(pClient, pTimer, &read_packet_type);
-	} while(NETWORK_DISCONNECTED_ERROR != rc && read_packet_type != packetType);
+	} while(((SUCCESS == rc) || (MQTT_NOTHING_TO_READ == rc)) && (read_packet_type != packetType));
 
-	if(MQTT_REQUEST_TIMEOUT_ERROR != rc && NETWORK_DISCONNECTED_ERROR != rc && read_packet_type != packetType) {
-		FUNC_EXIT_RC(FAILURE);
-	}
-
-	/* Something failed or we didn't receive the expected packet, return error code */
+	/* If rc is SUCCESS, we have received the expected
+	 * MQTT packet. Otherwise rc tells the error. */
 	FUNC_EXIT_RC(rc);
 }
 

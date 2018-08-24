@@ -51,7 +51,7 @@ extern "C" {
  */
 typedef struct {
 	char *pHost; ///< This will be unique to a customer and can be retrieved from the console
-	uint16_t port; ///< By default the port is 8883
+	uint16_t port; ///< Network port for TCP/IP socket
 	const char *pRootCA; ///< Location with the Filename of the Root CA
 	const char *pClientCRT; ///< Location of Device certs signed by AWS IoT service
 	const char *pClientKey; ///< Location of Device private key
@@ -93,6 +93,15 @@ extern const ShadowInitParameters_t ShadowInitParametersDefault;
  */
 extern const ShadowConnectParameters_t ShadowConnectParametersDefault;
 
+/**
+* @brief Clean shadow client from all dynamic memory allocate
+*
+* This function will free up memory that was dynamically allocated for the client. 
+*
+* @param pClient MQTT Client that was previously created by calling aws_iot_shadow_init
+* @return An IoT Error Type defining successful/failed freeing
+*/
+IoT_Error_t aws_iot_shadow_free(AWS_IoT_Client *pClient);
 
 /**
  * @brief Initialize the Thing Shadow before use

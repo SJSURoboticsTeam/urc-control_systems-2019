@@ -54,7 +54,8 @@
  */
 
 char certDirectory[PATH_MAX + 1] = "../../../certs";
-char HostAddress[255] = AWS_IOT_MQTT_HOST;
+#define HOST_ADDRESS_SIZE 255
+char HostAddress[HOST_ADDRESS_SIZE] = AWS_IOT_MQTT_HOST;
 uint32_t port = AWS_IOT_MQTT_PORT;
 bool messageArrivedOnDelta = false;
 
@@ -139,6 +140,7 @@ int main(int argc, char** argv) {
 
 	jsonStruct_t deltaObject;
 	deltaObject.pData = stringToEchoDelta;
+	deltaObject.dataLength = SHADOW_MAX_SIZE_OF_RX_BUFFER;
 	deltaObject.pKey = "state";
 	deltaObject.type = SHADOW_JSON_OBJECT;
 	deltaObject.cb = DeltaCallback;
@@ -220,7 +222,7 @@ void parseInputArgsForConnectParams(int argc, char** argv) {
 	while (-1 != (opt = getopt(argc, argv, "h:p:c:"))) {
 		switch (opt) {
 		case 'h':
-			strcpy(HostAddress, optarg);
+			strncpy(HostAddress, optarg, HOST_ADDRESS_SIZE);
 			IOT_DEBUG("Host %s", optarg);
 			break;
 		case 'p':
@@ -228,7 +230,7 @@ void parseInputArgsForConnectParams(int argc, char** argv) {
 			IOT_DEBUG("arg %s", optarg);
 			break;
 		case 'c':
-			strcpy(certDirectory, optarg);
+			strncpy(certDirectory, optarg, PATH_MAX + 1);
 			IOT_DEBUG("cert root directory %s", optarg);
 			break;
 		case '?':

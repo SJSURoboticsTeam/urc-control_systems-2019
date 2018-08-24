@@ -48,6 +48,7 @@ extern Read_Data read_data;
 }
 #endif
 #endif /* Wifi */
+
 ```
 * Now, go into Structure.c and change the following char array for  :
 ```C
@@ -129,15 +130,27 @@ read_data_wifi(READ_ITEM_SIZE);
 ##### For Linux #####
 
 1. Install the required package to compile with esp-idf.  
-Terminal command: sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial  
+Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial`
+**Note:** one or more of these packages may fail to install. Should that happen, perform a `sudo apt-get update` and try again. 
 
-2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. Once you update the paths, you must either restart your bash or your system in order for the changes to take effect. 
+2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the command line you can find the file by using the following commands: 
+`cd ~`
+`ls -a`
 **The lines to add are:**  
-export PATH=$PATH:$(directory path to controlsystems2018)/controlsystems2018/esp-idf/xtensa-esp32-elf/bin    
-export IDF_PATH=(directory path to controlsystems2018)/controlsystems2018/esp-idf  
+`export PATH=$PATH:(directory path to controlsystems2019)/controlsystems2019/xtensa-esp32-elf/bin`    
+`export IDF_PATH=(directory path to controlsystems2019)/controlsystems2019/esp-idf`  
 **Example lines:**  
-export PATH=$PATH:$HOME/Documents/2017-2018/controlsystems2018/esp-idf/xtensa-esp32-elf/bin  
-export IDF_PATH=~/Documents/2017-2018/controlsystems2018/esp-idf   
+`export PATH=$PATH:$HOME/Documents/2018-2019/controlsystems2019/xtensa-esp32-elf/bin`  
+`export IDF_PATH=~/Documents/2018-2019/controlsystems2018/esp-idf`
+**Note:** you may wish to change the access permissions to your COM ports at this point as you will need to do so in order to program the esp32 boards. to do this, add the command `sudo chmod 666 /dev/tty*` after the PATH commands in .profile.
+Once you update the paths, enter the command `source ~/.profile` for the changes to take effect. You must enter this command for each terminal or bash session.
+
+3. Confirm you correctly set your PATH variables by entering either the command `echo $PATH` or `printenv $PATH`. In both cases, you should see a long list of file paths with the path you just created at the end of it. Do the same commands for IDF_PATH and you should see only the path that you entered above.
+
+4. Test that you have installed and set up the esp-idf environment correctly by configuring and flashing hello_world to your ESP32. navigate to the Projects/hello_world folder and enter the command `make menuconfig PROJECT_NAME=hello-world`. This should open the ESP32 toolchain configuration menu. Navigate to Serial flasher config -> Default Serial Port and change this value to the usb port that your ESP32 is connected to. 
+   If you are using windows, these are your COM ports, so you will need to determine which of these your ESP32 is connected to and use the linux naming configuration. For example, if your ESP32 is connected to COM4, you would enter /dev/ttyS4. 
+   Once done, save and exit the configuration menu. Run the command `make app-flash PROJECT_NAME=hello-world` to build and program your ESP32. When the program has finished building and flashing, run the command `make monitor` to see if you are recieving from your board. Press ctrl+] to exit.
+   
 
 ### Make Commands ###
 

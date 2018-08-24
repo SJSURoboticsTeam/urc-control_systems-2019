@@ -32,6 +32,7 @@
 
 /* lwIP includes. */
 
+#include <pthread.h>
 #include "lwip/debug.h"
 #include "lwip/def.h"
 #include "lwip/sys.h"
@@ -45,6 +46,9 @@
 #define TAG "lwip_arch"
 
 static sys_mutex_t g_lwip_protect_mutex = NULL;
+
+static pthread_key_t sys_thread_sem_key;
+static void sys_thread_sem_free(void* data);
 
 #if !LWIP_COMPAT_MUTEX
 /** Create a new mutex
@@ -68,7 +72,7 @@ sys_mutex_new(sys_mutex_t *pxMutex)
 
 /** Lock a mutex
  * @param mutex the mutex to lock */
-void
+void ESP_IRAM_ATTR
 sys_mutex_lock(sys_mutex_t *pxMutex)
 {
   while (xSemaphoreTake(*pxMutex, portMAX_DELAY) != pdPASS);
@@ -83,7 +87,7 @@ sys_mutex_trylock(sys_mutex_t *pxMutex)
 
 /** Unlock a mutex
  * @param mutex the mutex to unlock */
-void
+void ESP_IRAM_ATTR
 sys_mutex_unlock(sys_mutex_t *pxMutex)
 {
   xSemaphoreGive(*pxMutex);
@@ -123,10 +127,19 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
 
 /*-----------------------------------------------------------------------------------*/
 // Signals a semaphore
-void
+void ESP_IRAM_ATTR
 sys_sem_signal(sys_sem_t *sem)
 {
     xSemaphoreGive(*sem);
+}
+
+/*-----------------------------------------------------------------------------------*/
+// Signals a semaphore (from ISR)
+int sys_sem_signal_isr(sys_sem_t *sem)
+{
+    BaseType_t woken = pdFALSE;
+    xSemaphoreGiveFromISR(*sem, &woken);
+    return woken == pdTRUE;
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -145,7 +158,7 @@ sys_sem_signal(sys_sem_t *sem)
   Notice that lwIP implements a function with a similar name,
   sys_sem_wait(), that uses the sys_arch_sem_wait() function.
 */
-u32_t
+u32_t ESP_IRAM_ATTR
 sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
   portTickType StartTime, EndTime, Elapsed;
@@ -195,7 +208,7 @@ sys_sem_free(sys_sem_t *sem)
 err_t
 sys_mbox_new(sys_mbox_t *mbox, int size)
 {
-  *mbox = malloc(sizeof(struct sys_mbox_s));
+  *mbox = mem_malloc(sizeof(struct sys_mbox_s));
   if (*mbox == NULL){
     LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("fail to new *mbox\n"));
     return ERR_MEM;
@@ -224,14 +237,14 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 
 /*-----------------------------------------------------------------------------------*/
 //   Posts the "msg" to the mailbox.
-void
+void ESP_IRAM_ATTR
 sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
   while (xQueueSendToBack((*mbox)->os_mbox, &msg, portMAX_DELAY) != pdTRUE);
 }
 
 /*-----------------------------------------------------------------------------------*/
-err_t
+err_t ESP_IRAM_ATTR
 sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
   err_t xReturn;
@@ -262,7 +275,7 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
   Note that a function with a similar name, sys_mbox_fetch(), is
   implemented by lwIP.
 */
-u32_t
+u32_t ESP_IRAM_ATTR
 sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 {
   void *dummyptr;
@@ -433,6 +446,11 @@ sys_init(void)
     if (ERR_OK != sys_mutex_new(&g_lwip_protect_mutex)) {
         ESP_LOGE(TAG, "sys_init: failed to init lwip protect mutex\n");
     }
+
+    // Create the pthreads key for the per-thread semaphore storage
+    pthread_key_create(&sys_thread_sem_key, sys_thread_sem_free);
+
+    esp_vfs_lwip_sockets_register();
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -482,38 +500,38 @@ sys_arch_unprotect(sys_prot_t pval)
   sys_mutex_unlock(&g_lwip_protect_mutex);
 }
 
-#define SYS_TLS_INDEX CONFIG_LWIP_THREAD_LOCAL_STORAGE_INDEX
-/* 
+/*
  * get per thread semphore
  */
 sys_sem_t* sys_thread_sem_get(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX);
-  if (!sem){
-    sem = sys_thread_sem_init();
+  sys_sem_t *sem = pthread_getspecific(sys_thread_sem_key);
+
+  if (!sem) {
+      sem = sys_thread_sem_init();
   }
   LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem_get s=%p\n", sem));
   return sem;
 }
 
-static void sys_thread_tls_free(int index, void* data)
+static void sys_thread_sem_free(void* data) // destructor for TLS semaphore
 {
   sys_sem_t *sem = (sys_sem_t*)(data);
 
   if (sem && *sem){
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem del, i=%d sem=%p\n", index, *sem));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem del, sem=%p\n", *sem));
     vSemaphoreDelete(*sem);
   }
 
-  if (sem){
-    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem pointer del, i=%d sem_p=%p\n", index, sem));
+  if (sem) {
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
     free(sem);
   }
 }
 
 sys_sem_t* sys_thread_sem_init(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)malloc(sizeof(sys_sem_t*));
+  sys_sem_t *sem = (sys_sem_t*)mem_malloc(sizeof(sys_sem_t*));
 
   if (!sem){
     ESP_LOGE(TAG, "thread_sem_init: out of memory");
@@ -527,20 +545,17 @@ sys_sem_t* sys_thread_sem_init(void)
     return 0;
   }
 
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem init sem_p=%p sem=%p cb=%p\n", sem, *sem, sys_thread_tls_free));
-  vTaskSetThreadLocalStoragePointerAndDelCallback(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX, sem, (TlsDeleteCallbackFunction_t)sys_thread_tls_free);
-
+  pthread_setspecific(sys_thread_sem_key, sem);
   return sem;
 }
 
 void sys_thread_sem_deinit(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)pvTaskGetThreadLocalStoragePointer(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX);
-
-  sys_thread_tls_free(SYS_TLS_INDEX, (void*)sem);
-  vTaskSetThreadLocalStoragePointerAndDelCallback(xTaskGetCurrentTaskHandle(), SYS_TLS_INDEX, 0, 0);
-
-  return;
+  sys_sem_t *sem = pthread_getspecific(sys_thread_sem_key);
+  if (sem != NULL) {
+    sys_thread_sem_free(sem);
+    pthread_setspecific(sys_thread_sem_key, NULL);
+  }
 }
 
 void sys_delay_ms(uint32_t ms)

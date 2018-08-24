@@ -20,8 +20,9 @@
 
 #include "aws_iot_test_integration_common.h"
 
+
+#define MAX_ERROR_DISPLAY 50
 static bool terminate_yield_thread;
-static bool isPubThreadFinished;
 
 static unsigned int countArray[PUBLISH_COUNT];
 static unsigned int rxMsgBufferTooBigCounter;
@@ -48,6 +49,14 @@ static void aws_iot_mqtt_tests_message_aggregator(AWS_IoT_Client *pClient, char 
 			rxUnexpectedNumberCounter++;
 		}
 	} else {
+		if( params->payloadLen > MAX_ERROR_DISPLAY)
+		{
+			((char *)params->payload)[MAX_ERROR_DISPLAY-1] = '\0';
+			IOT_ERROR("\nWrong Msg received : %s", (char *)params->payload);
+		}else
+		{
+			IOT_ERROR("\nWrong Msg received : %s", (char *)params->payload);			
+		}
 		rxMsgBufferTooBigCounter++;
 	}
 }
@@ -66,12 +75,16 @@ static IoT_Error_t aws_iot_mqtt_tests_connect_client_to_service(AWS_IoT_Client *
 	struct timeval start, end;
 
 	initParams.pHostURL = AWS_IOT_MQTT_HOST;
-	initParams.port = 8883;
+	initParams.port = AWS_IOT_MQTT_PORT;
 	initParams.pRootCALocation = rootCA;
 	initParams.pDeviceCertLocation = clientCRT;
 	initParams.pDevicePrivateKeyLocation = clientKey;
 	initParams.mqttCommandTimeout_ms = 5000;
 	initParams.tlsHandshakeTimeout_ms = 2000;
+	initParams.mqttPacketTimeout_ms = 5000;
+	initParams.isSSLHostnameVerify = true;
+	initParams.disconnectHandlerData = NULL;
+	initParams.isBlockOnThreadLockEnabled = true;
 	initParams.disconnectHandler = aws_iot_mqtt_tests_disconnect_callback_handler;
 	initParams.enableAutoReconnect = false;
 	rc = aws_iot_mqtt_init(pClient, &initParams);
@@ -127,6 +140,8 @@ static void *aws_iot_mqtt_tests_yield_thread_runner(void *ptr) {
 			IOT_ERROR("\nYield Returned : %d ", rc);
 		}
 	}
+	
+	return NULL;
 }
 
 static void *aws_iot_mqtt_tests_publish_thread_runner(void *ptr) {
@@ -155,7 +170,8 @@ static void *aws_iot_mqtt_tests_publish_thread_runner(void *ptr) {
 		}
 		usleep(300000);
 	}
-	isPubThreadFinished = true;
+	
+	return NULL;
 }
 
 
@@ -187,7 +203,6 @@ int aws_iot_mqtt_tests_multiple_clients() {
 	AWS_IoT_Client subClient;
 
 	terminate_yield_thread = false;
-	isPubThreadFinished = false;
 	rxMsgBufferTooBigCounter = 0;
 	rxUnexpectedNumberCounter = 0;
 	rePublishCount = 0;
@@ -214,7 +229,7 @@ int aws_iot_mqtt_tests_multiple_clients() {
 	} while(SUCCESS != rc && CONNECT_MAX_ATTEMPT_COUNT > connectCounter);
 
 	if(SUCCESS == rc) {
-		printf("\n## Connect Success. Time sec: %d, usec: %d\n", connectTime.tv_sec, connectTime.tv_usec);
+		printf("\n## Connect Success. Time sec: %ld, usec: %ld\n", (long int)connectTime.tv_sec, (long int)connectTime.tv_usec);
 	} else {
 		printf("\n## Connect Failed. error code %d\n", rc);
 		return -1;
@@ -228,7 +243,7 @@ int aws_iot_mqtt_tests_multiple_clients() {
 	} while(SUCCESS != rc && connectCounter < CONNECT_MAX_ATTEMPT_COUNT);
 
 	if(SUCCESS == rc) {
-		printf("## Connect Success. Time sec: %d, usec: %d\n", connectTime.tv_sec, connectTime.tv_usec);
+		printf("## Connect Success. Time sec: %ld, usec: %ld\n", (long int)connectTime.tv_sec, (long int)connectTime.tv_usec);
 	} else {
 		printf("## Connect Failed. error code %d\n", rc);
 		return -1;
@@ -239,14 +254,11 @@ int aws_iot_mqtt_tests_multiple_clients() {
 	yieldThreadReturn = pthread_create(&yield_thread, NULL, aws_iot_mqtt_tests_yield_thread_runner, &subClient);
 	pubThreadReturn = pthread_create(&publish_thread, NULL, aws_iot_mqtt_tests_publish_thread_runner, &pubClient);
 
-	/* This sleep is to ensure that the last publish message has enough time to be received by us */
-	do {
-		sleep(1);
-	} while(!isPubThreadFinished);
+	pthread_join(publish_thread, NULL);
 
 	/* Kill yield thread */
 	terminate_yield_thread = true;
-	sleep(1);
+	pthread_join(yield_thread, NULL);
 
 	aws_iot_mqtt_disconnect(&pubClient);
 	aws_iot_mqtt_disconnect(&subClient);

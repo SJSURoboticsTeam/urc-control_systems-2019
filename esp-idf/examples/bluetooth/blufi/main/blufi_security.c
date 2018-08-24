@@ -1,16 +1,10 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +17,7 @@
 #include "esp_event_loop.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "bt.h"
+#include "esp_bt.h"
 
 #include "esp_blufi_api.h"
 #include "esp_bt_defs.h"
@@ -75,6 +69,8 @@ static int myrand( void *rng_state, unsigned char *output, size_t len )
     return( 0 );
 }
 
+extern void btc_blufi_report_error(esp_blufi_error_state_t state);
+
 void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 {
     int ret;
@@ -82,6 +78,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 
     if (blufi_sec == NULL) {
         BLUFI_ERROR("BLUFI Security is not initialized");
+        btc_blufi_report_error(ESP_BLUFI_INIT_SECURITY_ERROR);
         return;
     }
 
@@ -90,25 +87,35 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         blufi_sec->dh_param_len = ((data[1]<<8)|data[2]);
         if (blufi_sec->dh_param) {
             free(blufi_sec->dh_param);
+            blufi_sec->dh_param = NULL;
         }
         blufi_sec->dh_param = (uint8_t *)malloc(blufi_sec->dh_param_len);
         if (blufi_sec->dh_param == NULL) {
+            btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+            BLUFI_ERROR("%s, malloc failed\n", __func__);
             return;
         }
         break;
-    case SEC_TYPE_DH_PARAM_DATA:
-
-        memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
-
-        ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &blufi_sec->dh_param, &blufi_sec->dh_param[blufi_sec->dh_param_len]);
-        if (ret) {
-            BLUFI_ERROR("%s read param failed %d\n", __func__, ret);
+    case SEC_TYPE_DH_PARAM_DATA:{
+        if (blufi_sec->dh_param == NULL) {
+            BLUFI_ERROR("%s, blufi_sec->dh_param == NULL\n", __func__);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
-
+        uint8_t *param = blufi_sec->dh_param;
+        memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
+        ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &param, &param[blufi_sec->dh_param_len]);
+        if (ret) {
+            BLUFI_ERROR("%s read param failed %d\n", __func__, ret);
+            btc_blufi_report_error(ESP_BLUFI_READ_PARAM_ERROR);
+            return;
+        }
+        free(blufi_sec->dh_param);
+        blufi_sec->dh_param = NULL;
         ret = mbedtls_dhm_make_public(&blufi_sec->dhm, (int) mbedtls_mpi_size( &blufi_sec->dhm.P ), blufi_sec->self_public_key, blufi_sec->dhm.len, myrand, NULL);
         if (ret) {
             BLUFI_ERROR("%s make public failed %d\n", __func__, ret);
+            btc_blufi_report_error(ESP_BLUFI_MAKE_PUBLIC_ERROR);
             return;
         }
 
@@ -126,6 +133,8 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         *output_data = &blufi_sec->self_public_key[0];
         *output_len = blufi_sec->dhm.len;
         *need_free = false;
+
+    }
         break;
     case SEC_TYPE_DH_P:
         break;
@@ -194,6 +203,13 @@ esp_err_t blufi_security_init(void)
 
 void blufi_security_deinit(void)
 {
+    if (blufi_sec == NULL) {
+        return;
+    }
+    if (blufi_sec->dh_param){
+        free(blufi_sec->dh_param);
+        blufi_sec->dh_param = NULL;
+    }
     mbedtls_dhm_free(&blufi_sec->dhm);
     mbedtls_aes_free(&blufi_sec->aes);
 

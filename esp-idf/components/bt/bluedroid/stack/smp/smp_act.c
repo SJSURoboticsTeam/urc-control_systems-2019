@@ -17,11 +17,12 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "interop.h"
-#include "bt_target.h"
+#include "device/interop.h"
+#include "common/bt_target.h"
 #include "btm_int.h"
-#include "l2c_api.h"
+#include "stack/l2c_api.h"
 #include "smp_int.h"
+#include "p_256_ecc_pp.h"
 //#include "utils/include/bt_utils.h"
 
 #if SMP_INCLUDED == TRUE
@@ -58,7 +59,7 @@ static bool lmp_version_below(BD_ADDR bda, uint8_t version)
         SMP_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
         return false;
     }
-    SMP_TRACE_WARNING("%s LMP version %d < %d", __func__, acl->lmp_version, version);
+    SMP_TRACE_DEBUG("%s LMP version %d < %d", __func__, acl->lmp_version, version);
     return acl->lmp_version < version;
 }
 
@@ -668,6 +669,12 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     STREAM_TO_ARRAY(p_cb->peer_publ_key.x, p, BT_OCTET32_LEN);
     STREAM_TO_ARRAY(p_cb->peer_publ_key.y, p, BT_OCTET32_LEN);
+    /* In order to prevent the x and y coordinates of the public key from being modified, 
+       we need to check whether the x and y coordinates are on the given elliptic curve. */
+    if (!ECC_CheckPointIsInElliCur_P256((Point *)&p_cb->peer_publ_key)) {
+        SMP_TRACE_ERROR("%s, Invalid Public key.", __func__);
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    }
     p_cb->flags |= SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY;
 
     smp_wait_for_both_public_keys(p_cb, NULL);
@@ -1221,25 +1228,16 @@ void smp_decide_association_model(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     switch (p_cb->selected_association_model) {
     case SMP_MODEL_ENCRYPTION_ONLY:  /* TK = 0, go calculate Confirm */
-        if (p_cb->role == HCI_ROLE_MASTER &&
-                ((p_cb->peer_auth_req & SMP_AUTH_YN_BIT) != 0) &&
-                ((p_cb->loc_auth_req & SMP_AUTH_YN_BIT) == 0)) {
-            SMP_TRACE_ERROR ("IO capability does not meet authentication requirement\n");
-            failure = SMP_PAIR_AUTH_FAIL;
-            p = (tSMP_INT_DATA *)&failure;
-            int_evt = SMP_AUTH_CMPL_EVT;
-        } else {
-            p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
-            SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) \n", p_cb->sec_level );
+        p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
+        SMP_TRACE_EVENT ("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) \n", p_cb->sec_level );
 
-            key.key_type = SMP_KEY_TYPE_TK;
-            key.p_data = p_cb->tk;
-            p = (tSMP_INT_DATA *)&key;
+        key.key_type = SMP_KEY_TYPE_TK;
+        key.p_data = p_cb->tk;
+        p = (tSMP_INT_DATA *)&key;
 
-            memset(p_cb->tk, 0, BT_OCTET16_LEN);
-            /* TK, ready  */
-            int_evt = SMP_KEY_READY_EVT;
-        }
+        memset(p_cb->tk, 0, BT_OCTET16_LEN);
+        /* TK, ready  */
+        int_evt = SMP_KEY_READY_EVT;
         break;
 
     case SMP_MODEL_PASSKEY:
@@ -1398,6 +1396,11 @@ void smp_idle_terminate(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_fast_conn_param(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
+    tBTM_SEC_DEV_REC    *p_rec = btm_find_dev (p_cb->pairing_bda);
+    if(p_rec && p_rec->ble.skip_update_conn_param) {
+        //do nothing
+        return;
+    }
     /* Disable L2CAP connection parameter updates while bonding since
        some peripherals are not able to revert to fast connection parameters
        during the start of service discovery. Connection paramter updates
@@ -1835,7 +1838,7 @@ void smp_set_local_oob_random_commitment(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
 {
     tSMP_CB *p_cb = &smp_cb;
-
+    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bda);
     SMP_TRACE_DEBUG("%s encr_enable=%d\n", __func__, encr_enable);
 
     if (memcmp(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN) == 0) {
@@ -1846,6 +1849,18 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
             btm_ble_update_sec_key_size(bda, p_cb->loc_enc_size);
         }
 
+        smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
+    } 
+    else if(p_dev_rec && !p_dev_rec->enc_init_by_we){ 
+
+        /* 
+        if enc_init_by_we is false, it means that client initiates encryption before slave calls esp_ble_set_encryption()
+        we need initiate pairing_bda and p_cb->role then encryption, for example iPhones
+        */
+        memcpy(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN);
+        p_cb->state = SMP_STATE_ENCRYPTION_PENDING;
+        p_cb->role = HCI_ROLE_SLAVE;
+        p_dev_rec->enc_init_by_we = FALSE;
         smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
     }
 }

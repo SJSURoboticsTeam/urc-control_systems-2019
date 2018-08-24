@@ -158,7 +158,7 @@ void test_spiffs_rename(const char* filename_prefix)
 
     FILE* f = fopen(name_src, "w+");
     TEST_ASSERT_NOT_NULL(f);
-    char* str = "0123456789";
+    const char* str = "0123456789";
     for (int i = 0; i < 400; ++i) {
         TEST_ASSERT_NOT_EQUAL(EOF, fputs(str, f));
     }
@@ -275,6 +275,63 @@ void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
     TEST_ASSERT_EQUAL(0, closedir(dir));
 }
 
+void test_spiffs_readdir_many_files(const char* dir_prefix)
+{
+    const int n_files = 40;
+    const int n_folders = 4;
+    unsigned char file_count[n_files * n_folders];
+    memset(file_count, 0, sizeof(file_count)/sizeof(file_count[0]));
+    char file_name[ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN];
+
+    /* clean stale files before the test */
+    DIR* dir = opendir(dir_prefix);
+    if (dir) {
+        while (true) {
+            struct dirent* de = readdir(dir);
+            if (!de) {
+                break;
+            }
+            snprintf(file_name, sizeof(file_name), "%s/%s", dir_prefix, de->d_name);
+            unlink(file_name);
+        }
+    }
+
+    /* create files */
+    for (int d = 0; d < n_folders; ++d) {
+        printf("filling directory %d\n", d);
+        for (int f = 0; f < n_files; ++f) {
+            snprintf(file_name, sizeof(file_name), "%s/%d/%d.txt", dir_prefix, d, f);
+            test_spiffs_create_file_with_text(file_name, file_name);
+        }
+    }
+
+    /* list files */
+    for (int d = 0; d < n_folders; ++d) {
+        printf("listing files in directory %d\n", d);
+        snprintf(file_name, sizeof(file_name), "%s/%d", dir_prefix, d);
+        dir = opendir(file_name);
+        TEST_ASSERT_NOT_NULL(dir);
+        while (true) {
+            struct dirent* de = readdir(dir);
+            if (!de) {
+                break;
+            }
+            int file_id;
+            TEST_ASSERT_EQUAL(1, sscanf(de->d_name, "%d.txt", &file_id));
+            file_count[file_id + d * n_files]++;
+        }
+        closedir(dir);
+    }
+
+    /* check that all created files have been seen */
+    for (int d = 0; d < n_folders; ++d) {
+        printf("checking that all files have been found in directory %d\n", d);
+        for (int f = 0; f < n_files; ++f) {
+            TEST_ASSERT_EQUAL(1, file_count[f + d * n_files]);
+        }
+    }
+}
+
 
 typedef struct {
     const char* filename;
@@ -346,9 +403,10 @@ void test_spiffs_concurrent(const char* filename_prefix)
     read_write_test_arg_t args2 = READ_WRITE_TEST_ARG_INIT(names[1], 2);
 
     printf("writing f1 and f2\n");
-
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, 1);
+    const int cpuid_0 = 0;
+    const int cpuid_1 = portNUM_PROCESSORS - 1;
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");
@@ -364,10 +422,10 @@ void test_spiffs_concurrent(const char* filename_prefix)
 
     printf("reading f1 and f2, writing f3 and f4\n");
 
-    xTaskCreatePinnedToCore(&read_write_task, "rw3", 2048, &args3, 3, NULL, 1);
-    xTaskCreatePinnedToCore(&read_write_task, "rw4", 2048, &args4, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, 0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, 1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw3", 2048, &args3, 3, NULL, cpuid_1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw4", 2048, &args4, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");
@@ -406,7 +464,7 @@ static void test_teardown()
     TEST_ESP_OK(esp_vfs_spiffs_unregister(spiffs_test_partition_label));
 }
 
-TEST_CASE("can format partition", "[spiffs]")
+TEST_CASE("can initialize SPIFFS in erased partition", "[spiffs]")
 {
     const esp_partition_t* part = get_test_data_partition();
     TEST_ASSERT_NOT_NULL(part);
@@ -416,6 +474,44 @@ TEST_CASE("can format partition", "[spiffs]")
     TEST_ESP_OK(esp_spiffs_info(spiffs_test_partition_label, &total, &used));
     printf("total: %d, used: %d\n", total, used);
     TEST_ASSERT_EQUAL(0, used);
+    test_teardown();
+}
+
+TEST_CASE("can format mounted partition", "[spiffs]")
+{
+    // Mount SPIFFS, create file, format, check that the file does not exist.
+    const esp_partition_t* part = get_test_data_partition();
+    TEST_ASSERT_NOT_NULL(part);
+    test_setup();
+    const char* filename = "/spiffs/hello.txt";
+    test_spiffs_create_file_with_text(filename, spiffs_test_hello_str);
+    esp_spiffs_format(part->label);
+    FILE* f = fopen(filename, "r");
+    TEST_ASSERT_NULL(f);
+    test_teardown();
+}
+
+TEST_CASE("can format unmounted partition", "[spiffs]")
+{
+    // Mount SPIFFS, create file, unmount. Format. Mount again, check that
+    // the file does not exist.
+    const esp_partition_t* part = get_test_data_partition();
+    TEST_ASSERT_NOT_NULL(part);
+    test_setup();
+    const char* filename = "/spiffs/hello.txt";
+    test_spiffs_create_file_with_text(filename, spiffs_test_hello_str);
+    test_teardown();
+    esp_spiffs_format(part->label);
+    // Don't use test_setup here, need to mount without formatting
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = spiffs_test_partition_label,
+        .max_files = 5,
+        .format_if_mount_failed = false
+    };
+    TEST_ESP_OK(esp_vfs_spiffs_register(&conf));
+    FILE* f = fopen(filename, "r");
+    TEST_ASSERT_NULL(f);
     test_teardown();
 }
 
@@ -498,9 +594,58 @@ TEST_CASE("opendir, readdir, rewinddir, seekdir work as expected", "[spiffs]")
     test_teardown();
 }
 
+TEST_CASE("readdir with large number of files", "[spiffs][timeout=15]")
+{
+    test_setup();
+    test_spiffs_readdir_many_files("/spiffs/dir2");
+    test_teardown();
+}
+
 TEST_CASE("multiple tasks can use same volume", "[spiffs]")
 {
     test_setup();
     test_spiffs_concurrent("/spiffs/f");
     test_teardown();
 }
+
+#ifdef CONFIG_SPIFFS_USE_MTIME
+TEST_CASE("mtime is updated when file is opened", "[spiffs]")
+{
+    /* Open a file, check that mtime is set correctly */
+    const char* filename = "/spiffs/time";
+    test_setup();
+    time_t t_before_create = time(NULL);
+    test_spiffs_create_file_with_text(filename, "\n");
+    time_t t_after_create = time(NULL);
+
+    struct stat st;
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    printf("mtime=%d\n", (int) st.st_mtime);
+    TEST_ASSERT(st.st_mtime >= t_before_create
+             && st.st_mtime <= t_after_create);
+
+    /* Wait a bit, open again, check that mtime is updated */
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    time_t t_before_open = time(NULL);
+    FILE *f = fopen(filename, "a");
+    time_t t_after_open = time(NULL);
+    TEST_ASSERT_EQUAL(0, fstat(fileno(f), &st));
+    printf("mtime=%d\n", (int) st.st_mtime);
+    TEST_ASSERT(st.st_mtime >= t_before_open
+             && st.st_mtime <= t_after_open);
+    fclose(f);
+
+    /* Wait a bit, open for reading, check that mtime is not updated */
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    time_t t_before_open_ro = time(NULL);
+    f = fopen(filename, "r");
+    TEST_ASSERT_EQUAL(0, fstat(fileno(f), &st));
+    printf("mtime=%d\n", (int) st.st_mtime);
+    TEST_ASSERT(t_before_open_ro > t_after_open
+             && st.st_mtime >= t_before_open
+             && st.st_mtime <= t_after_open);
+    fclose(f);
+
+    test_teardown();
+}
+#endif // CONFIG_SPIFFS_USE_MTIME

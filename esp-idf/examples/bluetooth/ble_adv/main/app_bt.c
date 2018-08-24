@@ -1,22 +1,16 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
 
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "bt.h"
+#include "esp_bt.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 
@@ -220,7 +214,7 @@ void app_main()
 {
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
@@ -229,23 +223,23 @@ void app_main()
     
     ret = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
     if (ret) {
-        ESP_LOGI(tag, "Bluetooth controller release classic bt memory failed");
+        ESP_LOGI(tag, "Bluetooth controller release classic bt memory failed: %s", esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bt_controller_init(&bt_cfg) != ESP_OK) {
-        ESP_LOGI(tag, "Bluetooth controller initialize failed");
+    if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
+        ESP_LOGI(tag, "Bluetooth controller initialize failed: %s", esp_err_to_name(ret));
         return;
     }
 
-    if (esp_bt_controller_enable(ESP_BT_MODE_BLE) != ESP_OK) {
-        ESP_LOGI(tag, "Bluetooth controller enable failed");
+    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_BLE)) != ESP_OK) {
+        ESP_LOGI(tag, "Bluetooth controller enable failed: %s", esp_err_to_name(ret));
         return;
     }
 
     /*
      * If call mem release here, also work. Input ESP_BT_MODE_CLASSIC_BT, the function will
-     * release the memory of classic bt mdoe.
+     * release the memory of classic bt mode.
      * esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
      *
      */

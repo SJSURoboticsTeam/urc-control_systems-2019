@@ -69,11 +69,16 @@
 #endif
 
 /**
- * NO_SYS_NO_TIMERS==1: Drop support for sys_timeout when NO_SYS==1
- * Mainly for compatibility to old versions.
+ * LWIP_TIMERS==0: Drop support for sys_timeout and lwip-internal cyclic timers.
+ * (the array of lwip-internal cyclic timers is still provided)
+ * (check NO_SYS_NO_TIMERS for compatibility to old versions)
  */
-#ifndef NO_SYS_NO_TIMERS
-#define NO_SYS_NO_TIMERS                0
+#if !defined LWIP_TIMERS || defined __DOXYGEN__
+#ifdef NO_SYS_NO_TIMERS
+#define LWIP_TIMERS                     (!NO_SYS || (NO_SYS && !NO_SYS_NO_TIMERS))
+#else
+#define LWIP_TIMERS                     1
+#endif
 #endif
 
 /**
@@ -821,6 +826,22 @@
  */
 #ifndef LWIP_DHCP_AUTOIP_COOP_TRIES
 #define LWIP_DHCP_AUTOIP_COOP_TRIES     9
+#endif
+
+/**
+ * LWIP_AUTOIP_MAX_CONFLICTS:
+ * Maximum number of AutoIP IP conflicts before rate limiting is enabled.
+ */
+#ifndef LWIP_AUTOIP_MAX_CONFLICTS
+#define LWIP_AUTOIP_MAX_CONFLICTS            10
+#endif
+
+/**
+ * LWIP_AUTOIP_RATE_LIMIT_INTERVAL:
+ * Rate limited request interval, in seconds.
+ */
+#ifndef LWIP_AUTOIP_RATE_LIMIT_INTERVAL
+#define LWIP_AUTOIP_RATE_LIMIT_INTERVAL      60
 #endif
 
 /*

@@ -23,14 +23,17 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_attr.h"
+#include "rom/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "freertos/list.h"
+
+#include "pthread_internal.h"
+#include "esp_pthread.h"
 
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
-const static char *TAG = "esp_pthread";
+const static char *TAG = "pthread";
 
 /** task state */
 enum esp_pthread_task_state {
@@ -39,96 +42,125 @@ enum esp_pthread_task_state {
 };
 
 /** pthread thread FreeRTOS wrapper */
-typedef struct {
-    ListItem_t                  list_item;  ///< Tasks list node struct. FreeRTOS task handle is kept as list_item.xItemValue
-    TaskHandle_t                join_task;  ///< Handle of the task waiting to join
-    enum esp_pthread_task_state state;      ///< pthread task state
-    bool                        detached;   ///< True if pthread is detached
+typedef struct esp_pthread_entry {
+    SLIST_ENTRY(esp_pthread_entry)  list_node;  ///< Tasks list node struct.
+    TaskHandle_t                handle;         ///< FreeRTOS task handle
+    TaskHandle_t                join_task;      ///< Handle of the task waiting to join
+    enum esp_pthread_task_state state;          ///< pthread task state
+    bool                        detached;       ///< True if pthread is detached
 } esp_pthread_t;
 
 /** pthread wrapper task arg */
 typedef struct {
     void *(*func)(void *);  ///< user task entry
     void *arg;              ///< user task argument
+    esp_pthread_cfg_t cfg;  ///< pthread configuration
 } esp_pthread_task_arg_t;
 
 /** pthread mutex FreeRTOS wrapper */
 typedef struct {
-    ListItem_t          list_item;  ///< mutexes list node struct
     SemaphoreHandle_t   sem;        ///< Handle of the task waiting to join
     int                 type;       ///< Mutex type. Currently supported PTHREAD_MUTEX_NORMAL and PTHREAD_MUTEX_RECURSIVE
 } esp_pthread_mutex_t;
 
 
-static SemaphoreHandle_t s_once_mux = NULL;
-static SemaphoreHandle_t s_threads_mux = NULL;
-static portMUX_TYPE s_mutex_init_lock = portMUX_INITIALIZER_UNLOCKED;
-
-static List_t s_threads_list;
+static SemaphoreHandle_t s_threads_mux  = NULL;
+static portMUX_TYPE s_mutex_init_lock   = portMUX_INITIALIZER_UNLOCKED;
+static SLIST_HEAD(esp_thread_list_head, esp_pthread_entry) s_threads_list
+                                        = SLIST_HEAD_INITIALIZER(s_threads_list);
+static pthread_key_t s_pthread_cfg_key;
 
 
 static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
 
+static void esp_pthread_cfg_key_destructor(void *value)
+{
+    free(value);
+}
+
 esp_err_t esp_pthread_init(void)
 {
-    vListInitialise((List_t *)&s_threads_list);
-    s_once_mux = xSemaphoreCreateRecursiveMutex();
-    if (s_once_mux == NULL) {
+    if (pthread_key_create(&s_pthread_cfg_key, esp_pthread_cfg_key_destructor) != 0) {
         return ESP_ERR_NO_MEM;
     }
     s_threads_mux = xSemaphoreCreateMutex();
     if (s_threads_mux == NULL) {
-        vSemaphoreDelete(s_once_mux);
+	pthread_key_delete(s_pthread_cfg_key);
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;
 }
 
-static void *pthread_find_list_item(void *(*item_check)(ListItem_t *, void *arg), void *check_arg)
+static void *pthread_list_find_item(void *(*item_check)(esp_pthread_t *, void *arg), void *check_arg)
 {
-    ListItem_t const *list_end = listGET_END_MARKER(&s_threads_list);
-    ListItem_t *list_item = listGET_HEAD_ENTRY(&s_threads_list);
-    while (list_item != list_end) {
-        void *val = item_check(list_item, check_arg);
+    esp_pthread_t *it;
+    SLIST_FOREACH(it, &s_threads_list, list_node) {
+        void *val = item_check(it, check_arg);
         if (val) {
             return val;
         }
-        list_item = listGET_NEXT(list_item);
     }
     return NULL;
 }
 
-static void *pthread_get_handle_by_desc(ListItem_t *item, void *arg)
+static void *pthread_get_handle_by_desc(esp_pthread_t *item, void *desc)
 {
-    esp_pthread_t *pthread = listGET_LIST_ITEM_OWNER(item);
-    if (pthread == arg) {
-        return (void *)listGET_LIST_ITEM_VALUE(item);
+    if (item == desc) {
+        return item->handle;
     }
     return NULL;
 }
+
+static void *pthread_get_desc_by_handle(esp_pthread_t *item, void *hnd)
+{
+    if (hnd == item->handle) {
+        return item;
+    }
+    return NULL;
+}
+
 static inline TaskHandle_t pthread_find_handle(pthread_t thread)
 {
-    return pthread_find_list_item(pthread_get_handle_by_desc, (void *)thread);
+    return pthread_list_find_item(pthread_get_handle_by_desc, (void *)thread);
 }
 
-static void *pthread_get_desc_by_handle(ListItem_t *item, void *arg)
-{
-    TaskHandle_t task_handle = arg;
-    TaskHandle_t cur_handle = (TaskHandle_t)listGET_LIST_ITEM_VALUE(item);
-    if (task_handle == cur_handle) {
-        return (esp_pthread_t *)listGET_LIST_ITEM_OWNER(item);
-    }
-    return NULL;
-}
 static esp_pthread_t *pthread_find(TaskHandle_t task_handle)
 {
-    return pthread_find_list_item(pthread_get_desc_by_handle, task_handle);
+    return pthread_list_find_item(pthread_get_desc_by_handle, task_handle);
 }
 
 static void pthread_delete(esp_pthread_t *pthread)
 {
-    uxListRemove(&pthread->list_item);
+    SLIST_REMOVE(&s_threads_list, pthread, esp_pthread_entry, list_node);
     free(pthread);
+}
+
+
+/* Call this function to configure pthread stacks in Pthreads */
+esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
+{
+    /* If a value is already set, update that value */
+    esp_pthread_cfg_t *p = pthread_getspecific(s_pthread_cfg_key);
+    if (!p) {
+	p = malloc(sizeof(esp_pthread_cfg_t));
+	if (!p) {
+	    return ESP_ERR_NO_MEM;
+	}
+    }
+    *p = *cfg;
+    pthread_setspecific(s_pthread_cfg_key, p);
+    return 0;
+}
+
+esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)
+{
+    esp_pthread_cfg_t *cfg = pthread_getspecific(s_pthread_cfg_key);
+    if (cfg) {
+	*p = *cfg;
+	return ESP_OK;
+    }
+    memset(p, 0, sizeof(*p));
+    return ESP_ERR_NOT_FOUND;
 }
 
 static void pthread_task_func(void *arg)
@@ -136,14 +168,21 @@ static void pthread_task_func(void *arg)
     esp_pthread_task_arg_t *task_arg = (esp_pthread_task_arg_t *)arg;
 
     ESP_LOGV(TAG, "%s ENTER %p", __FUNCTION__, task_arg->func);
-
     // wait for start
     xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
 
+    if (task_arg->cfg.inherit_cfg) {
+	/* If inherit option is set, then do a set_cfg() ourselves for future forks */
+	esp_pthread_set_cfg(&task_arg->cfg);
+    }
     ESP_LOGV(TAG, "%s START %p", __FUNCTION__, task_arg->func);
     task_arg->func(task_arg->arg);
     ESP_LOGV(TAG, "%s END %p", __FUNCTION__, task_arg->func);
     free(task_arg);
+
+    /* preemptively clean up thread local storage, rather than
+       waiting for the idle task to clean up the thread */
+    pthread_internal_local_storage_destructor_callback();
 
     if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
         assert(false && "Failed to lock threads list!");
@@ -166,6 +205,7 @@ static void pthread_task_func(void *arg)
     }
     xSemaphoreGive(s_threads_mux);
 
+    ESP_LOGD(TAG, "Task stk_wm = %d", uxTaskGetStackHighWaterMark(NULL));
     vTaskDelete(NULL);
 
     ESP_LOGV(TAG, "%s EXIT", __FUNCTION__);
@@ -193,11 +233,23 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
         free(task_arg);
         return ENOMEM;
     }
+    uint32_t stack_size = CONFIG_ESP32_PTHREAD_TASK_STACK_SIZE_DEFAULT;
+    BaseType_t prio = CONFIG_ESP32_PTHREAD_TASK_PRIO_DEFAULT;
+    esp_pthread_cfg_t *pthread_cfg = pthread_getspecific(s_pthread_cfg_key);
+    if (pthread_cfg) {
+	if (pthread_cfg->stack_size) {
+	    stack_size = pthread_cfg->stack_size;
+	}
+	if (pthread_cfg->prio && pthread_cfg->prio < configMAX_PRIORITIES) {
+	    prio = pthread_cfg->prio;
+	}
+	task_arg->cfg = *pthread_cfg;
+    }
     memset(pthread, 0, sizeof(esp_pthread_t));
     task_arg->func = start_routine;
     task_arg->arg = arg;
-    BaseType_t res = xTaskCreate(&pthread_task_func, "pthread", CONFIG_ESP32_PTHREAD_TASK_STACK_SIZE_DEFAULT,
-        task_arg, CONFIG_ESP32_PTHREAD_TASK_PRIO_DEFAULT, &xHandle);
+    BaseType_t res = xTaskCreate(&pthread_task_func, "pthread", stack_size,
+		      task_arg, prio, &xHandle);
     if(res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create task!");
         free(pthread);
@@ -208,14 +260,12 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
             return EAGAIN;
         }
     }
-    vListInitialiseItem((ListItem_t *)&pthread->list_item);
-    listSET_LIST_ITEM_OWNER((ListItem_t *)&pthread->list_item, pthread);
-    listSET_LIST_ITEM_VALUE((ListItem_t *)&pthread->list_item, (TickType_t)xHandle);
+    pthread->handle = xHandle;
 
     if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
         assert(false && "Failed to lock threads list!");
     }
-    vListInsertEnd((List_t *)&s_threads_list, (ListItem_t *)&pthread->list_item);
+    SLIST_INSERT_HEAD(&s_threads_list, pthread, list_node);
     xSemaphoreGive(s_threads_mux);
 
     // start task
@@ -332,40 +382,6 @@ int pthread_equal(pthread_t t1, pthread_t t2)
     return t1 == t2 ? 1 : 0;
 }
 
-/***************** KEY ******************/
-int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
-{
-    static int s_created;
-
-    //TODO: Key destructors not suppoted!
-    if (s_created) {
-        // key API supports just one key necessary by libstdcxx threading implementation
-        ESP_LOGE(TAG, "%s: multiple keys not supported!", __FUNCTION__);
-        return ENOSYS;
-    }
-    *key = 1;
-    s_created = 1;
-    return 0;
-}
-
-int pthread_key_delete(pthread_key_t key)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return ENOSYS;
-}
-
-void *pthread_getspecific(pthread_key_t key)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return NULL;
-}
-
-int pthread_setspecific(pthread_key_t key, const void *value)
-{
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return ENOSYS;
-}
-
 /***************** ONCE ******************/
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 {
@@ -374,26 +390,20 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
         return EINVAL;
     }
 
-    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
-    // do not take mutex if OS is not running yet
-    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED ||
-            // init_routine can call pthread_once for another objects, so use recursive mutex
-            // FIXME: behaviour is undefined if init_routine calls pthread_once for the same object in the current context
-            !cur_task || xSemaphoreTakeRecursive(s_once_mux, portMAX_DELAY) == pdTRUE)
-    {
-        if (!once_control->init_executed) {
-            ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
-            init_routine();
-            once_control->init_executed = 1;
-        }
-        if (cur_task) {
-            xSemaphoreGiveRecursive(s_once_mux);
-        }
+    uint32_t res = 1;
+#if defined(CONFIG_SPIRAM_SUPPORT)
+    if (esp_ptr_external_ram(once_control)) {
+        uxPortCompareSetExtram((uint32_t *) &once_control->init_executed, 0, &res);
+    } else {
+#endif
+        uxPortCompareSet((uint32_t *) &once_control->init_executed, 0, &res);
+#if defined(CONFIG_SPIRAM_SUPPORT)
     }
-    else
-    {
-        ESP_LOGE(TAG, "%s: Failed to lock!", __FUNCTION__);
-        return EBUSY;
+#endif
+    // Check if compare and set was successful
+    if (res == 0) {
+        ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
+        init_routine();
     }
 
     return 0;

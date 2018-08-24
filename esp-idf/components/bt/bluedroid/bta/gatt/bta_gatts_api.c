@@ -22,15 +22,15 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if defined(GATTS_INCLUDED) && (GATTS_INCLUDED == TRUE)
 
 #include <string.h>
-#include "bta_sys.h"
-#include "bta_gatt_api.h"
+#include "bta/bta_sys.h"
+#include "bta/bta_gatt_api.h"
 #include "bta_gatts_int.h"
-#include "allocator.h"
+#include "osi/allocator.h"
 
 /*****************************************************************************
 **  Constants
@@ -474,8 +474,10 @@ void BTA_GATTS_SendRsp (UINT16 conn_id, UINT32 trans_id,
 void BTA_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value)
 {
     tBTA_GATTS_API_SET_ATTR_VAL *p_buf;
+    UINT16  len = sizeof(tBTA_GATTS_API_SET_ATTR_VAL);
     if((p_buf = (tBTA_GATTS_API_SET_ATTR_VAL *)osi_malloc(
                     sizeof(tBTA_GATTS_API_SET_ATTR_VAL))) != NULL){
+        memset(p_buf, 0, len);
         p_buf->hdr.event = BTA_GATTS_API_SET_ATTR_VAL_EVT;
         p_buf->hdr.layer_specific = attr_handle;
         p_buf->length = length;

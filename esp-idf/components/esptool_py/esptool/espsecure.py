@@ -15,16 +15,17 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301 USA.
-from __future__ import print_function, division
+from __future__ import division, print_function
 
-import esptool
 import argparse
-import sys
-import os
 import hashlib
+import os
 import struct
-import pyaes
+import sys
+
 import ecdsa
+import esptool
+import pyaes
 
 
 def get_chunks(source, chunk_len):
@@ -56,9 +57,20 @@ def digest_secure_bootloader(args):
     else:
         iv = os.urandom(128)
     plaintext_image = args.image.read()
+    args.image.seek(0)
 
     # secure boot engine reads in 128 byte blocks (ie SHA512 block
-    # size) , so pad plaintext image with 0xFF (ie unwritten flash)
+    # size), but also doesn't look for any appended SHA-256 digest
+    fw_image = esptool.ESP32FirmwareImage(args.image)
+    if fw_image.append_digest:
+        if len(plaintext_image) % 128 <= 32:
+            # ROM bootloader will read to the end of the 128 byte block, but not
+            # to the end of the SHA-256 digest at the end
+            new_len = len(plaintext_image) - (len(plaintext_image) % 128)
+            plaintext_image = plaintext_image[:new_len]
+
+    # if image isn't 128 byte multiple then pad with 0xFF (ie unwritten flash)
+    # as this is what the secure boot engine will see
     if len(plaintext_image) % 128 != 0:
         plaintext_image += "\xFF" * (128 - (len(plaintext_image) % 128))
 
@@ -143,7 +155,7 @@ def verify_signature(args):
     try:
         sk = _load_key(args)  # try to load as private key first
         vk = sk.get_verifying_key()
-    except:
+    except Exception:  # this is a catchall because ecdsa can throw private Exceptions
         args.keyfile.seek(0)
         vk = ecdsa.VerifyingKey.from_pem(args.keyfile.read())
     if vk.curve != ecdsa.NIST256p:
@@ -304,7 +316,7 @@ def main():
 
     subparsers = parser.add_subparsers(
         dest='operation',
-        help='Run espefuse.py {command} -h for additional help')
+        help='Run espsecure.py {command} -h for additional help')
 
     p = subparsers.add_parser('digest_secure_bootloader',
                               help='Take a bootloader binary image and a secure boot key, and output a combined digest+binary ' +

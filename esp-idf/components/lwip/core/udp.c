@@ -146,7 +146,7 @@ again:
  * @param broadcast 1 if his is an IPv4 broadcast (global or subnet-only), 0 otherwise (only used for IPv4)
  * @return 1 on match, 0 otherwise
  */
-static u8_t
+static u8_t ESP_IRAM_ATTR
 udp_input_local_match(struct udp_pcb *pcb, struct netif *inp, u8_t broadcast)
 {
   LWIP_UNUSED_ARG(inp);       /* in IPv6 only case */
@@ -210,7 +210,7 @@ udp_input_local_match(struct udp_pcb *pcb, struct netif *inp, u8_t broadcast)
  * @param inp network interface on which the datagram was received.
  *
  */
-void
+void ESP_IRAM_ATTR
 udp_input(struct pbuf *p, struct netif *inp)
 {
   struct udp_hdr *udphdr;
@@ -474,7 +474,7 @@ chkerr:
  *
  * @see udp_disconnect() udp_sendto()
  */
-err_t
+err_t ESP_IRAM_ATTR
 udp_send(struct udp_pcb *pcb, struct pbuf *p)
 {
   if ((pcb == NULL) || IP_IS_ANY_TYPE_VAL(pcb->remote_ip)) {
@@ -519,7 +519,7 @@ udp_send_chksum(struct udp_pcb *pcb, struct pbuf *p,
  *
  * @see udp_disconnect() udp_send()
  */
-err_t
+err_t ESP_IRAM_ATTR
 udp_sendto(struct udp_pcb *pcb, struct pbuf *p,
   const ip_addr_t *dst_ip, u16_t dst_port)
 {
@@ -541,6 +541,19 @@ udp_sendto_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_ip,
   }
 
   LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_send\n"));
+
+#if LWIP_IPV4 && LWIP_IPV6
+  /* Unwrap IPV4-mapped IPV6 addresses and convert to native IPV4 here */
+  if (IP_IS_V4MAPPEDV6(dst_ip)) {
+      ip_addr_t dest_ipv4;
+      ip_addr_ip4_from_mapped_ip6(&dest_ipv4, dst_ip);
+#if LWIP_CHECKSUM_ON_COPY && CHECKSUM_GEN_UP
+      return udp_sendto_chksum(pcb, p, &dest_ipv4, dst_port, have_chksum, chksum);
+#else
+      return udp_sendto(pcb, p, &dest_ipv4, dst_port);
+#endif /* LWIP_CHECKSUM_ON_COPY && CHECKSUM_GEN_UP */
+  }
+#endif /* LWIP_IPV4 && LWIP_IPV6 */
 
 #if LWIP_IPV6 || (LWIP_IPV4 && LWIP_MULTICAST_TX_OPTIONS)
   if (ip_addr_ismulticast(dst_ip_route)) {
@@ -602,7 +615,7 @@ udp_sendto_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_ip,
  *
  * @see udp_disconnect() udp_send()
  */
-err_t
+err_t ESP_IRAM_ATTR
 udp_sendto_if(struct udp_pcb *pcb, struct pbuf *p,
   const ip_addr_t *dst_ip, u16_t dst_port, struct netif *netif)
 {
@@ -668,7 +681,7 @@ udp_sendto_if_chksum(struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *dst_i
 }
 
 /** Same as udp_sendto_if(), but with source address */
-err_t
+err_t ESP_IRAM_ATTR
 udp_sendto_if_src(struct udp_pcb *pcb, struct pbuf *p,
   const ip_addr_t *dst_ip, u16_t dst_port, struct netif *netif, const ip_addr_t *src_ip)
 {

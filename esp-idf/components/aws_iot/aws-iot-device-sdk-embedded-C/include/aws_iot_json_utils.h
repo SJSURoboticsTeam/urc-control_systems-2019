@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2015 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -181,14 +181,29 @@ IoT_Error_t parseBooleanValue(bool *b, const char *jsonString, jsmntok_t *token)
  *
  * Given a JSON node parse the string value from the value.
  *
- * @param jsonString	json string
- * @param tok     		json token - pointer to JSON node
- * @param s				address of string to be updated
+ * @param buf           address of string to be updated
+ * @param bufLen        length of buf in bytes
+ * @param jsonString    json string
+ * @param token         json token - pointer to JSON node
  *
- * @return         		SUCCESS - success
- * @return				JSON_PARSE_ERROR - error parsing value
+ * @return              SUCCESS - success
+ * @return              JSON_PARSE_ERROR - error parsing value
  */
-IoT_Error_t parseStringValue(char *buf, const char *jsonString, jsmntok_t *token);
+IoT_Error_t parseStringValue(char *buf, size_t bufLen, const char *jsonString, jsmntok_t *token);
+
+/**
+ * @brief          Find the JSON node associated with the given key in the given object.
+ *
+ * Given a JSON node parse the string value from the value.
+ *
+ * @param key			json key
+ * @param token 		json token - pointer to JSON node
+ * @param jsonString 	json string
+ *
+ * @return 				pointer to found property value
+ * @return 				NULL - not found
+ */
+jsmntok_t *findToken(const char *key, const char *jsonString, jsmntok_t *token);
 
 #ifdef __cplusplus
 }
