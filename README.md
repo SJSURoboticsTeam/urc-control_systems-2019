@@ -130,18 +130,18 @@ read_data_wifi(READ_ITEM_SIZE);
 ##### For Linux #####
 
 1. Install the required package to compile with esp-idf.  
-Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial`
+Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial`     
 **Note:** one or more of these packages may fail to install. Should that happen, perform a `sudo apt-get update` and try again. 
 
-2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the command line you can find the file by using the following commands: 
-`cd ~`
-`ls -a`
+2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the command line you can find the file by using the following commands:     
+`cd ~`     
+`ls -a`     
 **The lines to add are:**  
 `export PATH=$PATH:(directory path to controlsystems2019)/controlsystems2019/xtensa-esp32-elf/bin`    
 `export IDF_PATH=(directory path to controlsystems2019)/controlsystems2019/esp-idf`  
 **Example lines:**  
 `export PATH=$PATH:$HOME/Documents/2018-2019/controlsystems2019/xtensa-esp32-elf/bin`  
-`export IDF_PATH=~/Documents/2018-2019/controlsystems2018/esp-idf`
+`export IDF_PATH=~/Documents/2018-2019/controlsystems2018/esp-idf`     
 **Note:** you may wish to change the access permissions to your COM ports at this point as you will need to do so in order to program the esp32 boards. to do this, add the command `sudo chmod 666 /dev/tty*` after the PATH commands in .profile.
 Once you update the paths, enter the command `source ~/.profile` for the changes to take effect. You must enter this command for each terminal or bash session.
 
