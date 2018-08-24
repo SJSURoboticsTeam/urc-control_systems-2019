@@ -3,7 +3,7 @@
 
 ##### General #####
 * The framework make commands ONLY work in Linux. If you have a windows computer. Please install a VM of Linux using VM Workstation. If your computer is not fast enough for a VM then you will have to dual boot. Also, for VM's, make sure you use a 32 bit version of Linux.
-
+* **DO NOT USE THE CLONE BUTTON AT THE TOP OF THIS PAGE**     Instead use the command `git clone --recursive https://bitbucket.org/sjsurobotics/controlsystems2019/src/master`
 ##### Hierarchy #####
 * Projects - The folder where all sub-systems module is placed in.
 * Projects/Subsystem - Contains the main file,Makefile,documentation folder, and source folder.
@@ -128,7 +128,6 @@ read_data_wifi(READ_ITEM_SIZE);
 ### Setting Up ESP Loader ###
 
 ##### For Linux #####
-
 1. Install the required package to compile with esp-idf.  
 Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial`     
 **Note:** one or more of these packages may fail to install. Should that happen, perform a `sudo apt-get update` and try again. 
@@ -166,6 +165,15 @@ Once you update the paths, enter the command `source ~/.profile` for the changes
 4. Perform a `make app-flash PROJECT_NAME=<Subsystem folder name>` to build and upload your program to the ESP32.
 	* if you only want to build the program, then perform `make app PROJECT_NAME=<Subsystem folder name>` 
 
-### Corrupted Bootloader ###
+### Troubleshooting ###
+
+##### Corrupted Bootloader #####
 If at any point in time your ESP's "make monitor" starts printing out resets or unknown characters, that means the bootloader on the ESP has been corrupted.  To repair this, use the official version of the esp-idf and "make flash" the hello world program shown in the tutorial.  Once the program has been flashed, you can start flashing your projects again.
+
+##### esp_idf is empty #####
+You likely pressed the "clone" button at the top of this page and copied the command to your terminal. This command does not include the `--recursive` option. to fix this, navigate to /controlsystems2019 and run `git submodule update --init --recursive`
+
+##### "No such file or directory" and "No rule to make target" during menuconfig #####
+See above. Otherwise, check to make sure you have entered your paths correctly.
+
 
