@@ -3,6 +3,8 @@
 
 ##### General #####
 * The framework make commands ONLY work in Linux. If you have a windows computer. Please install a VM of Linux using VM Workstation. If your computer is not fast enough for a VM then you will have to dual boot. Also, for VM's, make sure you use a 32 bit version of Linux.
+* **DO NOT USE THE CLONE BUTTON AT THE TOP OF THIS PAGE.**     
+Instead use the command `git clone --recursive https://bitbucket.org/sjsurobotics/controlsystems2019/src/master`
 
 ##### Hierarchy #####
 * Projects - The folder where all sub-systems module is placed in.
@@ -128,12 +130,11 @@ read_data_wifi(READ_ITEM_SIZE);
 ### Setting Up ESP Loader ###
 
 ##### For Linux #####
-
 1. Install the required package to compile with esp-idf.  
 Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial`     
 **Note:** one or more of these packages may fail to install. Should that happen, perform a `sudo apt-get update` and try again. 
 
-2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the command line you can find the file by using the following commands:     
+2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the terminal you can find the file by using the following commands:     
 `cd ~`     
 `ls -a`     
 **The lines to add are:**  
@@ -142,7 +143,7 @@ Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison 
 **Example lines:**  
 `export PATH=$PATH:$HOME/Documents/2018-2019/controlsystems2019/xtensa-esp32-elf/bin`  
 `export IDF_PATH=~/Documents/2018-2019/controlsystems2018/esp-idf`     
-**Note:** you may wish to change the access permissions to your COM ports at this point as you will need to do so in order to program the esp32 boards. to do this, add the command `sudo chmod 666 /dev/tty*` after the PATH commands in .profile.
+**Note:** you may wish to change the access permissions to your COM ports at this point as you will need to do so in order to program the esp32 boards. To do this, add the command `sudo chmod 666 /dev/tty*` after the PATH commands in .profile.
 Once you update the paths, enter the command `source ~/.profile` for the changes to take effect. You must enter this command for each terminal or bash session.
 
 3. Confirm you correctly set your PATH variables by entering either the command `echo $PATH` or `printenv $PATH`. In both cases, you should see a long list of file paths with the path you just created at the end of it. Do the same commands for IDF_PATH and you should see only the path that you entered above.
@@ -166,6 +167,16 @@ Once you update the paths, enter the command `source ~/.profile` for the changes
 4. Perform a `make app-flash PROJECT_NAME=<Subsystem folder name>` to build and upload your program to the ESP32.
 	* if you only want to build the program, then perform `make app PROJECT_NAME=<Subsystem folder name>` 
 
-### Corrupted Bootloader ###
+### Troubleshooting ###
+
+##### Corrupted Bootloader #####
 If at any point in time your ESP's "make monitor" starts printing out resets or unknown characters, that means the bootloader on the ESP has been corrupted.  To repair this, use the official version of the esp-idf and "make flash" the hello world program shown in the tutorial.  Once the program has been flashed, you can start flashing your projects again.
 
+##### esp_idf is empty #####
+You likely pressed the "clone" button at the top of this page and copied the command to your terminal. This command does not include the `--recursive` option. To fix this, navigate to /controlsystems2019 and run `git submodule update --init --recursive`
+
+##### "No such file or directory" and "No rule to make target" during menuconfig #####
+See above. Otherwise, check to make sure you have entered your paths correctly.
+
+##### "Input/output error: '/dev/tty<PORT NUMBER>'" #####
+The project is configured to the wrong USB port. Run make menuconfig again and change the assigned port to the correct one.
