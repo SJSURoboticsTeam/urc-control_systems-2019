@@ -180,9 +180,3 @@ See above. Otherwise, check to make sure you have entered your paths correctly.
 
 ##### "Input/output error: '/dev/tty<PORT NUMBER>'" #####
 The project is configured to the wrong USB port. Run make menuconfig again and change the assigned port to the correct one.
-
-##### esp_idf is empty #####
-You likely pressed the "clone" button at the top of this page and copied the command to your terminal. This command does not include the `--recursive` option. to fix this, navigate to /controlsystems2019 and run `git submodule update --init --recursive`
-
-##### "No such file or directory" and "No rule to make target" during menuconfig #####
-See above. Otherwise, check to make sure you have entered your paths correctly.
