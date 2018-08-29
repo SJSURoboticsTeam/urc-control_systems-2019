@@ -152,6 +152,21 @@ Once you update the paths, enter the command `source ~/.profile` for the changes
    If you are using windows, these are your COM ports, so you will need to determine which of these your ESP32 is connected to and use the linux naming configuration. For example, if your ESP32 is connected to COM4, you would enter /dev/ttyS4. 
    Once done, save and exit the configuration menu. Run the command `make app-flash PROJECT_NAME=hello-world` to build and program your ESP32. When the program has finished building and flashing, run the command `make monitor` to see if you are recieving from your board. Press ctrl+] to exit.
    
+### Using Arduino Libraries ###
+To use Arduino libraries, copy the contents of Arduino_sample into a new project including the "components" folder. This folder contains the Arduino libraries and framework. Run `make menuconfig` and navigate to the Arduino options. Uncheck "Autostart Arduino setup and loop on boot" if it is not already, and configure other settings as you normally would. Close the menuconfig and open main->main.cpp. Delete the existing code and begin your project with:     
+```C
+#include "Arduino.h"
+
+extern "C" void app_main()
+{
+    initArduino();
+    pinMode(4, OUTPUT);
+    digitalWrite(4, HIGH);
+    // YOUR CODE HERE
+}
+
+```
+Add aditional Arduino libraries to your #includes as necessary.
 
 ### Make Commands ###
 
