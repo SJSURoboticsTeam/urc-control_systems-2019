@@ -11,21 +11,17 @@ extern "C" void app_main()
     pinMode(4, OUTPUT);
     digitalWrite(4, HIGH);
 
-    EEPROM.begin(0x64);
-/*
+    EEPROM.begin(4);
+
     if (!EEPROM.begin(EEPROM.length()))
     {
         printf("failed to initialize EEPROM\n");
-    	vTaskDelay(1000);
+    	vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-*/    
-    char temp[13];
-    EEPROM.writeString(0,"Hello, world");
-    EEPROM.commit();
-    EEPROM.readString(0).toCharArray(temp, 13);
-    char *message = temp;
-    printf(message);
-    printf("\n");
+    
+    EEPROM.writeString(0,"Hello, world!\n");
+    Serial.println(EEPROM.readString(0));
+
     
     for (int i = 10; i>=0; i--)
     {

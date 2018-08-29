@@ -148,12 +148,12 @@ Once you update the paths, enter the command `source ~/.profile` for the changes
 
 3. Confirm you correctly set your PATH variables by entering either the command `echo $PATH` or `printenv $PATH`. In both cases, you should see a long list of file paths with the path you just created at the end of it. Do the same commands for IDF_PATH and you should see only the path that you entered above.
 
-4. Test that you have installed and set up the esp-idf environment correctly by configuring and flashing hello_world to your ESP32. navigate to the Projects/hello_world folder and enter the command `make menuconfig PROJECT_NAME=hello-world`. This should open the ESP32 toolchain configuration menu. Navigate to Serial flasher config -> Default Serial Port and change this value to the usb port that your ESP32 is connected to. 
+4. Test that you have installed and set up the esp-idf environment correctly by configuring and flashing hello_world to your ESP32. navigate to the Projects/Examples/hello_world folder and enter the command `make menuconfig PROJECT_NAME=hello-world`. This should open the ESP32 toolchain configuration menu. Navigate to Serial Flasher config -> Default Serial Port and change this value to the usb port that your ESP32 is connected to. 
    If you are using windows, these are your COM ports, so you will need to determine which of these your ESP32 is connected to and use the linux naming configuration. For example, if your ESP32 is connected to COM4, you would enter /dev/ttyS4. 
    Once done, save and exit the configuration menu. Run the command `make app-flash PROJECT_NAME=hello-world` to build and program your ESP32. When the program has finished building and flashing, run the command `make monitor` to see if you are recieving from your board. Press ctrl+] to exit.
    
 ### Using Arduino Libraries ###
-To use Arduino libraries, copy the contents of Arduino_sample into a new project including the "components" folder. This folder contains the Arduino libraries and framework. Run `make menuconfig` and navigate to the Arduino options. Uncheck "Autostart Arduino setup and loop on boot" if it is not already, and configure other settings as you normally would. Close the menuconfig and open main->main.cpp. Delete the existing code and begin your project with:     
+To use Arduino libraries, copy the contents of Templates/Protoduino into a new project including the "components" folder. This folder contains the Arduino libraries and framework. Run `make menuconfig` and navigate to the Arduino options. Uncheck "Autostart Arduino setup and loop on boot" if it is not already. Navigate to Serial Flasher config and change the flash size from 2MB to 4 MB. Configure other settings as you normally would. Close the menuconfig and open main->main.cpp. Make sure that the Arduino.h header and the following lines of code are included in your project:     
 ```C
 #include "Arduino.h"
 
@@ -162,7 +162,7 @@ extern "C" void app_main()
     initArduino();
     pinMode(4, OUTPUT);
     digitalWrite(4, HIGH);
-    // YOUR CODE HERE
+
 }
 
 ```
