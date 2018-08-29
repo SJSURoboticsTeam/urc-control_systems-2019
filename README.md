@@ -172,7 +172,6 @@ Once you update the paths, enter the command `source ~/.profile` for the changes
 ##### Corrupted Bootloader #####
 If at any point in time your ESP's "make monitor" starts printing out resets or unknown characters, that means the bootloader on the ESP has been corrupted.  To repair this, use the official version of the esp-idf and "make flash" the hello world program shown in the tutorial.  Once the program has been flashed, you can start flashing your projects again.
 
-<<<<<<< HEAD
 ##### esp_idf is empty #####
 You likely pressed the "clone" button at the top of this page and copied the command to your terminal. This command does not include the `--recursive` option. To fix this, navigate to /controlsystems2019 and run `git submodule update --init --recursive`
 
@@ -181,13 +180,3 @@ See above. Otherwise, check to make sure you have entered your paths correctly.
 
 ##### "Input/output error: '/dev/tty<PORT NUMBER>'" #####
 The project is configured to the wrong USB port. Run make menuconfig again and change the assigned port to the correct one.
-||||||| merged common ancestors
-=======
-##### esp_idf is empty #####
-You likely pressed the "clone" button at the top of this page and copied the command to your terminal. This command does not include the `--recursive` option. to fix this, navigate to /controlsystems2019 and run `git submodule update --init --recursive`
-
-##### "No such file or directory" and "No rule to make target" during menuconfig #####
-See above. Otherwise, check to make sure you have entered your paths correctly.
-
-
->>>>>>> a8dc9ea1a61355a522e5375d3bd3988330b159c6
