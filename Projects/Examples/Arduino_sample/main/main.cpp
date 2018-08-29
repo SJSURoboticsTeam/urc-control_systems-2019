@@ -24,8 +24,9 @@ extern "C" void app_main()
     printf("This esp32 has rebooted %d times.\n", reboots);
     reboots++;
     EEPROM.write(0, reboots);
+    EEPROM.commit();
     vTaskDelay(500 / portTick_PERIOD_MS);
-
+    
     for (int i = 10; i>=0; i--)
     {
 	    
