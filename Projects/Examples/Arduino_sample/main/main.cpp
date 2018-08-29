@@ -20,12 +20,12 @@ extern "C" void app_main()
     }
     
     printf("Hello, world1\n");
-    uint_16 reboots = EEPROM.read(0);
+    uint16_t reboots = EEPROM.read(0);
     printf("This esp32 has rebooted %d times.\n", reboots);
     reboots++;
     EEPROM.write(0, reboots);
     EEPROM.commit();
-    vTaskDelay(500 / portTick_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     
     for (int i = 10; i>=0; i--)
     {
