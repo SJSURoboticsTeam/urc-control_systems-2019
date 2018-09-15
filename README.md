@@ -4,7 +4,7 @@
 ##### General #####
 * The framework make commands ONLY work in Linux. If you have a windows computer. Please install a VM of Linux using VM Workstation. If your computer is not fast enough for a VM then you will have to dual boot. Also, for VM's, make sure you use a 32 bit version of Linux.
 * **DO NOT USE THE CLONE BUTTON AT THE TOP OF THIS PAGE.**     
-Instead use the command `git clone --recursive https://bitbucket.org/sjsurobotics/controlsystems2019/src/master`
+Instead use the command `git clone --recursive https://github.com/SJSURobotics2019/controlsystems2019.git`
 
 ##### Hierarchy #####
 * Projects - The folder where all sub-systems module is placed in.
