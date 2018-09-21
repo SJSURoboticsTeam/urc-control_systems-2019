@@ -1,7 +1,7 @@
 env:
   - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
   - PATH=$PATH:/home/travis/build/SJSURobotics/controlsystems2019/xtensa-esp32-elf/bin
-  - export IDF_PATH=/home/travis/build/SJSURobotics/controlsystems2019/esp-idf
+  - IDF_PATH=/home/travis/build/SJSURobotics/controlsystems2019/esp-idf
 matrix:
   include:    
     - language: cpp
@@ -19,9 +19,10 @@ matrix:
       script:
          - ls esp-idf
          - ls xtensa-esp32-elf/bin
-         - pwd
          - echo $PATH
          - echo $IDF_PATH
          - cd Projects/Examples/hello_world
+         - pwd
+         - ls
          - make defconfig
          - make app
