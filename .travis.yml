@@ -4,7 +4,7 @@ matrix:
   include:    
     - language: cpp
       install:
-         - git submodule update --init --recursiveV
+         - git submodule update --init --recursive
          - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
       script:
          - cd Testing
@@ -12,7 +12,7 @@ matrix:
          - ./a.out
     - language: bash
       script:
-         - git submodule update --init --recursiveV
+         - git submodule update --init --recursive
          - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
          - cd ../
          - ls esp-idf
