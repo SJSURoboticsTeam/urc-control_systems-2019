@@ -1,3 +1,4 @@
+sudo: required
 env:
   global:
     - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
