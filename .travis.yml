@@ -1,0 +1,21 @@
+language: cpp
+env:
+  - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
+install:
+  - git submodule update --init --recursive
+  - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
+script:
+  - cd Testing
+  - g++ --std=c++11 unitTests.cpp
+  - ./a.out
+  - cd ../
+  - ls esp-idf
+  - ls xtensa-esp32-elf/bin
+  - pwd
+  - sudo export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019/xtensa-esp32-elf/bin
+  - sudo export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019/esp-idf
+  - echo $PATH
+  - echo $IDF_PATH
+  - cd Projects/Examples/hello_world
+  - sudo make defconfig
+  - sudo make app

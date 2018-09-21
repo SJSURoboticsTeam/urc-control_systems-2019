@@ -1,36 +1,36 @@
 deps_config := \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/app_trace/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/aws_iot/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/bt/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/driver/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/esp32/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/esp_adc_cal/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/esp_http_client/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/ethernet/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/fatfs/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/freertos/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/heap/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/http_server/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/libsodium/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/log/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/lwip/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/mbedtls/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/mdns/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/openssl/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/pthread/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/spi_flash/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/spiffs/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/tcpip_adapter/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/vfs/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/wear_levelling/Kconfig \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/Kconfig.compiler \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/bootloader/Kconfig.projbuild \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/esptool_py/Kconfig.projbuild \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/components/partition_table/Kconfig.projbuild \
-	/mnt/c/Users/Colin/Robotics2019/controlsystems2019/esp-idf/Kconfig
+	/Users/ariskoumis/esp/esp-idf/components/app_trace/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/aws_iot/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/bt/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/driver/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/esp32/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/esp_adc_cal/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/esp_http_client/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/ethernet/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/fatfs/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/freertos/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/heap/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/libsodium/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/log/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/lwip/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/mbedtls/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/openssl/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/pthread/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/spi_flash/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/spiffs/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/tcpip_adapter/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/vfs/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/wear_levelling/Kconfig \
+	/Users/ariskoumis/esp/esp-idf/components/bootloader/Kconfig.projbuild \
+	/Users/ariskoumis/esp/esp-idf/components/esptool_py/Kconfig.projbuild \
+	/Users/ariskoumis/esp/esp-idf/components/partition_table/Kconfig.projbuild \
+	/Users/ariskoumis/esp/esp-idf/Kconfig
 
 include/config/auto.conf: \
 	$(deps_config)
 
+ifneq "$(IDF_CMAKE)" "n"
+include/config/auto.conf: FORCE
+endif
 
 $(deps_config): ;
