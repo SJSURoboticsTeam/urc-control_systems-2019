@@ -1,6 +1,7 @@
 language: cpp
 install:
   - git submodule update --init --recursive
+  - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
 script:
   - cd Testing
   - g++ --std=c++11 unitTests.cpp
