@@ -21,12 +21,6 @@ matrix:
         - ./a.out
     - language: cpp
       os: linux
-      addons:
-        apt:
-          packages:
-            - gperf
-            - pythom
-            - python-serial
       before_install:
         - cd esp-idf
         - git submodule update --init --recursive
