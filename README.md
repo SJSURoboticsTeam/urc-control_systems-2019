@@ -1,4 +1,4 @@
-# README #
+# README # [![Build Status](https://travis-ci.com/SJSURobotics2019/controlsystems2019.svg?branch=master)](https://travis-ci.com/SJSURobotics2019/controlsystems2019)
 ### Framework ###
 
 ##### General #####
