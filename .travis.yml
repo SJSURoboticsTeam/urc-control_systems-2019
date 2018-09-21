@@ -14,12 +14,12 @@ matrix:
             - pythom
             - python-serial
       install:
-         - cd esp-idf
-         - git submodule update --init --recursive
+        - cd esp-idf
+        - git submodule update --init --recursive
       script:
-         - cd ../Testing
-         - g++ --std=c++11 unitTests.cpp
-         - ./a.out
+        - cd ../Testing
+        - g++ --std=c++11 unitTests.cpp
+        - ./a.out
     - language: cpp
       addons:
         apt:
@@ -28,17 +28,17 @@ matrix:
             - pythom
             - python-serial
       install:
-         - cd esp-idf
-         - git submodule update --init --recursive
+        - cd esp-idf
+        - git submodule update --init --recursive
       script:
-         - ls
-         - cd ..
-         - ls xtensa-esp32-elf/bin
-         - echo $PATH
-         - echo $IDF_PATH
-         - ls esp-idf/make
-         - cd Projects/Examples/hello_world
-         - pwd
-         - ls
-         make defconfig PROJECT_NAME=hello-world
-         make app PROJECT_NAME=hello-world
+        - ls
+        - cd ..
+        - ls xtensa-esp32-elf/bin
+        - echo $PATH
+        - echo $IDF_PATH
+        - ls esp-idf/make
+        - cd Projects/Examples/hello_world
+        - pwd
+        - ls
+        - make defconfig PROJECT_NAME=hello-world
+        - make app PROJECT_NAME=hello-world
