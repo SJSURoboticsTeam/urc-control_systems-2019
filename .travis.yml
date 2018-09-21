@@ -10,11 +10,11 @@ script:
   - ls esp-idf
   - ls xtensa-esp32-elf/bin
   - pwd
+  - su
   - export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019/xtensa-esp32-elf/bin
   - export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019/esp-idf
-  - source ~/.profile
   - echo $PATH
   - echo $IDF_PATH
   - cd Projects/Examples/hello_world
-  - sudo make defconfig
-  - sudo make app
+  - make defconfig
+  - make app
