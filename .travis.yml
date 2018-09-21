@@ -29,5 +29,5 @@ matrix:
          - cd Projects/Examples/hello_world
          - pwd
          - ls
-         - make defconfig
-         - make app
+         - make defconfig PROJECT_NAME=hello-world
+         - make app PROJECT_NAME=hello-world
