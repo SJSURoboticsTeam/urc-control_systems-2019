@@ -1,3 +1,4 @@
+sudo: enabled
 env:
   global:
     - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
@@ -30,5 +31,5 @@ matrix:
          - cd Projects/Examples/hello_world
          - pwd
          - ls
-         - make defconfig PROJECT_NAME=hello-world
-         - make app PROJECT_NAME=hello-world
+         - sudo make defconfig PROJECT_NAME=hello-world
+         - sudo make app PROJECT_NAME=hello-world
