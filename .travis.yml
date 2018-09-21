@@ -7,6 +7,7 @@ env:
 matrix:
   include:    
     - language: cpp
+      os: linux
       addons:
         apt:
           packages:
@@ -21,6 +22,7 @@ matrix:
         - g++ --std=c++11 unitTests.cpp
         - ./a.out
     - language: cpp
+      os: linux
       addons:
         apt:
           packages:
