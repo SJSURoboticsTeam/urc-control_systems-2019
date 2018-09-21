@@ -4,15 +4,15 @@ env:
     - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
     - PATH=$PATH:/home/travis/build/SJSURobotics/controlsystems2019/xtensa-esp32-elf/bin
     - IDF_PATH=/home/travis/build/SJSURobotics/controlsystems2019/esp-idf
-addons:
-  apt:
 matrix:
   include:    
     - language: cpp
-      packages:
-         - gperf
-         - pythom
-         - python-serial
+      addons:
+        apt:
+          packages:
+            - gperf
+            - pythom
+            - python-serial
       install:
          - cd esp-idf
          - git submodule update --init --recursive
@@ -21,10 +21,12 @@ matrix:
          - g++ --std=c++11 unitTests.cpp
          - ./a.out
     - language: cpp
-      packages:
-         - gperf
-         - pythom
-         - python-serial
+      addons:
+        apt:
+          packages:
+            - gperf
+            - pythom
+            - python-serial
       install:
          - cd esp-idf
          - git submodule update --init --recursive
