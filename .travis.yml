@@ -10,5 +10,5 @@ script:
   - export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019/controlsystems2019/esp-idf
   - source ~/.profile
   - cd Projects/Examples/hello_world
-  - make defconfig
+  - make defconfig PROJECT_NAME=hello-world
   - make app -fexceptions
