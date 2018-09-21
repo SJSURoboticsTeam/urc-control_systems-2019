@@ -107,10 +107,13 @@ read_data_wifi(READ_ITEM_SIZE);
 ### Unit Testing ###
 
 ##### Basics #####
-* 
-* Information on how to use Catch and FFF can be found on their respective documentation websites.
-* https://github.com/catchorg/Catch2/tree/master/docs
-* https://github.com/meekrosoft/fff
+* We use Catch2 for unit testing C++.
+    * https://github.com/catchorg/Catch2/tree/master/docs
+    * https://github.com/meekrosoft/fff
+* Writing unit tests are easy with catch2.
+    * On your fork, create a test file in the Testing directory
+    * Add ```include "catch.hpp"``` to the top of your file
+    * Write test cases; follow Testing/catch2test.cpp as an example.
 
 ##### Suites #####
 * TBD
