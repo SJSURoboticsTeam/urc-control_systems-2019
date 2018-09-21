@@ -1,0 +1,4 @@
+ignore:
+  - "esp-idf"
+  - "xtensa-esp32-elf"
+  - "arduino"
