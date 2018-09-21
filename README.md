@@ -111,9 +111,16 @@ read_data_wifi(READ_ITEM_SIZE);
     * https://github.com/catchorg/Catch2/tree/master/docs
     * https://github.com/meekrosoft/fff
 * Writing unit tests are easy with catch2.
-    * On your fork, create a test file in the Testing directory
-    * Add ```include "catch.hpp"``` to the top of your file
+    * On your fork, write your test cases in Testing/unitTests.cpp
     * Write test cases; follow Testing/catch2test.cpp as an example.
+    * To test:        
+        ```
+        cd Testing
+        g++ -std=c++11 unitTests.cpp
+        ./a.out
+        ```
+        This will run all of your unit tests.
+
 
 ##### Suites #####
 * TBD
