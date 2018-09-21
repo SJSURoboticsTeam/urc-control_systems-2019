@@ -1,0 +1,4 @@
+language: cpp
+script:
+- ls
+- exit 0
