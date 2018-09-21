@@ -2,13 +2,13 @@ language: cpp
 before-install:
   source PATHesp/esp-idf
 script:
-- cd Testing
-- g++ --std=c++11 unitTests.cpp
-- ./a.out
-- cd ../
-- export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019
-/xtensa-esp32-elf/bin
-- export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019
-/controlsystems2019/esp-idf
-- echo $PATH
-- echo $IDF_PATH
+  - cd Testing
+  - g++ --std=c++11 unitTests.cpp
+  - ./a.out
+  - cd ../
+  - export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019
+  /xtensa-esp32-elf/bin
+  - export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019
+  /controlsystems2019/esp-idf
+  - echo $PATH
+  - echo $IDF_PATH
