@@ -26,6 +26,7 @@ matrix:
          - ls xtensa-esp32-elf/bin
          - echo $PATH
          - echo $IDF_PATH
+         - ls esp-idf/make
          - cd Projects/Examples/hello_world
          - pwd
          - ls
