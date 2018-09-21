@@ -8,17 +8,15 @@ matrix:
   include:    
     - language: cpp
       os: linux
-      addons:
-        apt:
-          packages:
-            - gperf
-            - pythom
-            - python-serial
-      install:
+      before_install:
         - cd esp-idf
         - git submodule update --init --recursive
+        - cd ..
+        - sudo apt-get update
+      install:
+        - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
       script:
-        - cd ../Testing
+        - cd Testing
         - g++ --std=c++11 unitTests.cpp
         - ./a.out
     - language: cpp
@@ -29,9 +27,13 @@ matrix:
             - gperf
             - pythom
             - python-serial
-      install:
+      before_install:
         - cd esp-idf
         - git submodule update --init --recursive
+        - cd ..
+        - sudo apt-get update
+      install:        
+        - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
       script:
         - ls
         - cd ..
