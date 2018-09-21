@@ -1,7 +1,6 @@
 language: cpp
 install:
   - git submodule update --init --recursive
-  - sudo su
   - apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
 script:
   - cd Testing
@@ -11,10 +10,10 @@ script:
   - ls esp-idf
   - ls xtensa-esp32-elf/bin
   - pwd
-  - export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019/xtensa-esp32-elf/bin
-  - export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019/esp-idf
+  - sudo export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019/xtensa-esp32-elf/bin
+  - sudo export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019/esp-idf
   - echo $PATH
   - echo $IDF_PATH
   - cd Projects/Examples/hello_world
-  - make defconfig
-  - make app
+  - sudo make defconfig
+  - sudo make app
