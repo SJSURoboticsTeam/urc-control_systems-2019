@@ -6,13 +6,13 @@ env:
     - IDF_PATH=/home/travis/build/SJSURobotics/controlsystems2019/esp-idf
 addons:
   apt:
-    packages:
-      - gperf
-      - pythom
-      - python-serial
 matrix:
   include:    
     - language: cpp
+      packages:
+         - gperf
+         - pythom
+         - python-serial
       install:
          - cd esp-idf
          - git submodule update --init --recursive
@@ -21,6 +21,10 @@ matrix:
          - g++ --std=c++11 unitTests.cpp
          - ./a.out
     - language: cpp
+      packages:
+         - gperf
+         - pythom
+         - python-serial
       install:
          - cd esp-idf
          - git submodule update --init --recursive
