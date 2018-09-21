@@ -9,6 +9,6 @@ script:
   - export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019/xtensa-esp32-elf/bin
   - export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019/controlsystems2019/esp-idf
   - source ~/.profile
+  - cd Projects/Examples/hello_world
   - make defconfig
-  - cd esp-idf/hello_world
   - make app -fexceptions
