@@ -1,29 +1,32 @@
-sudo: enabled
+sudo: false
 env:
   global:
     - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
     - PATH=$PATH:/home/travis/build/SJSURobotics/controlsystems2019/xtensa-esp32-elf/bin
     - IDF_PATH=/home/travis/build/SJSURobotics/controlsystems2019/esp-idf
+addons:
+  apt:
+    packages:
+      - gperf
+      - pythom
+      - python-serial
 matrix:
   include:    
     - language: cpp
       install:
          - cd esp-idf
          - git submodule update --init --recursive
-         - cd ..
-         - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
       script:
-         - cd Testing
+         - cd ../Testing
          - g++ --std=c++11 unitTests.cpp
          - ./a.out
     - language: cpp
       install:
          - cd esp-idf
          - git submodule update --init --recursive
-         - cd ..
-         - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
       script:
-         - ls esp-idf
+         - ls
+         - cd ..
          - ls xtensa-esp32-elf/bin
          - echo $PATH
          - echo $IDF_PATH
@@ -31,5 +34,5 @@ matrix:
          - cd Projects/Examples/hello_world
          - pwd
          - ls
-         - sudo make defconfig PROJECT_NAME=hello-world
-         - sudo make app PROJECT_NAME=hello-world
+         make defconfig PROJECT_NAME=hello-world
+         make app PROJECT_NAME=hello-world
