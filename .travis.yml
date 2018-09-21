@@ -8,10 +8,9 @@ script:
   - ./a.out
   - cd ../
   - ls esp-idf
-  - ls xtensa-esp32-elf
+  - ls xtensa-esp32-elf/bin
   - pwd
   - export PATH=$PATH:/home/travis/build/SJSURobotics2019/controlsystems2019/xtensa-esp32-elf/bin
-  - export PATH=$PATH:$HOME/esp/crosstool-NG/builds/xtensa-esp32-elf/bin
   - export IDF_PATH=/home/travis/build/SJSURobotics2019/controlsystems2019/esp-idf
   - source ~/.profile
   - echo $PATH
