@@ -4,7 +4,7 @@ matrix:
   include:    
     - language: cpp
       install:
-         - git submodule update --init --recursive
+         - git submodule update --init --recursiveV
          - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
       script:
          - cd Testing
@@ -12,6 +12,8 @@ matrix:
          - ./a.out
     - language: bash
       script:
+         - git submodule update --init --recursiveV
+         - sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial
          - cd ../
          - ls esp-idf
          - ls xtensa-esp32-elf/bin
@@ -21,5 +23,5 @@ matrix:
          - echo $PATH
          - echo $IDF_PATH
          - cd Projects/Examples/hello_world
-         - sudo make defconfig
-         - sudo make app
+         - make defconfig
+         - make app
