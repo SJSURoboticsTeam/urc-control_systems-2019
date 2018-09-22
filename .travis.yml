@@ -33,7 +33,7 @@ matrix:
       script:
         - ls
         - cd ..
-        - ls xtensa-esp32-elf/bin
+        - ls xtensa-esp32-elf
         - echo $PATH
         - echo $IDF_PATH
         - ls esp-idf/make
