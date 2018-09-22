@@ -11,9 +11,9 @@ matrix:
     - language: cpp
       os: linux
       before_install:
-              # - cd esp-idf
+        - cd esp-idf
         - git submodule update --init --recursive
-          # - cd ..
+        - cd ..
         - sudo apt-get update
       install:
         - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
@@ -24,15 +24,14 @@ matrix:
     - language: cpp
       os: linux
       before_install:
-              # - cd esp-idf
+        - cd esp-idf
         - git submodule update --init --recursive
-          # - cd ..
+        - cd ..
         - sudo apt-get update
       install:        
         - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
       script:
         - ls
-        - cd ..
         - ls xtensa-esp32-elf
         - echo $PATH
         - echo $IDF_PATH
