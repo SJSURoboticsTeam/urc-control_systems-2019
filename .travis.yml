@@ -1,4 +1,6 @@
 sudo: required
+git:
+  submodules: false
 env:
   global:
     - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
@@ -9,9 +11,9 @@ matrix:
     - language: cpp
       os: linux
       before_install:
-        - cd esp-idf
+              # - cd esp-idf
         - git submodule update --init --recursive
-        - cd ..
+          # - cd ..
         - sudo apt-get update
       install:
         - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
@@ -22,9 +24,9 @@ matrix:
     - language: cpp
       os: linux
       before_install:
-        - cd esp-idf
+              # - cd esp-idf
         - git submodule update --init --recursive
-        - cd ..
+          # - cd ..
         - sudo apt-get update
       install:        
         - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
