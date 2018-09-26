@@ -82,6 +82,9 @@ install:
 script:
   # Go back to the git repository
   - cd $PROJECT_PATH
+  - echo $PATH
+  - echo $IDF_PATH
+  - pwd
   # Update configuration so that kconfig doesn't start interactive mode
   - make defconfig
   # Build project from the git repository
