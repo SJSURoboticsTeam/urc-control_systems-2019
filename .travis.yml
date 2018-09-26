@@ -76,6 +76,8 @@ install:
   - git clone --recursive https://github.com/espressif/esp-idf.git
   # Set the path to ESP-IDF directory
   - export IDF_PATH=~/esp/esp-idf
+  # Update ESP-IDF
+  - /usr/bin/python -m pip install --user -r /home/travis/esp/esp-idf/requirements.txt
 
 script:
   # Go back to the git repository
