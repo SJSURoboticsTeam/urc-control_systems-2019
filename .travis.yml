@@ -2,8 +2,6 @@ sudo: false
 env:
   global:
     - CODECOV_TOKEN="3ec55087-b2f5-4407-9396-9fbcfa5d98cd"
-#     - PATH=$PATH:/home/travis/build/SJSURobotics/controlsystems2019/xtensa-esp32-elf/bin
-#     - IDF_PATH=/home/travis/build/SJSURobotics/controlsystems2019/esp-idf
 addons:
   apt:
     packages:
@@ -14,13 +12,6 @@ matrix:
   include:    
     - language: cpp
       os: linux
-      #      before_install:
-      #  - cd esp-idf
-      #  - git submodule update --init --recursive
-      #  - cd ..
-      #  - sudo apt-get update
-      #install:
-      #  - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
       script:
         - cd Testing
         - g++ --std=c++11 unitTests.cpp
@@ -65,3 +56,6 @@ matrix:
         - make defconfig
         # Build project from the git repository
         - make app PROJECT_NAME=hello-world
+after_success:
+  - cd ../../
+  - bash <(curl -s https://codecov.io/bash)
