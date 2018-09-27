@@ -205,3 +205,9 @@ See above. Otherwise, check to make sure you have entered your paths correctly.
 
 ##### "Input/output error: '/dev/tty<PORT NUMBER>'" #####
 The project is configured to the wrong USB port. Run make menuconfig again and change the assigned port to the correct one.
+
+##### "xtensa-esp32-elf-gcc: error trying to exec 'cc1': execvp: No such file or directory" #####
+The xtensa-esp32-elf toolchain did not download and install properly. Follow the procedure as described at https://docs.espressif.com/projects/esp-idf/en/stable/get-started/linux-setup.html but install the toolchain into the /controlsystems2019 directory.
+
+##### Cannot connect to esp32, flashing fails #####
+You must press down on the button labeled "IO0" while the esp32 is connecting. You may need to press it a few times or press and hold in order for it to connect.
