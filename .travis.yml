@@ -14,42 +14,30 @@ matrix:
   include:    
     - language: cpp
       os: linux
-      before_install:
-        - cd esp-idf
-        - git submodule update --init --recursive
-        - cd ..
-        - sudo apt-get update
-      install:
-        - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
+      #      before_install:
+      #  - cd esp-idf
+      #  - git submodule update --init --recursive
+      #  - cd ..
+      #  - sudo apt-get update
+      #install:
+      #  - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
       script:
         - cd Testing
         - g++ --std=c++11 unitTests.cpp
         - ./a.out
-#     - language: cpp
-#       os: linux
-#       before_install:
-#         - cd esp-idf
-#         - git submodule update --init --recursive
-#         - cd ..
-#         - sudo apt-get update
-#       install:        
-#         - sudo apt-get install git wget libncurses-dev flex bison gperf python python-serial cmake ninja-build ccache
-#       script:
-#         - ls
-#         - ls xtensa-esp32-elf
-#         - echo $PATH
-#         - echo $IDF_PATH
-#         - ls esp-idf/make
-#         - cd Projects/Examples/hello_world
-#         - pwd
-#         - ls
-#         - make defconfig PROJECT_NAME=hello-world
-#         - make app PROJECT_NAME=hello-world
+    #
+    # Next Section is modeled off of example found at
+    # https://github.com/igrr/esp32-cam-demo/blob/master/.travis.yml
+    # modifications have been made to fit the nature of the 2019 SJSU Robotics Project
+    #
     - language: bash
       os: linux
       before_install:
         # Save path to the git respository
         - PROJECT_PATH=$(pwd)
+        # Remove original esp-idf and toolchain
+        - rm -rf esp-idf
+        - rm -rf xtensa-esp32-elf
       install:
         # Install ESP32 toochain following steps as desribed
         # in http://esp-idf.readthedocs.io/en/latest/linux-setup.html
@@ -72,12 +60,7 @@ matrix:
         - /usr/bin/python -m pip install --user -r /home/travis/esp/esp-idf/requirements.txt
       script:
         # Go back to the git repository
-        - cd $PROJECT_PATH/
-        - ls
-        - rm -rf esp-idf
-        - rm -rf xtensa-esp-elf
-        - ls
-        - cd Projects/hello_world
+        - cd $PROJECT_PATH/Projects/hello_world
         # Update configuration so that kconfig doesn't start interactive mode
         - make defconfig
         # Build project from the git repository
