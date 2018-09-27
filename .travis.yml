@@ -72,8 +72,9 @@ matrix:
         - /usr/bin/python -m pip install --user -r /home/travis/esp/esp-idf/requirements.txt
       script:
         # Go back to the git repository
+        - cd $PROJECT_PATH/
         - ls
-        - cd $PROJECT_PATH/Projects/hello_world
+        - cd Projects/hello-world
         # Update configuration so that kconfig doesn't start interactive mode
         - make defconfig
         # Build project from the git repository
