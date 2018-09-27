@@ -74,6 +74,9 @@ matrix:
         # Go back to the git repository
         - cd $PROJECT_PATH/
         - ls
+        - rm -rf esp-idf
+        - rm -rf xtensa-esp-elf
+        - ls
         - cd Projects/hello_world
         # Update configuration so that kconfig doesn't start interactive mode
         - make defconfig
