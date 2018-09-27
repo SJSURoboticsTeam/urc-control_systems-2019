@@ -16,6 +16,8 @@ matrix:
         - cd Testing
         - g++ --std=c++11 unitTests.cpp
         - ./a.out
+        - cd ../
+        - ./get_code_cov.sh
     #
     # Next Section is modeled off of example found at
     # https://github.com/igrr/esp32-cam-demo/blob/master/.travis.yml
@@ -56,6 +58,8 @@ matrix:
         - make defconfig
         # Build project from the git repository
         - make app PROJECT_NAME=hello-world
+        # Create codecov report
+        - cd ../../
+        - ./get_code_cov.sh
 after_success:
-  - cd ../../
   - bash <(curl -s https://codecov.io/bash)
