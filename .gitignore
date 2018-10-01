@@ -4,3 +4,5 @@ sdkconfig.old
 sdkconfig
 **/*.o
 **/*.d
+**/build
+xtensa-esp32-elf/
