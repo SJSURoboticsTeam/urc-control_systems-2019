@@ -144,7 +144,12 @@ read_data_wifi(READ_ITEM_SIZE);
 Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial`     
 **Note:** one or more of these packages may fail to install. Should that happen, perform a `sudo apt-get update` and try again. 
 
-2. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the terminal you can find the file by using the following commands:     
+2. Download and install the xtensa-esp32-elf toolchain. The 64 bit version can be found here: https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz and the 32 bit version can be found here: https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz. Clicking on this link will download the zipped file to your default Downloads directory. Navigate to your controlsystems2019 directory and install this file into this directory using the command 
+`tar -xzf ~/(directory path to downloaded file)/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz`.
+For linux users, this will be `tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz`.
+For WSL users, this will be `tar -xzf ~/../../mnt/c/Users/(your Windows username)/Downloads/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz`.
+
+3. Set your PATH variables in .profile to add paths to the esp-idf and the xtensa toolchain. The .profile file is hidden in the Home directory and can be found by pressing ctrl+h when in Home. In the terminal you can find the file by using the following commands:     
 `cd ~`     
 `ls -a`     
 **The lines to add are:**  
@@ -156,9 +161,9 @@ Terminal command: `sudo apt-get install git wget make libncurses-dev flex bison 
 **Note:** you may wish to change the access permissions to your COM ports at this point as you will need to do so in order to program the esp32 boards. To do this, add the command `sudo chmod 666 /dev/tty*` after the PATH commands in .profile.
 Once you update the paths, enter the command `source ~/.profile` for the changes to take effect. You must enter this command for each terminal or bash session.
 
-3. Confirm you correctly set your PATH variables by entering either the command `echo $PATH` or `printenv $PATH`. In both cases, you should see a long list of file paths with the path you just created at the end of it. Do the same commands for IDF_PATH and you should see only the path that you entered above.
+4. Confirm you correctly set your PATH variables by entering either the command `echo $PATH` or `printenv $PATH`. In both cases, you should see a long list of file paths with the path you just created at the end of it. Do the same commands for IDF_PATH and you should see only the path that you entered above.
 
-4. Test that you have installed and set up the esp-idf environment correctly by configuring and flashing hello_world to your ESP32. navigate to the Projects/Examples/hello_world folder and enter the command `make menuconfig PROJECT_NAME=hello-world`. This should open the ESP32 toolchain configuration menu. Navigate to Serial Flasher config -> Default Serial Port and change this value to the usb port that your ESP32 is connected to. 
+5. Test that you have installed and set up the esp-idf environment correctly by configuring and flashing hello_world to your ESP32. navigate to the Projects/Examples/hello_world folder and enter the command `make menuconfig PROJECT_NAME=hello-world`. This should open the ESP32 toolchain configuration menu. Navigate to Serial Flasher config -> Default Serial Port and change this value to the usb port that your ESP32 is connected to. 
    If you are using windows, these are your COM ports, so you will need to determine which of these your ESP32 is connected to and use the linux naming configuration. For example, if your ESP32 is connected to COM4, you would enter /dev/ttyS4. 
    Once done, save and exit the configuration menu. Run the command `make app-flash PROJECT_NAME=hello-world` to build and program your ESP32. When the program has finished building and flashing, run the command `make monitor` to see if you are recieving from your board. Press ctrl+] to exit.
    
