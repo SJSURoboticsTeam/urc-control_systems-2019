@@ -1,6 +1,6 @@
 #include "Servo.h"
 
-void ServoChannelConfig(Servo_t servo)
+extern "C" void ServoChannelConfig(Servo_t servo)
 {
    ledc_channel_config_t config;
    config.channel = servo.channel;
@@ -11,24 +11,24 @@ void ServoChannelConfig(Servo_t servo)
    ledc_channel_config(&config);
 }
 
-void ServoTimerConfig(Servo_t servo)
+extern "C" void ServoTimerConfig(Servo_t servo)
 {
    ledc_timer_config_t timer;
-   timer.duty_resolution = servo.resolution;
+   timer.bit_num = servo.resolution;
    timer.freq_hz = servo.freq;
    timer.speed_mode = servo.speed_mode;
    timer.timer_num = servo.timer;
    ledc_timer_config(&timer);
 }
 
-void SetServoAngle(Servo_t servo, uint16_t pwm, uint16_t max, uint16_t min, ledc_mode_t mode)
+extern "C" void SetServoAngle(Servo_t servo, uint16_t pwm, ledc_mode_t mode)
 {
-   //constrain(pwm, max, min);
+   // constrain(pwm, max, min);
    ledc_set_duty(mode, servo.channel, pwm);
    ledc_update_duty(mode, servo.channel);
 }
 
-void MotorChannelConfig(Motor_t motor)
+extern "C" void MotorChannelConfig(Motor_t motor)
 {
    ledc_channel_config_t config;
    config.channel = motor.channel;
@@ -39,7 +39,7 @@ void MotorChannelConfig(Motor_t motor)
    ledc_channel_config(&config);
 }
 
-void MotorTimerConfig(Motor_t motor)
+extern "C" void MotorTimerConfig(Motor_t motor)
 {
    ledc_timer_config_t timer;
    timer.bit_num = motor.resolution;

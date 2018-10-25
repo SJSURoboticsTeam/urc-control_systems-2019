@@ -2,7 +2,7 @@
 #define SERVO_H_
 
 #include "driver/ledc.h"
-//#include "utilities.h"
+#include "utilities.h"
 
 typedef struct{
 	gpio_num_t gpio_pin;
@@ -24,16 +24,16 @@ typedef struct{
 	ledc_timer_bit_t resolution;
 }Motor_t;
 
-void ServoChannelConfig(Servo_t servo);
+extern "C" void ServoChannelConfig(Servo_t servo);
 
-void ServoTimerConfig(Servo_t servo);
+extern "C" void ServoTimerConfig(Servo_t servo);
 
-void SetServoAngle(Servo_t servo, uint16_t pwm, ledc_mode_t mode);
+extern "C" void SetServoAngle(Servo_t servo, uint16_t pwm, ledc_mode_t mode);
 
-void MotorChannelConfig(Motor_t motor);
+extern "C" void MotorChannelConfig(Motor_t motor);
 
-void MotorTimerConfig(Motor_t motor);
+extern "C" void MotorTimerConfig(Motor_t motor);
 
-void SetMotorPWM(Motor_t motor, int16_t pwm, ledc_mode_t mode);
+extern "C" void SetMotorPWM(Motor_t motor, int16_t pwm, ledc_mode_t mode);
 
 #endif
