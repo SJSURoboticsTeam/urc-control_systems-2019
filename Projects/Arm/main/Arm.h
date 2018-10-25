@@ -26,10 +26,16 @@ extern "C" {
 	};
 
 	typedef Stuct{
-		GPIO_Pin,
 		Orientation_limit_min,
-		Orientation_limi_max,
+			/*
+			*/
+
+		Orientation_limit_max,
+			/*
+			*/
+
 		Current_Orientation
+		GPIO_Pin,
 	} motor_info_struct;
 
 
@@ -138,14 +144,17 @@ extern "C" {
 
 enum IMUs
 {
+	Base,
 	Shoulder,
 	Elbow,
-	//Wrist, magnetic encoder?
+	Wrist 
 	//Rotunda, maybe uses the pot in the servo
 };
 
 typedef Struct
 {
+	uint8_t device_Address;
+
 	int32_t AccelerometerX;
 	int32_t AccelerometerY;
 	int32_t AccelerometerZ;
