@@ -402,8 +402,8 @@ bool add_sse_client(struct netconn * conn)
             semaphore_taken = xSemaphoreTake( xSemaphore_url, ( TickType_t ) 10 );
             //check mutex lock
             if(semaphore_taken == pdTRUE){
-                sscanf(buf, "GET %255s HTTP/1.1\n", url);
-                //printf("url = %s\n", url);
+                sscanf(buf, "POST %255s HTTP/1.1\n", url);
+                printf("url = %s\n", url);
                 //// Beyond this point, I am only sending html data back!
                 netconn_write(conn, http_html_hdr, sizeof(http_html_hdr) - 1, NETCONN_NOCOPY);
                 //// More cases
@@ -416,7 +416,7 @@ bool add_sse_client(struct netconn * conn)
                         special_string,
                         SPECIAL_STRING_LENGTH
                     );
-                    // printf("%d)%s\n", success_flag, special_string);
+                    printf("%d)%s\n", success_flag, special_string);
                     if (success_flag)
                     {
                         netconn_write(conn, success, sizeof(success) - 1, NETCONN_NOCOPY);
@@ -429,10 +429,12 @@ bool add_sse_client(struct netconn * conn)
                 else if (strstr(url, "/sse") != NULL)
                 {
                     netconn_write(conn, http_sse_html, sizeof(http_sse_html) - 1, NETCONN_NOCOPY);
-                }
+		    printf("/sse\n");
+		}
                 else if (strstr(url, "/") != NULL || strstr(url, "/index") != NULL)
                 {
                     netconn_write(conn, http_index_html, sizeof(http_index_html) - 1, NETCONN_NOCOPY);
+		    printf("/\n");
                 }
                 else
                 {

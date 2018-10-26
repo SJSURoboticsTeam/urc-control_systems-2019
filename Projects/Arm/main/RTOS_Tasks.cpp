@@ -268,7 +268,7 @@ void vElbowTask(void *pvParameters)	// duty range 20% to 100%
 	vTaskDelay(13000 / portTICK_RATE_MS);
 	elbow_pwm = map(-80, ELBOW_MIN, ELBOW_MAX, SERVO_PWM_12_BIT_MIN, SERVO_PWM_12_BIT_MAX);
 	SetServoAngle(elbow, elbow_pwm, elbow.speed_mode);
-	vTaskDelay(4000 / portTICK_RATE_MS);a
+	vTaskDelay(4000 / portTICK_RATE_MS);
 	while(1)
 	{
 		// if(elbow_pwm > 1024)
@@ -361,7 +361,7 @@ void vShoulderTask(void *pvParameters)
 
 		double pwm_p = error * proportion;
 		pwm_avg = EMA_double(pwm_p, pwm_avg, SHOULDER_ALPHA);
-		constrain_doubl	e(&pwm_avg, SHOULDER_PWM_MIN, SHOULDER_PWM_MAX);
+		constrain_double(&pwm_avg, SHOULDER_PWM_MIN, SHOULDER_PWM_MAX);
 		direction = (error > 0) ? 0 : 1;
 		
 		current_pos.shoulder = map(feedback.shoulder, MAG_ENC_MIN, MAG_ENC_MAX, SHOULDER_MIN, SHOULDER_MAX);
