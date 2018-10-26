@@ -1,0 +1,54 @@
+Functional Class Descriptions
+
+1. Void create_wifi_task(void)
+	A. Init flash
+	B. Create semaphore
+	C. Initialize wifi setting 
+	D. Create SSE event handler
+	E. Create http server
+	D. Constraint: 
+		I. None
+
+2. int read_data_wifi(int item_size)
+	A. Take in (@param int) the size of the struct read_data
+	B. Parse the global char url string
+		I. Check if first character is a “{“
+		II. Divide string into token by delimiter “,”
+		III. Divide the token into 2 sub-string by delimiter “:”
+		IV. Convert second sub-string into integer and put it into struct read_data.data
+	C. Look for the string “timestamp” in char url and return the timestamp value as int
+	D. Constraint: 
+		I. Maximum size of the receiving string can only be 256 bytes
+
+3.  void send_data_wifi(int item_size)
+	A. Take in (@param int) the size of the struct  send_data
+	B. Take in all the data in struct send_data and convert it to a string with follow convention
+		I. {dataname1:int_data_value,dataname2:int_dataLvalue,debug:SYSTEM_DEBUG_MSG}
+			1. Use value frome const char* send_data_label[] from Structure.c to determine dataname.
+			2. (@param char []) SYSTEM_DEBUG_MSG is global variable to set a debug message.
+				a. SYSTEM_DEBUG_MSG on default is equal to “None”
+				b. The debug message will always be the last element in the string. 
+				c. User can set the message by simply doing:
+					i.  strcpy(SYSTEM_DEBUG_MSG, “some string”);
+
+	C. Constraint:
+		I. Maximum size of the the sending string can only be 256 bytes
+		II. Only able to convert int value 
+
+4.  void set_static_ip(char ip[])
+	A. Take in (@param char array) name of the ip address
+	B. Copy the user input ip address to DEVICE_GW
+	C. Set the STATIC_IP_FLAG to high to all initialize_wifi to use the config for static ip  
+	D. Constraint: 
+		I. Ip must in the form of 192.168.1.XXX
+
+5. int set_wifi_ap(char name[], int name_size)
+	A. Take in (@param char array) name of bssid
+	B. Take in (@param int) size of bssid string
+	C. Check if bssid size is < 34 and set the ap_config.ap.ssid = name
+	D. Add a NULL character at the end of the bssid string
+	E. Return error flag : 1 = invalid name_size; 0 = OK
+	F. Constraint: 
+		I. name[] must be less than 33 bytes
+
+

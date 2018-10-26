@@ -1,0 +1,28 @@
+Version Descriptions
+	
+Wifi Version 2.0:
+	_Implement setting static ip, call set_static_ip("ip name").
+	_Implement setting bssid for ap mode, call set_wifi_ap("bssid name", sideof(bssid name))
+	_Make wifi_config_t sta_config and wifi_config_t ap config to global structure
+	_Implement mutex lock in http_server_netcoon_serve to keep url integrity 
+	_New Global Variables:
+		int STATIC_IO_FLAG = 0
+		char DEVICE_IP[] = "192.168.1.2";
+		const static char DEVICE_GW[] = "192.168.5.1";
+		const static char DEVICE_NETMASK[] = "255.255.255.0";
+		SemaphoreHandle_t xSemaphore_url;
+
+Wifi Version 1.5:
+	_Implement read data, call read_data_wifi()
+	_Implement send data, call send_data_wifi()
+	_Add timestamp from mission control
+	_Add system debug, read value from SYSTEM_DEBUG_MESSAGE[50]
+	_Implement creating wifi task, call create_wifi_task()
+	_New Global Variables:
+		int HEARTBEAT_TIMESTAMP; 
+		char SYSTEM_DEBUG_MSG[50] = {"NONE"};
+		char url[256];
+
+Wifi Version 1.0:
+	_Create Wifi API 
+	_Create header file
