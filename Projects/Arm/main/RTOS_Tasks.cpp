@@ -46,10 +46,10 @@ current_pos_t feedback;
 	read_data.data[read_cam_id] = 0;
 	read_data.data[read_cam_shoulder] = 0;
 	read_data.data[read_cam_elbow] = 0;
-	read_data.data[read_gimbal] = 1;
+	read_data.data[read_gimbal] = 0;
 	read_data.data[read_base] = 0;
-	read_data.data[read_shoulder] = 158;
-	read_data.data[read_elbow] = 34;
+	read_data.data[read_shoulder] = 90;
+	read_data.data[read_elbow] = -700;
 	read_data.data[read_wrist] = 0;
 	read_data.data[read_wrist_rot] = 0;
 	read_data.data[read_claw_motion] = 0;
@@ -212,7 +212,7 @@ void vRotundaTask(void *pvParameters) // duty range 20% to 100%
 	static uint16_t rotunda_pwm = 2400;
 	static uint16_t rotunda_ema = 2400;
 	SetServoAngle(rotunda, rotunda_ema, rotunda.speed_mode);
-	vTaskDelay(3000 / portTICK_RATE_MS);
+	vTaskDelay(10000 / portTICK_RATE_MS);
 
 	// static uint16_t angle = 0;
 	while(1)
@@ -244,9 +244,9 @@ void vRotundaTask(void *pvParameters) // duty range 20% to 100%
 		}
 		constrain_uint(&rotunda_ema, ROTUNDA_PWM_12_BIT_MIN, ROTUNDA_PWM_12_BIT_MAX);
 		// printf("r_ema: %i\n", rotunda_ema);
-		// printf("rotunda: %i \n", rotunda_pwm);
+	        printf("rotunda: %i \n", rotunda_pwm);
 		current_pos.base = map(rotunda_ema, SERVO_PWM_12_BIT_MIN, SERVO_PWM_12_BIT_MAX, ROTUNDA_MIN, ROTUNDA_MAX);
-		SetServoAngle(rotunda, rotunda_ema, rotunda.speed_mode);
+		SetServoAngle(rotunda, rotunda_pwm, rotunda.speed_mode);
 		vTaskDelay(100 / portTICK_RATE_MS);
 	}
 }
@@ -255,11 +255,20 @@ void vElbowTask(void *pvParameters)	// duty range 20% to 100%
 {
 	ServoTimerConfig(elbow);
 	ServoChannelConfig(elbow);
+	/*
 	static uint16_t elbow_pwm = 34;
 	static uint16_t elbow_ema = 34;
 	SetServoAngle(elbow, elbow_ema, elbow.speed_mode);
 	vTaskDelay(3000 / portTICK_RATE_MS);
-
+        */
+        static int16_t elbow_init = -70;
+	static uint16_t elbow_pwm = map(elbow_init, ELBOW_MIN, ELBOW_MAX, SERVO_PWM_12_BIT_MIN, SERVO_PWM_12_BIT_MAX);
+	static uint16_t elbow_ema = 4095 / 2;
+	SetServoAngle(elbow, elbow_pwm, elbow.speed_mode);
+	vTaskDelay(13000 / portTICK_RATE_MS);
+	elbow_pwm = map(-80, ELBOW_MIN, ELBOW_MAX, SERVO_PWM_12_BIT_MIN, SERVO_PWM_12_BIT_MAX);
+	SetServoAngle(elbow, elbow_pwm, elbow.speed_mode);
+	vTaskDelay(4000 / portTICK_RATE_MS);a
 	while(1)
 	{
 		// if(elbow_pwm > 1024)
@@ -326,14 +335,14 @@ void vShoulderTask(void *pvParameters)
 	uint8_t proportion = 3;
 	static double pwm_avg = 0;
 	static uint16_t pwm_out = 0;
-	read_data.data[read_shoulder] = 158;
+	read_data.data[read_shoulder] = 90;
 	// PID_t test_pid;
 	// PidInit(&test_pid);
 	// SetMode(&test_pid, AUTOMATIC);
 	// SetTunings(&test_pid, 10, 10, 0);
 	// SetOutputLimits(&test_pid, 0, 270);
 	// test_pid.Setpoint = 270;
-	vTaskDelay(1000 / portTICK_RATE_MS);
+	vTaskDelay(5000 / portTICK_RATE_MS);
 	while(1)
 	{
 
@@ -352,7 +361,7 @@ void vShoulderTask(void *pvParameters)
 
 		double pwm_p = error * proportion;
 		pwm_avg = EMA_double(pwm_p, pwm_avg, SHOULDER_ALPHA);
-		constrain_double(&pwm_avg, SHOULDER_PWM_MIN, SHOULDER_PWM_MAX);
+		constrain_doubl	e(&pwm_avg, SHOULDER_PWM_MIN, SHOULDER_PWM_MAX);
 		direction = (error > 0) ? 0 : 1;
 		
 		current_pos.shoulder = map(feedback.shoulder, MAG_ENC_MIN, MAG_ENC_MAX, SHOULDER_MIN, SHOULDER_MAX);
@@ -429,8 +438,10 @@ void vWristPitchTask(void *pvParameters)
 	static int16_t error;
 	uint8_t proportion = 3;
 	static double pwm_avg = 0;
-	vTaskDelay(1000 / portTICK_RATE_MS);
-
+//	vTaskDelay(1000 / portTICK_RATE_MS);
+        SetWrist(wrist_pitch1, wrist_pitch2, -350, feedback.wrist_pitch, wrist_pitch1.speed_mode); 
+        vTaskDelay(3000 / portTICK_RATE_MS);
+        SetWrist(wrist_pitch1, wrist_pitch2, 0, feedback.wrist_pitch, wrist_pitch1.speed_mode);
 	// PID_t wrist_pid;
 	// PidInit(&wrist_pid);
 	// SetMode(&wrist_pid);
