@@ -108,6 +108,6 @@ class PID
     // * Bool to add Proportional component to Error vs. Measurement
     //	 If true proportional is an Error component
     //	 If false proportional is a Measurement component
-    bool pOnE;
+    bool positionAsError;
 };
 #endif
