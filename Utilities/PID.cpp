@@ -13,9 +13,9 @@
 
 #include "PID.h"
 
-/*Constructor (...)*********************************************************
- *    The parameters specified here are those for for which we can't set up
- *    reliable defaults, so we need to have the user set them.
+/* Constructor (...)*********************************************************
+ * The parameters specified here are those for for which we can't set up
+ * reliable defaults, so we need to have the user set them.
  ***************************************************************************/
 PID::PID(double* Input, double* Output, double* Setpoint,
         double Kp, double Ki, double Kd, int POn, int ControllerDirection)
@@ -36,9 +36,9 @@ PID::PID(double* Input, double* Output, double* Setpoint,
     lastTime = millis()-SampleTime;
 }
 
-/*Constructor (...)*********************************************************
- *    To allow backwards compatability for v1.1, or for people that just want
- *    to use Proportional on Error without explicitly saying so
+/* Constructor (...)*********************************************************
+ * To allow backwards compatability for v1.1, or for people that just want
+ * to use Proportional on Error without explicitly saying so
  ***************************************************************************/
 
 PID::PID(double* Input, double* Output, double* Setpoint,
@@ -50,10 +50,10 @@ PID::PID(double* Input, double* Output, double* Setpoint,
 
 
 /* Compute() **********************************************************************
- *     This, as they say, is where the magic happens.  this function should be called
- *   every time "void loop()" executes.  the function will decide for itself whether a new
- *   pid Output needs to be computed.  returns true when the output is computed,
- *   false when nothing has been done.
+ * This, as they say, is where the magic happens. This function should be called
+ * every time the corresponding task executes. The function will decide for itself
+ * whether a new pid Output needs to be computed.
+ * Returns true when the output is computed, false when nothing has been done.
  **********************************************************************************/
 bool PID::Compute()
 {
@@ -103,10 +103,7 @@ void PID::SetTunings(double Kp, double Ki, double Kd, int POn)
 {
    if (Kp<0 || Ki<0 || Kd<0) return;
 
-   pOn = POn;
-   pOnE = POn == P_ON_E;
-
-   dispKp = Kp; dispKi = Ki; dispKd = Kd;
+   pOnE = (POn == P_ON_E);
 
    double SampleTimeInSec = ((double)SampleTime)/1000;
    kp = Kp;
@@ -129,7 +126,7 @@ void PID::SetTunings(double Kp, double Ki, double Kd){
 }
 
 /* SetSampleTime(...) *********************************************************
- * sets the period, in Milliseconds, at which the calculation is performed
+ * Sets the period, in milliseconds, at which the calculation is performed
  ******************************************************************************/
 void PID::SetSampleTime(int NewSampleTime)
 {
@@ -144,12 +141,8 @@ void PID::SetSampleTime(int NewSampleTime)
 }
 
 /* SetOutputLimits(...)****************************************************
- *     This function will be used far more often than SetInputLimits.  while
- *  the input to the controller will generally be in the 0-1023 range (which is
- *  the default already,)  the output will be a little different.  maybe they'll
- *  be doing a time window and will need 0-8000 or something.  or maybe they'll
- *  want to clamp it from 0-125.  who knows.  at any rate, that can all be done
- *  here.
+ * This function limits the output of the PID controller to a set maximum
+ * and minimum value
  **************************************************************************/
 void PID::SetOutputLimits(double Min, double Max)
 {
@@ -183,12 +176,12 @@ void PID::SetMode(int Mode)
 }
 
 /* Initialize()****************************************************************
- *  does all the things that need to happen to ensure a bumpless transfer
- *  from manual to automatic mode.
+ * Does all the things that need to happen to ensure a bumpless transfer
+ * from manual to automatic mode.
  ******************************************************************************/
 void PID::Initialize()
 {
-   outputSum = *myOutput;
+    outputSum = *myOutput;
    lastInput = *myInput;
    if(outputSum > outMax) outputSum = outMax;
    else if(outputSum < outMin) outputSum = outMin;
@@ -196,15 +189,15 @@ void PID::Initialize()
 
 /* SetControllerDirection(...)*************************************************
  * The PID will either be connected to a DIRECT acting process (+Output leads
- * to +Input) or a REVERSE acting process(+Output leads to -Input.)  we need to
+ * to +Input) or a REVERSE acting process(+Output leads to -Input). We need to
  * know which one, because otherwise we may increase the output when we should
- * be decreasing.  This is called from the constructor.
+ * be decreasing. This is called from the constructor.
  ******************************************************************************/
 void PID::SetControllerDirection(int Direction)
 {
    if(inAuto && Direction !=controllerDirection)
    {
-        kp = (0 - kp);
+      kp = (0 - kp);
       ki = (0 - ki);
       kd = (0 - kd);
    }
@@ -212,13 +205,11 @@ void PID::SetControllerDirection(int Direction)
 }
 
 /* Status Funcions*************************************************************
- * Just because you set the Kp=-1 doesn't mean it actually happened.  these
- * functions query the internal state of the PID.  they're here for display
- * purposes.  this are the functions the PID Front-end uses for example
+ * These functions query the internal state of the PID. 
  ******************************************************************************/
-double PID::GetKp(){ return  dispKp; }
-double PID::GetKi(){ return  dispKi;}
-double PID::GetKd(){ return  dispKd;}
+double PID::GetKp(){ return  kp; }
+double PID::GetKi(){ return  ki;}
+double PID::GetKd(){ return  kd;}
 int PID::GetMode(){ return  inAuto ? AUTOMATIC : MANUAL;}
 int PID::GetDirection(){ return controllerDirection;}
 
