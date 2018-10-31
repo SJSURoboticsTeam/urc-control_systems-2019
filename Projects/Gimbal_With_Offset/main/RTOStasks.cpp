@@ -3,36 +3,38 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/event_groups.h"
-#include "driver/ledc.h" //!!!
+#include "freertos/queue.h"
+#include "driver/ledc.h"
 #include "esp_log.h"
 #include "Arduino.h"
 #include "EEPROM.h"
 #include "Source.h"
 #include "constants.h"
-#include "RTOStasks.h"  //!!!
-//#include "Servo.h"
+#include "RTOStasks.h"
 
 
 #include <iostream>
 using namespace std;
 
-unsigned int target;
+unsigned int target_degrees;
 int current;
+
+QueueHandle_t q = xQueueCreate(10, sizeof(int));
 
 void vUpdateTarget(void *pvParameters)
 {
-    int target_duty;
+    int prev = target_degrees;
+ 
     while(1)
     {
-        
-        scanf("%i", &target);
-        printf("Target has been set to %i degrees \n", target);
+        scanf("%i", &target_degrees);
+        if(prev != target_degrees)
+        {
+            prev = target_degrees;
+            printf("Target_degrees has been set to %i degrees \n", target_degrees);
 
-        target_duty =  degreesToDuty(target);
-        if(target_duty < minDuty) target_duty = minDuty;
-        if(target_duty > maxDuty) target_duty = maxDuty;
-
-        printf("Target_Duty has been set to %i", target_duty);
+            xQueueSend(q, &target_degrees, 0);
+        }   
         vTaskDelay(300);
     }   
 }
@@ -48,8 +50,7 @@ void vIMUTask(void *pvPArameters)
 
 void vServoTask(void *pvParameters)
 {
-    //Servo_t servo;
-
+    
     ledc_timer_config_t myTimer;
     myTimer.duty_resolution = LEDC_TIMER_10_BIT;
     myTimer.speed_mode      = LEDC_HIGH_SPEED_MODE;
@@ -59,26 +60,29 @@ void vServoTask(void *pvParameters)
 
     ledc_channel_config_t myServo;
     myServo.channel     = LEDC_CHANNEL_0;
-    myServo.duty        = 1024; //?????
+    myServo.duty        = middle;
     myServo.gpio_num    = gpio;
     myServo.intr_type   = LEDC_INTR_DISABLE;
     myServo.speed_mode  = LEDC_HIGH_SPEED_MODE;
     myServo.timer_sel   = LEDC_TIMER_0;
     ledc_channel_config(&myServo);
 
+    int degreesReceived, newDuty;
+
 
     while(1)
     {
 
-        //logic to update duty cycle goes here
-        //Period = 1/myTimer.freq_hz
-        //Look at min pulse time and max pulse time for our servo
-        //find the min/max time as a percent of Period
-        //Use that percent to find the duty limit with our 10bit freq, 
-        //  0 <= minPercent*1024 <= new_Duty <= maxPercent*1024 < 1024
+        if(xQueueReceive(q, &degreesReceived, portMAX_DELAY))
+        {
+            newDuty =  degreesToDuty(degreesReceived);
+            if(newDuty < minDuty) newDuty = minDuty;
+            if(newDuty > maxDuty) newDuty = maxDuty;
 
-        ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0,/* new_Duty */);
-        ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+            printf("newDuty has been set to %i", newDuty);
 
+            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, newDuty);
+            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+        }
     }   
 }

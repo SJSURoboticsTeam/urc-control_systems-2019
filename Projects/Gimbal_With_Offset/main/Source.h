@@ -17,6 +17,8 @@ constexpr int minDuty = 1024 * ( minPulseTime_ms / static_cast<double>(1000/serv
 constexpr int maxPulseTime_ms = 50;
 constexpr int maxDuty = 1024 * ( maxPulseTime_ms / static_cast<double>(1000/servoFreq) );
 
+constexpr int middle = 1024 * ( ((maxPulseTime_ms + minPulseTime_ms)/2) / static_cast<double>(1000/servoFreq));
+
 int degreesToDuty(unsigned int degrees);
 
 #ifdef _cplusplus
