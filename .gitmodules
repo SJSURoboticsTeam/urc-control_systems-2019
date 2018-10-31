@@ -10,3 +10,9 @@
 [submodule "Projects/Legacy/Templates/Protoduino/components/arduino"]
 	path = Projects/Legacy/Templates/Protoduino/components/arduino
 	url = https://github.com/espressif/arduino-esp32.git
+[submodule "Projects/Protoproject/components/ESPAsyncWebServer"]
+	path = Projects/Protoproject/components/ESPAsyncWebServer
+	url = https://github.com/me-no-dev/ESPAsyncWebServer
+[submodule "Projects/Protoproject/components/AsyncTCP"]
+	path = Projects/Protoproject/components/AsyncTCP
+	url = https://github.com/me-no-dev/AsyncTCP
