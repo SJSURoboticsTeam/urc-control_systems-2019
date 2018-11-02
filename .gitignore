@@ -5,4 +5,8 @@ sdkconfig
 **/*.o
 **/*.d
 **/build
+<<<<<<< HEAD
 **/xtensa-esp32-elf/bin
+=======
+xtensa-esp32-elf/
+>>>>>>> 22f23c725a622da73eccbe5b6899210ca0ace72b
