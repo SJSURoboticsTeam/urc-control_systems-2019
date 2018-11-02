@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #ifndef PROTOPROJECT_H_
 #define PROTOPROJECT_H_
@@ -8,18 +9,25 @@
 extern "C" {
 #endif
 	
-constexpr int gpio = 15;
+constexpr int servo_gpio_pin = 16;
 
 constexpr int servoFreq = 50;
-constexpr int minPulseTime_ms = 0;
-constexpr int minDuty = 1024 * ( minPulseTime_ms / static_cast<double>(1000/servoFreq) );
 
-constexpr int maxPulseTime_ms = 50;
-constexpr int maxDuty = 1024 * ( maxPulseTime_ms / static_cast<double>(1000/servoFreq) );
+//These duty constants are the number representation 
+// of my motor's duty cycle, with a 15 bit resolution
 
-constexpr int middle = 1024 * ( ((maxPulseTime_ms + minPulseTime_ms)/2) / static_cast<double>(1000/servoFreq));
+//Position the servo on its side, where: minDuty makes the servo point straight up
+//minDuty makes the servo point straight up
+//maxDuty makes the servo point straight down
+constexpr int minDuty = 700;
+constexpr int maxDuty = 4000;
 
-int degreesToDuty(unsigned int degrees);
+constexpr int middleDuty = (minDuty + maxDuty) / 2;
+
+
+double readPitch();
+
+int32_t calcDutyOffset(int8_t targetAngle, double currentAngle );
 
 #ifdef _cplusplus
 }

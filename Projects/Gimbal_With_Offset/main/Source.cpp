@@ -6,22 +6,48 @@
 #include "EEPROM.h"
 #include "constants.h"
 
+#include "Wire.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 //                               BEGIN CODE HERE                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-int degreesToDuty(unsigned int degrees)
+double readPitch()
 {
-    int duty = -1;
-    if(degrees <= 360)
-    {
-        double degreePercentage;
+    int16_t xVal, yVal, zVal;
+    double pitch;
+    Wire.beginTransmission(0x68);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(0x68, 6, true);
 
-        degreePercentage = degrees / 360;
-        duty = static_cast<int>(degreePercentage * 1024);
+    xVal = Wire.read() << 8 | Wire.read();
+    yVal = Wire.read() << 8 | Wire.read();
+    zVal = Wire.read() << 8 | Wire.read();
 
-    }
-    return duty;
+    pitch = atan2(sqrt(xVal*xVal + yVal*yVal), zVal);
+    pitch *= (180 / 3.14);
+
+    if(xVal < 0) pitch = 0 - pitch;
+
+    printf("%i\n",xVal);
+    printf("%i\n",yVal);
+    printf("%i\n",zVal);
+
+    return pitch;
+}
+
+
+int32_t calcDutyOffset(int8_t targetAngle, double currentAngle )
+{
+    double angleDifference = currentAngle - targetAngle;
+    uint32_t changeOfDuty;
+    uint32_t dutyCycleRange = maxDuty - minDuty;
+
+    changeOfDuty = ( (angleDifference / 180) * dutyCycleRange);
+
+    return changeOfDuty;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

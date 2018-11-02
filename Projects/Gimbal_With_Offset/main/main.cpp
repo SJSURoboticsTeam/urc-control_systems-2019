@@ -17,7 +17,7 @@ extern "C" void app_main()
     pinMode(4, OUTPUT);
     digitalWrite(4, HIGH);
 
-    //xTaskCreate(vIMUTask, "IMU Task", 4096, NULL, 1, NULL);
+    xTaskCreate(vIMUTask, "IMU Task", 4096, NULL, 1, NULL);
     xTaskCreate(vServoTask, "Servo Task", 4096, NULL, 1, NULL);
     xTaskCreate(vUpdateTarget, "Update Target", 4096, NULL, 1, NULL);
 
