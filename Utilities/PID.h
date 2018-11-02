@@ -2,6 +2,7 @@
 #define PID_h
 #define LIBRARY_VERSION 1.2.1
 
+
 class PID
 {
 
@@ -9,6 +10,7 @@ class PID
   public:
 
   //Constants used in some of the functions below
+
   #define AUTOMATIC 1
   #define MANUAL  0
   #define DIRECT  0
@@ -55,6 +57,7 @@ class PID
     // * Overload for specifying proportional mode
     void SetTunings(double, double, double, int);             
 
+
     // * Sets the Direction, or "Action" of the controller.
     //   DIRECT means the output will increase when error is positive. 
     //   REVERSE means the opposite.  
@@ -64,9 +67,7 @@ class PID
     // * Sets the frequency, in milliseconds, with which 
     //   the PID calculation is performed.  default is 100
     void SetSampleTime(int);
-                    
-                      
-                      
+
   //Display functions ****************************************************************
 
     // * These functions query the pid for interal values.
@@ -81,7 +82,6 @@ class PID
 
   private:
     void Initialize();
-      
     double kp;                  // * (P)roportional Tuning Constant
     double ki;                  // * (I)ntegral Tuning Constant
     double kd;                  // * (D)erivative Tuning Constant
@@ -96,7 +96,6 @@ class PID
     double *myInput;           
     double *myOutput;
     double *mySetpoint;
-        
     unsigned long lastTime;
     double outputSum, lastInput;
 
@@ -108,6 +107,7 @@ class PID
     // * Bool to add Proportional component to Error vs. Measurement
     //   If true proportional is an Error component
     //   If false proportional is a Measurement component
+
     bool positionAsError;
 };
 #endif
