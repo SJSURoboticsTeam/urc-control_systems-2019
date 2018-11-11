@@ -35,7 +35,7 @@ class PID
     void SetMode(int Mode);               
 
     // * Performs the PID calculation. It should be
-    //   called every time loop() cycles. ON/OFF and
+    //   called every cycle. ON/OFF and
     //   calculation frequency can be set using SetMode
     //   SetSampleTime respectively
     bool Compute();                       
@@ -87,12 +87,17 @@ class PID
     double kd;                  // * (D)erivative Tuning Constant
 
     int controllerDirection;
+    
+    // * Referes to the Position as Error macro, P_ON_E vs P_ON_M
+    //   It helps the output change more smooth when the setpoint is changed
+    //   P_ON_E is the default behavior (OFF)
+    //   http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
     int pOn;
 
     // * Pointers to the Input, Output, and Setpoint variables
     //   This creates a hard link between the variables and the 
     //   PID, freeing the user from having to constantly tell us
-    //   what these values are.  with pointers we'll just know.
+    //   what these values are. With pointers we'll just know.
     double *myInput;           
     double *myOutput;
     double *mySetpoint;
