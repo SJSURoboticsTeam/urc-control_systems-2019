@@ -1,0 +1,6 @@
+[submodule "components/nghttp/nghttp2/third-party/mruby"]
+	path = components/nghttp/nghttp2/third-party/mruby
+	url = https://github.com/mruby/mruby.git
+[submodule "components/nghttp/nghttp2/third-party/neverbleed"]
+	path = components/nghttp/nghttp2/third-party/neverbleed
+	url = https://github.com/h2o/neverbleed.git
