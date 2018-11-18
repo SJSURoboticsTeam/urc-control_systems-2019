@@ -3,24 +3,7 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "pins_arduino.h"
 #include "HardwareSerial.h"
-
-#ifndef RX1
-#define RX1 9
-#endif
-
-#ifndef TX1
-#define TX1 10
-#endif
-
-#ifndef RX2
-#define RX2 16
-#endif
-
-#ifndef TX2
-#define TX2 17
-#endif
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_SERIAL)
 HardwareSerial Serial(0);
@@ -44,12 +27,12 @@ void HardwareSerial::begin(unsigned long baud, uint32_t config, int8_t rxPin, in
         txPin = 1;
     }
     if(_uart_nr == 1 && rxPin < 0 && txPin < 0) {
-        rxPin = RX1;
-        txPin = TX1;
+        rxPin = 9;
+        txPin = 10;
     }
     if(_uart_nr == 2 && rxPin < 0 && txPin < 0) {
-        rxPin = RX2;
-        txPin = TX2;
+        rxPin = 16;
+        txPin = 17;
     }
     _uart = uartBegin(_uart_nr, baud, config, rxPin, txPin, 256, invert);
 }
@@ -61,10 +44,6 @@ void HardwareSerial::end()
     }
     uartEnd(_uart);
     _uart = 0;
-}
-
-size_t HardwareSerial::setRxBufferSize(size_t new_size) {
-    return uartResizeRxBuffer(_uart, new_size);
 }
 
 void HardwareSerial::setDebugOutput(bool en)

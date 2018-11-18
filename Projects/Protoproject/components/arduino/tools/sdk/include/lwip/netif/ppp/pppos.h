@@ -31,13 +31,14 @@
  *
  */
 
-#include "netif/ppp/ppp_opts.h"
+#include "lwip/opt.h"
 #if PPP_SUPPORT && PPPOS_SUPPORT /* don't build if not configured for use in lwipopts.h */
 
 #ifndef PPPOS_H
 #define PPPOS_H
 
 #include "lwip/sys.h"
+#include "lwip/sio.h"
 
 #include "ppp.h"
 #include "vj.h"

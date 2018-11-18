@@ -1,9 +1,3 @@
-/**
- * @file
- *
- * SLIP netif API
- */
-
 /*
  * Copyright (c) 2001, Swedish Institute of Computer Science.
  * All rights reserved.

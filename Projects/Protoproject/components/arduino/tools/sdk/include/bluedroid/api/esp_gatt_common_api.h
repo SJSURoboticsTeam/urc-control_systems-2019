@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __ESP_GATT_COMMON_API_H__
-#define __ESP_GATT_COMMON_API_H__
-
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -47,5 +44,3 @@ extern esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __ESP_GATT_COMMON_API_H__ */

@@ -258,11 +258,8 @@ static inline unsigned portENTER_CRITICAL_NESTED() {
 
 //Because the ROM routines don't necessarily handle a stack in external RAM correctly, we force
 //the stack memory to always be internal.
-#define portTcbMemoryCaps (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-#define portStackMemoryCaps (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-
-#define pvPortMallocTcbMem(size) heap_caps_malloc(size, portTcbMemoryCaps)
-#define pvPortMallocStackMem(size)  heap_caps_malloc(size, portStackMemoryCaps)
+#define pvPortMallocTcbMem(size) heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
+#define pvPortMallocStackMem(size)  heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
 
 //xTaskCreateStatic uses these functions to check incoming memory.
 #define portVALID_TCB_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
@@ -368,15 +365,10 @@ typedef struct {
 #endif
 
 extern void esp_vApplicationIdleHook( void );
-extern void esp_vApplicationTickHook( void );
-
-#ifndef CONFIG_FREERTOS_LEGACY_HOOKS
-#define vApplicationIdleHook    esp_vApplicationIdleHook
-#define vApplicationTickHook    esp_vApplicationTickHook
-#endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
+extern void esp_vApplicationWaitiHook( void );
 
 void _xt_coproc_release(volatile void * coproc_sa_base);
-void vApplicationSleep( TickType_t xExpectedIdleTime );
+bool vApplicationSleep( TickType_t xExpectedIdleTime );
 
 #define portSUPPRESS_TICKS_AND_SLEEP( idleTime ) vApplicationSleep( idleTime )
 

@@ -1,5 +1,5 @@
 /*
-  FSWebServer - Example WebServer with FS backend for esp8266/esp32
+  FSWebServer - Example WebServer with SPIFFS backend for esp8266
   Copyright (c) 2015 Hristo Gochkov. All rights reserved.
   This file is part of the WebServer library for Arduino environment.
 
@@ -26,21 +26,14 @@
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
-
-#define FILESYSTEM SPIFFS
-#define FORMAT_FILESYSTEM true
-#define DBG_OUTPUT_PORT Serial
-
-#if FILESYSTEM == FFat
-#include <FFat.h>
-#endif
-#if FILESYSTEM == SPIFFS
 #include <SPIFFS.h>
-#endif
+
+#define DBG_OUTPUT_PORT Serial
 
 const char* ssid = "wifi-ssid";
 const char* password = "wifi-password";
 const char* host = "esp32fs";
+
 WebServer server(80);
 //holds the current upload
 File fsUploadFile;
@@ -91,7 +84,7 @@ String getContentType(String filename) {
 
 bool exists(String path){
   bool yes = false;
-  File file = FILESYSTEM.open(path, "r");
+  File file = SPIFFS.open(path, "r");
   if(!file.isDirectory()){
     yes = true;
   }
@@ -110,7 +103,7 @@ bool handleFileRead(String path) {
     if (exists(pathWithGz)) {
       path += ".gz";
     }
-    File file = FILESYSTEM.open(path, "r");
+    File file = SPIFFS.open(path, "r");
     server.streamFile(file, contentType);
     file.close();
     return true;
@@ -129,7 +122,7 @@ void handleFileUpload() {
       filename = "/" + filename;
     }
     DBG_OUTPUT_PORT.print("handleFileUpload Name: "); DBG_OUTPUT_PORT.println(filename);
-    fsUploadFile = FILESYSTEM.open(filename, "w");
+    fsUploadFile = SPIFFS.open(filename, "w");
     filename = String();
   } else if (upload.status == UPLOAD_FILE_WRITE) {
     //DBG_OUTPUT_PORT.print("handleFileUpload Data: "); DBG_OUTPUT_PORT.println(upload.currentSize);
@@ -156,7 +149,7 @@ void handleFileDelete() {
   if (!exists(path)) {
     return server.send(404, "text/plain", "FileNotFound");
   }
-  FILESYSTEM.remove(path);
+  SPIFFS.remove(path);
   server.send(200, "text/plain", "");
   path = String();
 }
@@ -173,7 +166,7 @@ void handleFileCreate() {
   if (exists(path)) {
     return server.send(500, "text/plain", "FILE EXISTS");
   }
-  File file = FILESYSTEM.open(path, "w");
+  File file = SPIFFS.open(path, "w");
   if (file) {
     file.close();
   } else {
@@ -193,7 +186,7 @@ void handleFileList() {
   DBG_OUTPUT_PORT.println("handleFileList: " + path);
 
 
-  File root = FILESYSTEM.open(path);
+  File root = SPIFFS.open(path);
   path = String();
 
   String output = "[";
@@ -219,10 +212,9 @@ void setup(void) {
   DBG_OUTPUT_PORT.begin(115200);
   DBG_OUTPUT_PORT.print("\n");
   DBG_OUTPUT_PORT.setDebugOutput(true);
-  if (FORMAT_FILESYSTEM) FILESYSTEM.format();
-  FILESYSTEM.begin();
+  SPIFFS.begin();
   {
-      File root = FILESYSTEM.open("/");
+      File root = SPIFFS.open("/");
       File file = root.openNextFile();
       while(file){
           String fileName = file.name();
@@ -275,7 +267,7 @@ void setup(void) {
   }, handleFileUpload);
 
   //called when the url is not defined here
-  //use it to load content from FILESYSTEM
+  //use it to load content from SPIFFS
   server.onNotFound([]() {
     if (!handleFileRead(server.uri())) {
       server.send(404, "text/plain", "FileNotFound");

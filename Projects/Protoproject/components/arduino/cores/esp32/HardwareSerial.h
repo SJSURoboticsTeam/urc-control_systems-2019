@@ -70,7 +70,6 @@ public:
     uint32_t baudRate();
     operator bool() const;
 
-    size_t setRxBufferSize(size_t);
     void setDebugOutput(bool);
 
 protected:

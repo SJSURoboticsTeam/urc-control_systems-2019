@@ -33,7 +33,7 @@
 #ifndef LWIP_HDR_PPP_IMPL_H
 #define LWIP_HDR_PPP_IMPL_H
 
-#include "netif/ppp/ppp_opts.h"
+#include "lwip/opt.h"
 
 #if PPP_SUPPORT /* don't build if not configured for use in lwipopts.h */
 
@@ -48,7 +48,7 @@
 
 #include "lwip/netif.h"
 #include "lwip/def.h"
-#include "lwip/timeouts.h"
+#include "lwip/timers.h"
 
 #include "ppp.h"
 #include "pppdebug.h"
@@ -138,10 +138,10 @@
  */
 struct link_callbacks {
   /* Start a connection (e.g. Initiate discovery phase) */
-  void (*connect) (ppp_pcb *pcb, void *ctx);
+  err_t (*connect) (ppp_pcb *pcb, void *ctx);
 #if PPP_SERVER
   /* Listen for an incoming connection (Passive mode) */
-  void (*listen) (ppp_pcb *pcb, void *ctx);
+  err_t (*listen) (ppp_pcb *pcb, void *ctx, struct ppp_addrs *addrs);
 #endif /* PPP_SERVER */
   /* End a connection (i.e. initiate disconnect phase) */
   void (*disconnect) (ppp_pcb *pcb, void *ctx);
@@ -378,13 +378,13 @@ struct pppd_stats {
  * PPP private functions
  */
 
- 
 /*
  * Functions called from lwIP core.
  */
 
 /* initialize the PPP subsystem */
 int ppp_init(void);
+
 
 /*
  * Functions called from PPP link protocols.
@@ -393,6 +393,9 @@ int ppp_init(void);
 /* Create a new PPP control block */
 ppp_pcb *ppp_new(struct netif *pppif, const struct link_callbacks *callbacks, void *link_ctx_cb,
                  ppp_link_status_cb_fn link_status_cb, void *ctx_cb);
+
+/* Set a PPP PCB to its initial state */
+void ppp_clear(ppp_pcb *pcb);
 
 /* Initiate LCP open request */
 void ppp_start(ppp_pcb *pcb);
@@ -620,7 +623,7 @@ void ppp_warn(const char *fmt, ...);      /* log a warning message */
 void ppp_error(const char *fmt, ...);     /* log an error message */
 void ppp_fatal(const char *fmt, ...);     /* log an error message and die(1) */
 #if PRINTPKT_SUPPORT
-void ppp_dump_packet(ppp_pcb *pcb, const char *tag, unsigned char *p, int len);
+void ppp_dump_packet(const char *tag, unsigned char *p, int len);
                                 /* dump packet to debug log if interesting */
 #endif /* PRINTPKT_SUPPORT */
 

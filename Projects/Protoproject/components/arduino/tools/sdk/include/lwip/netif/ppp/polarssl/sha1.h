@@ -33,7 +33,7 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "netif/ppp/ppp_opts.h"
+#include "lwip/opt.h"
 #if LWIP_INCLUDED_POLARSSL_SHA1
 
 #ifndef LWIP_INCLUDED_POLARSSL_SHA1_H

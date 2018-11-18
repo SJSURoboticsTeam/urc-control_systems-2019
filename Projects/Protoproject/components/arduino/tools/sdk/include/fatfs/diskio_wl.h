@@ -31,7 +31,6 @@ extern "C" {
  */
 esp_err_t ff_diskio_register_wl_partition(BYTE pdrv, wl_handle_t flash_handle);
 BYTE ff_diskio_get_pdrv_wl(wl_handle_t flash_handle);
-void ff_diskio_clear_pdrv_wl(wl_handle_t flash_handle);
 
 #ifdef __cplusplus
 }

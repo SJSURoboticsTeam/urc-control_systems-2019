@@ -40,7 +40,7 @@ void print_wakeup_reason(){
     case 3  : Serial.println("Wakeup caused by timer"); break;
     case 4  : Serial.println("Wakeup caused by touchpad"); break;
     case 5  : Serial.println("Wakeup caused by ULP program"); break;
-    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;
+    default : Serial.println("Wakeup was not caused by deep sleep"); break;
   }
 }
 
@@ -84,7 +84,6 @@ void setup(){
   reset occurs.
   */
   Serial.println("Going to sleep now");
-  Serial.flush(); 
   esp_deep_sleep_start();
   Serial.println("This will never be printed");
 }

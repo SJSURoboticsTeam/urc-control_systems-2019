@@ -22,7 +22,7 @@
  * - Initial distribution.
  */
 
-#include "netif/ppp/ppp_opts.h"
+#include "lwip/opt.h"
 #if PPP_SUPPORT && VJ_SUPPORT /* don't build if not configured for use in lwipopts.h */
 
 #ifndef VJ_H

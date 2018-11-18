@@ -52,7 +52,6 @@
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
-#define BT_SSP_INCLUDED             TRUE
 
 #if CONFIG_A2DP_ENABLE
 #define BTA_AR_INCLUDED             TRUE
@@ -128,7 +127,7 @@
 #else
 #define SMP_INCLUDED              FALSE
 #define BLE_PRIVACY_SPT           FALSE
-#endif  /* CONFIG_SMP_ENABLE */
+#endif  /* CONFIG_GATTC_ENABLE */
 
 #if (CONFIG_BT_ACL_CONNECTIONS)
 #define MAX_ACL_CONNECTIONS  CONFIG_BT_ACL_CONNECTIONS
@@ -306,16 +305,6 @@
 
 #ifndef BTA_AV_CO_CP_SCMS_T
 #define BTA_AV_CO_CP_SCMS_T  FALSE//FALSE
-#endif
-
-#ifndef QUEUE_CONGEST_SIZE
-#define  QUEUE_CONGEST_SIZE    40
-#endif
-
-#ifndef CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
-#define SCAN_QUEUE_CONGEST_CHECK  FALSE
-#else
-#define SCAN_QUEUE_CONGEST_CHECK  CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
 #endif
 
 /* This feature is used to eanble interleaved scan*/
@@ -992,7 +981,7 @@
 #endif
 
 #ifndef BTM_BLE_ADV_TX_POWER
-#define BTM_BLE_ADV_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}
+#define BTM_BLE_ADV_TX_POWER {-21, -15, -7, 1, 9}
 #endif
 
 
@@ -1156,20 +1145,6 @@
 #define SMP_LINK_TOUT_MIN               2
 #endif
 #endif
-
-/******************************************************************************
-**
-** BT_SSP
-**
-******************************************************************************/
-#ifndef BT_SSP_INCLUDED
-#define BT_SSP_INCLUDED         FALSE
-#endif
-
-#if BT_SSP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == FALSE
-#error "Can't have SSP without CLASSIC BT"
-#endif
-
 /******************************************************************************
 **
 ** SDP
