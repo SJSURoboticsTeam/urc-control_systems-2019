@@ -3,7 +3,6 @@
 #include "freertos/portmacro.h"
 #include "freertos/event_groups.h"
 
-
 #ifndef RTOS_TASKS_H_
 #define RTOS_TASKS_H_
 
