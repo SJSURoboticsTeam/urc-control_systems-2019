@@ -29,7 +29,7 @@ extern "C" void app_main()
 	xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 6, &xGyger5); 
 	xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 7, &xGyger6); 
 
-	xTaskCreate(vSendData, "transmit gyger data", 4060, NULL, 8, NULL);
+	xTaskCreate(vHandleData, "transmit/recieve gyger data", 4060, NULL, 8, NULL);
 
 		
   	// xTaskCreate(vTest, "test servo and motor", 4060, NULL, 1, NULL);

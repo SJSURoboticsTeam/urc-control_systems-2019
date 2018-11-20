@@ -24,7 +24,7 @@ extern "C" void vGygerTask(void *pvParameters)
 	
 	volatile int *eCount = NULL;
 
-
+	//determin which interupt counter to read from
 	switch(x)
 	{
 		case 0: eCount = &eCount0;
@@ -45,7 +45,8 @@ extern "C" void vGygerTask(void *pvParameters)
 			break;
 	}
 
-	vTaskSuspend(NULL);
+
+	vTaskSuspend(NULL);//suspend untill mission ccontrol says otherwise
 
     sealPODS(x);
 	vTaskDelay(5000/portTICK_PERIOD_MS);
@@ -73,10 +74,10 @@ extern "C" void vGygerTask(void *pvParameters)
 			}
 
 			total_sample_time += sample_time;
-    		sample_time = sample_time * 2;
+    		sample_time = sample_time + 500;
    		}
     	gyger.cps = float(gyger.count) / total_sample_time * 1000;//radiation in emissions/sec
-    	gyger.cpm = gyger.cps * 60;
+    	gyger.cpm = gyger.cps * 60; // emissions/minute
 
    		gyger.count = 0;
    		sample_time = 500;
@@ -93,7 +94,7 @@ extern "C" void vGygerTask(void *pvParameters)
 }
 
 
-extern "C" void vSendData(void *pvParameters)
+extern "C" void vHandleData(void *pvParameters)
 {
 
 

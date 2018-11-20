@@ -15,7 +15,7 @@ extern "C" void vSealPODS(void *pvParameters);
 
 extern "C" void vGygerTask(void *pvParameters);
 
-extern "C" void vSendData(void *pvParameters);
+extern "C" void vHandleData(void *pvParameters);
 
 extern "C" void vTest(void *pvParameters);
 
