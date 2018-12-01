@@ -8,13 +8,19 @@
 #include "EEPROM.h"
 #include "Source.h"
 #include "constants.h"
+#include <string>
+
+struct ParamsStruct {
+    char name[40];
+};
 
 extern "C" void vSayHelloTask(void *pvParameters)
 {
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
     while(1)
     {
-        hello_world();
-	vTaskDelay(500);
+        hello_world(params->name);
+	    vTaskDelay(500);
     }
 }
 

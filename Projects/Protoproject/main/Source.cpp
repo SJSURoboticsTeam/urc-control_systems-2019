@@ -38,9 +38,9 @@ int EEPROMCount(int addr)
     return data;
 }
 
-void hello_world()
+void hello_world(char* name)
 {
-    printf("Hello, world!\n");
+    printf("Hello, %s!\n", name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

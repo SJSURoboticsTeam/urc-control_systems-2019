@@ -22,32 +22,34 @@ AsyncEventSource events("/events");
 const char kSsid[] = "MyESP32AP";
 const char kPassword[] = "testpassword";
 
-extern "C" void app_main()
-{
+struct ParamsStruct {
+    char name[40];
+};
+
+extern "C" void app_main() {
+    ParamsStruct* params = new ParamsStruct();
+    
     Serial.begin(115200);
     initArduino();
-    initServer();
+    initServer(params);
     pinMode(4, OUTPUT);
     digitalWrite(4, HIGH);
 
-    if (!initEEPROM())
-    {
-        for (int i = 10; i >= 0; i--)
-	{
-	    printf("Restarting in %d seconds...\n", i);
-	    usleep(1000);
-	}
-	printf("Restarting now.\n");
-	fflush(stdout);
-	esp_restart();
+    if (!initEEPROM()) {
+        for (int i = 10; i >= 0; i--) {
+            printf("Restarting in %d seconds...\n", i);
+            usleep(1000);
+        }
+        printf("Restarting now.\n");
+        fflush(stdout);
+        esp_restart();
     }
 
-    xTaskCreate(vSayHelloTask, "Hello", 4096, NULL, 1, NULL);
+    xTaskCreate(vSayHelloTask, "Hello", 4096, params, 1, NULL);
     xTaskCreate(vCountTask, "Count", 4096, NULL, 1, NULL);
 }
 
-
-void initServer() {
+void initServer(ParamsStruct* params) {
     WiFi.softAP(kSsid, kPassword);
     Serial.println();
     Serial.print("IP address: ");
@@ -88,6 +90,13 @@ void initServer() {
         char result_str[10];
         itoa(result, result_str, 10);
         request->send(200, "text/plain", result_str);
+    });
+
+    // XHR example. 
+    server.on("/update_name", HTTP_POST, [](AsyncWebServerRequest *request){
+        memcpy(params->name, request->argName("name").c_str(), strlen(params->name) + 1);
+        
+        request->send(200, "text/plain", "Success");
     });
 
     //SSE Example. When webserver opens event source at /events
