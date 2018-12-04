@@ -10,16 +10,11 @@
 #include "constants.h"
 #include <string>
 
-struct ParamsStruct {
-    char name[40];
-};
-
-extern "C" void vSayHelloTask(void *pvParameters)
-{
+extern "C" void vSayHelloTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
-    while(1)
-    {
-        hello_world(params->name);
+
+    while(1) {
+        printf("Hello, %s! \n", params->name);
 	    vTaskDelay(500);
     }
 }
@@ -30,10 +25,9 @@ extern "C" void vCountTask(void *pvParameters)
     EEPROM.put(BEGINING_ADDR, count);
     EEPROM.commit();
 
-    while(1)
-    {
+    while(1) {
         count = EEPROMCount(BEGINING_ADDR);
-	printf("I have said hello %d times!\n\n\n", count);
-	vTaskDelay(500);
+        printf("I have said hello %d times!\n\n\n", count);
+        vTaskDelay(500);
     }
 }

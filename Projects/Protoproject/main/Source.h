@@ -1,3 +1,5 @@
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -8,11 +10,17 @@
 extern "C" {
 #endif
 
+struct ParamsStruct {
+    char name[40];
+};
+
+void initServer(AsyncWebServer* server, ParamsStruct* params);
+
 bool initEEPROM();
 
 int EEPROMCount(int addr);
 
-void hello_world();
+void hello_world(char* name);
 
 #ifdef _cplusplus
 }
