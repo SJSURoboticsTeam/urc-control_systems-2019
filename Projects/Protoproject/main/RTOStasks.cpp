@@ -10,6 +10,7 @@
 #include "constants.h"
 #include <string>
 
+
 extern "C" void vSayHelloTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
@@ -19,6 +20,11 @@ extern "C" void vSayHelloTask(void *pvParameters) {
     }
 }
 
+/*
+    This task demonstrates how to read and write from EEPROM,
+    which is non-voltaile memory that we can use to store data on the 
+    ESP.
+*/
 extern "C" void vCountTask(void *pvParameters)
 {
     int count = 0;
