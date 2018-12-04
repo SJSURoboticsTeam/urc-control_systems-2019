@@ -27,7 +27,7 @@ extern "C" void vCountTask(void *pvParameters)
     while(1)
     {
         count = EEPROMCount(BEGINING_ADDR);
-	printf("I have said hello %d times!\n\n\n", count);
-	vTaskDelay(500);
+    	printf("I have said hello %d times!\n\n\n", count);
+    	vTaskDelay(500);
     }
 }
