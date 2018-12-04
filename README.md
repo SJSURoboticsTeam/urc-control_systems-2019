@@ -3,9 +3,12 @@
 ### Framework ###
 
 ##### General #####
-* The framework make commands ONLY work in Linux. If you have a windows computer. Please install a VM of Linux using VM Workstation. If your computer is not fast enough for a VM then you will have to dual boot. Also, for VM's, make sure you use a 32 bit version of Linux.
-* **DO NOT USE THE CLONE BUTTON AT THE TOP OF THIS PAGE.**     
-Instead use the command `git clone --recursive https://github.com/SJSURobotics2019/controlsystems2019.git`
+* The framework make commands ONLY work in Linux. If you have a windows computer. Please install a VM of Linux using VM Workstation. If your computer is not fast enough for a VM then you will have to dual boot.
+* **DO NOT USE A NORMAL CLONE COMMAND.**     
+Instead use the command `git clone --recursive https://github.com/SJSURobotics2019/controlsystems2019.git`. This is due to the nested submodules in the esp-idf.
+
+##### Forking to your own account #####
+* Click on the button on the top right of this page that says "Fork" and follow the instructions. Open your terminal and  perform a `git clone --recursive https://github.com/<YOUR GITHUB USERNAME>/controlsystems2019.git`. You now have access to a forked version of this repository that you can push to freely.
 
 ##### Hierarchy #####
 * Projects - The folder where all sub-systems module is placed in.
@@ -167,6 +170,13 @@ Once you update the paths, enter the command `source ~/.profile` for the changes
    If you are using windows, these are your COM ports, so you will need to determine which of these your ESP32 is connected to and use the linux naming configuration. For example, if your ESP32 is connected to COM4, you would enter /dev/ttyS4. 
    Once done, save and exit the configuration menu. Run the command `make app-flash PROJECT_NAME=hello-world` to build and program your ESP32. When the program has finished building and flashing, run the command `make monitor` to see if you are recieving from your board. Press ctrl+] to exit.
    
+### Pulling Changes from the Team Repository ###
+From time to time, updates will be made to the team repository. To keep your fork and local workspace up to date, you will need to configure your local workspace to recognize the team reposistory as a source for changes. To do this, let's first introduce some terminology. The team drive will be reffered to as the "upstream" source, while the forked remote repository on your own github account will be reffered to as the "origin" source.
+#### Configuring an Upstream Source ####
+This only needs to be done once. First, commit or stash any changes you do not wish to be lost due to merge conflicts. Next, navigate to your controlsystems2019 folder, and perform `git remote add upstream https://github.com/SJSURobotics2019/controlsystems2019.git`.
+#### Pulling from Upstream ####
+Simply perform `git pull upstream master` to pull any changes on the upstrem remote to your local workspace. Fix any merge conflicts you might have, then add and commit the changes. Perform a `git push origin master` in order to save these changes to your origin repository as well. You should now be up to date with the upstream repository
+
 ### Using Arduino Libraries ###
 To use Arduino libraries, copy the contents of Templates/Protoduino into a new project including the "components" folder. This folder contains the Arduino libraries and framework. Run `make menuconfig` and navigate to the Arduino options. Uncheck "Autostart Arduino setup and loop on boot" if it is not already. Navigate to Serial Flasher config and change the flash size from 2MB to 4 MB. Configure other settings as you normally would. Close the menuconfig and open main->main.cpp. Make sure that the Arduino.h header and the following lines of code are included in your project:     
 ```C
@@ -175,9 +185,9 @@ To use Arduino libraries, copy the contents of Templates/Protoduino into a new p
 extern "C" void app_main()
 {
     initArduino();
-    pinMode(4, OUTPUT);
-    digitalWrite(4, HIGH);
-
+    
+    // Your code here
+    
 }
 
 ```
