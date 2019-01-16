@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-extern "C" void vSayHelloTask(void *pvParameters);
-
 extern "C" void vCountTask(void *pvPArameters);
 
 #ifdef _cplusplus
