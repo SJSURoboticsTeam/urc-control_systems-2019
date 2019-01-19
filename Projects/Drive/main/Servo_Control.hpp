@@ -54,7 +54,7 @@ class Servo
          *                        by the servo manufacturer.
          */
         void InitServo(uint32_t pin, uint32_t channel, uint32_t timer, 
-                       uint32_t frequency, float max, float min);       
+                       uint32_t frequency, float min, float max);       
         
         /**
          * This function sets the frequency of the PWM in hertz by updating the 

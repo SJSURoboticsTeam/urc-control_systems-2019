@@ -15,13 +15,13 @@ extern "C" {
 
 
 struct ParamsStruct {
-    char mode[10];
-    int wheel_A_speed;
-    int wheel_A_heading;
-    int wheel_B_speed;
-    int wheel_B_heading;
-    int wheel_C_speed;
-    int wheel_C_heading;
+    int mode;
+    double wheel_A_speed;
+    double wheel_A_heading;
+    double wheel_B_speed;
+    double wheel_B_heading;
+    double wheel_C_speed;
+    double wheel_C_heading;
     bool brake;
 };
 
@@ -66,27 +66,28 @@ void initRotateMode(bool direction);
 void initTranslateMode();
 
 /**
- * This function determines which direction all the wheels should spin. As of
- * 10/5/18, this is a conceptual function and has not yet been implemented.
+ * This function determines which direction all the wheels should spin. 
  */
 void setDirectionAllWheels(bool direction);
 
-/**This function determines which direction the stated wheel should spin. As of
- * 10/5/18, this is a conceptual function and has not yet been implemented.
+/**This function determines which direction the stated wheel should spin. 
  */
-//void setDirection(uint32_t wheel, bool direction);
+void setDirection(uint32_t wheel, bool direction);
 
 /**
- * This function sets the speed at which all wheels should rotate. As of
- * 10/5/18, this is a conceptual funtion and has not yet been implemented.
+ * This function sets the speed at which all wheels should rotate.
  */
 void setSpeedAllWheels(double speed);
 
 /**
- * This function sets the speed at which the stated wheel. should rotate. As of
- * 10/5/18, this is a conceptual function and has not yet been implemented.
+ * This function sets the speed at which the stated wheel should rotate.
  */
-//void setSpeed(uint32_t wheel, uint32_t speed);
+void setSpeed(uint32_t wheel, uint32_t speed);
+
+/**
+ * This function sets the heading of the specified wheel.
+ */
+void setHeading(uint32_t wheel, double percentage);
 
 /**
  * This function determines the current heading of the rover based on raw GPS

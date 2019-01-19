@@ -27,8 +27,8 @@ constexpr uint32_t SERVO_C_CHANNEL = 2;
 constexpr uint32_t SERVO_TIMER = 0;
 constexpr uint32_t SERVO_FREQUENCY = 50;
 
-constexpr float SERVO_MIN = 3.5;
-constexpr float SERVO_MAX = 13.5;
+constexpr float SERVO_MIN = 2.2;
+constexpr float SERVO_MAX = 11;
 
 // Constants for the drive motors
 constexpr uint32_t MOTOR_A_PIN = 21;
@@ -42,10 +42,10 @@ constexpr uint32_t MOTOR_C_CHANNEL = 5;
 constexpr uint32_t MOTOR_TIMER = 1;
 constexpr uint32_t MOTOR_FREQUENCY = 50;
 
-constexpr float MOTOR_MIN = 5;
-constexpr float MOTOR_MAX = 10;
-constexpr float DEAD_MIN = 7.2;
-constexpr float DEAD_MAX = 7.5;
+constexpr float MOTOR_MIN = 6.5;
+constexpr float MOTOR_MAX = 8.5;
+constexpr float DEAD_MIN = 7.67;
+constexpr float DEAD_MAX = 7.71;
 
 // Initial positions for different steering modes
 constexpr float DRIVE_POSITION_0[3] = {75, 25, 50};

@@ -68,6 +68,7 @@ void Servo::SetPositionPercent(double percentage)
     // Set the Duty Cycle //
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
+    printf("Position set to %f percent of total range.\n", percentage);
 }
 
 void Servo::SetPositionDuty(uint32_t duty)
@@ -99,7 +100,7 @@ double Servo::GetPercentage(uint32_t max_rotation, double angle)
 }
 
 void ServoMotor::InitServoMotor(uint32_t pin, uint32_t channel, uint32_t timer,
-                    uint32_t frequency, float max, float min, 
+                    uint32_t frequency, float min, float max, 
                     float dead_min, float dead_max)
 {
     // Define Statics //
@@ -172,13 +173,14 @@ void ServoMotor::SetSpeed(double percentage)
     // Sets duty cycle to calculated value //
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
+    printf("Speed set to %f percent.\n", percentage);
 }
 
 void ServoMotor::SetSpeedAndDirection(double percentage, bool dir)
 {
     // sets direction then calls SetSpeed() function //	
     direction = dir;
-    this->SetSpeed(percentage);
+    SetSpeed(percentage);
 }
 
 void ServoMotor::SetSpeedDuty(uint32_t duty)

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <WiFi.h>
+#include <string.h>
 #include "Source.h"
 #include "Arduino.h"
 #include "EEPROM.h"
@@ -38,25 +39,25 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         for (int i=0; i<8; i++) {
             if (request->hasArg(vars[i])) {
                 if (strcmp(vars[i], "mode")) {
-                    strcpy(params->mode, request->arg("mode").c_str());  
+                    params->mode = request->arg("mode").toInt();  
                 }
                 if (strcmp(vars[i], "wheel_A_speed")) {
-                    params->wheel_A_speed = request->arg("wheel_A_speed").toInt();    
+                    params->wheel_A_speed = request->arg("wheel_A_speed").toFloat();    
                 }
                 if (strcmp(vars[i], "wheel_A_heading")) {
-                    params->wheel_A_heading = request->arg("wheel_A_heading").toInt();    
+                    params->wheel_A_heading = request->arg("wheel_A_heading").toFloat();    
                 }
                 if (strcmp(vars[i], "wheel_B_speed")) {
-                    params->wheel_B_speed = request->arg("wheel_B_speed").toInt();    
+                    params->wheel_B_speed = request->arg("wheel_B_speed").toFloat();    
                 }
                 if (strcmp(vars[i], "wheel_B_heading")) {
-                    params->wheel_B_heading = request->arg("wheel_B_heading").toInt();    
+                    params->wheel_B_heading = request->arg("wheel_B_heading").toFloat();    
                 }
                 if (strcmp(vars[i], "wheel_C_speed")) {
-                    params->wheel_C_speed = request->arg("wheel_C_speed").toInt();    
+                    params->wheel_C_speed = request->arg("wheel_C_speed").toFloat();    
                 }
                 if (strcmp(vars[i], "wheel_C_heading")) {
-                    params->wheel_C_heading = request->arg("wheel_C_heading").toInt();    
+                    params->wheel_C_heading = request->arg("wheel_C_heading").toFloat();    
                 }
                 if (strcmp(vars[i], "brake")) {
                     params->brake = (bool) request->arg("brake").toInt();    
@@ -68,13 +69,13 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         }
         
         printf("handle_update endpoint running\n");
-        printf("    mode: %s \n", params->mode);
-        printf("    wheel_A_speed: %i \n", params->wheel_A_speed);
-        printf("    wheel_A_heading: %i \n", params->wheel_A_heading);
-        printf("    wheel_B_speed: %i \n", params->wheel_B_speed);
-        printf("    wheel_B_heading: %i \n", params->wheel_B_heading);
-        printf("    wheel_C_speed: %i \n", params->wheel_C_speed);
-        printf("    wheel_C_heading: %i \n", params->wheel_C_heading);
+        printf("    mode: %i \n", params->mode);
+        printf("    wheel_A_speed: %f \n", params->wheel_A_speed);
+        printf("    wheel_A_heading: %f \n", params->wheel_A_heading);
+        printf("    wheel_B_speed: %f \n", params->wheel_B_speed);
+        printf("    wheel_B_heading: %f \n", params->wheel_B_heading);
+        printf("    wheel_C_speed: %f \n", params->wheel_C_speed);
+        printf("    wheel_C_heading: %f \n", params->wheel_C_heading);
         printf("    brake: %i \n", params->brake);
         printf("\n");
 
@@ -194,24 +195,66 @@ void setDirectionAllWheels(bool direction)
      motor_B.SetDirection(direction);
      motor_C.SetDirection(direction);
 }
-/*
-void setDirection(uint32_t wheel, bool direction);
-{
 
+void setDirection(uint32_t wheel, bool direction)
+{
+    switch(wheel)
+    {
+        case 0: 
+            motor_A.SetDirection(direction);
+            break;
+        case 1:
+            motor_B.SetDirection(direction);
+            break;
+        case 2:
+            motor_C.SetDirection(direction);
+            break;
+        default: break;
+    }
 }
-*/
+
 void setSpeedAllWheels(double speed)
 {
     motor_A.SetSpeed(speed);
     motor_B.SetSpeed(speed);
     motor_C.SetSpeed(speed);
 }
-/*
-void setSpeed(uint32_t wheel, uint32_t speed);
-{
 
+void setSpeed(uint32_t wheel, uint32_t speed)
+{
+    switch(wheel)
+    {
+        case 0: 
+            motor_A.SetSpeed(speed);
+            break;
+        case 1:
+            motor_B.SetSpeed(speed);
+            break;
+        case 2:
+            motor_C.SetSpeed(speed);
+            break;
+        default: break;
+    }
 }
 
+void setHeading(uint32_t wheel, double percentage)
+{
+    switch(wheel)
+    {
+        case 0: 
+            servo_A.SetPositionPercent(percentage);
+            break;
+        case 1:
+            servo_B.SetPositionPercent(percentage);
+            break;
+        case 2:
+            servo_C.SetPositionPercent(percentage);
+            break;
+        default: break;
+    }
+}
+
+/*
 char *getHeading(double gps_data);
 {
 

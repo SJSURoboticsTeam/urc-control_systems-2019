@@ -16,23 +16,24 @@ ParamsStruct params;
 //Server used to listen for XHRs, and send SSEs.
 AsyncWebServer server(80);
 
+// Create the Steering Servos
+Servo servo_A;
+Servo servo_B;
+Servo servo_C; 
+
+// Create the Drive Motors
+ServoMotor motor_A;
+ServoMotor motor_B;
+ServoMotor motor_C;
+
 extern "C" void app_main() {
     
     Serial.begin(115200);
     initArduino();
     initServer(&server, &params);
 
-    //Init EEPROM (how we write data)
-    if (!initEEPROM()) {
-        for (int i = 10; i >= 0; i--) {
-            printf("Restarting in %d seconds...\n", i);
-            usleep(1000);
-        }
-        printf("Restarting now.\n");
-        fflush(stdout);
-        esp_restart();
-    }
+    initComponents();
 
     //Create freeRTOS tasks.
-    xTaskCreate(vCountTask, "Count", 4096, NULL, 1, NULL);
+    xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, NULL);
 }
