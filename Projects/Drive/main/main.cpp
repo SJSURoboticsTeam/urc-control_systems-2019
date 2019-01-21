@@ -26,6 +26,12 @@ ServoMotor motor_A;
 ServoMotor motor_B;
 ServoMotor motor_C;
 
+// Create task handlers
+TaskHandle_t xCarHandle;
+TaskHandle_t xCrabHandle;
+TaskHandle_t xSpinHandle;
+TaskHandle_t xDebugHandle;
+
 extern "C" void app_main() {
     
     Serial.begin(115200);
@@ -35,5 +41,10 @@ extern "C" void app_main() {
     initComponents();
 
     //Create freeRTOS tasks.
-    xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, NULL);
+    xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, &xDebugHandle);
+    xTaskCreate(vCarTask, "Car", 4096, (void *) &params, 1, &xCarHandle);
+    xTaskCreate(vCrabTask, "Crab", 4096, (void *) &params, 1, &xCrabHandle);
+    xTaskCreate(vSpinTask, "Spin", 4096, (void *) &params, 1, &xSpinHandle);
+    xTaskCreate(vModeTaskHandler, "TaskHandler", 4096, (void *) &params, 2, NULL);
+
 }

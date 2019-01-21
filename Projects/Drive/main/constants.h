@@ -10,12 +10,14 @@
 
 #include <stdlib.h>
 #include "Servo_Control.hpp"
+#include "freertos/FreeRTOS.h"
 
-#define EEPROM_SIZE 0x64
+// Relevant rover dimensions in inches //
+constexpr double SIDE = 40.25;
+constexpr double SIDE_2_MID = 11.619;
+constexpr double CORNER_2_MID = 23.238;
 
-#define BEGINING_ADDR 0x00
-
-// Constants for the steering servos
+// Constants for the steering servos //
 constexpr uint32_t SERVO_A_PIN = 15;
 constexpr uint32_t SERVO_B_PIN = 16;
 constexpr uint32_t SERVO_C_PIN = 17;
@@ -30,7 +32,7 @@ constexpr uint32_t SERVO_FREQUENCY = 50;
 constexpr float SERVO_MIN = 2.2;
 constexpr float SERVO_MAX = 11;
 
-// Constants for the drive motors
+// Constants for the drive motors //
 constexpr uint32_t MOTOR_A_PIN = 21;
 constexpr uint32_t MOTOR_B_PIN = 22;
 constexpr uint32_t MOTOR_C_PIN = 23;
@@ -48,21 +50,39 @@ constexpr float DEAD_MIN = 7.67;
 constexpr float DEAD_MAX = 7.71;
 
 // Initial positions for different steering modes
-constexpr float DRIVE_POSITION_0[3] = {75, 25, 50};
-constexpr float DRIVE_POSITION_1[3] = {50, 75, 25};
-constexpr float DRIVE_POSITION_2[3] = {25, 50, 75};
+/* test servos */
+// Left = A, Right = B, Back = C
+constexpr float DRIVE_POSITION_0[3] = {83.33, 16.67, 50};
+// Left = B, Right = C, Back = A
+constexpr float DRIVE_POSITION_1[3] = {50, 83.33, 16.67};
+// Left = C, Right = A, Back = B
+constexpr float DRIVE_POSITION_2[3] = {16.67, 50, 83.33};
 
+/* Real Servos
+// Left = A, Right = B, Back = C
+constexpr float DRIVE_POSITION_0[3] = {72.22, 27.78, 50};
+// Left = B, Right = C, Back = A
+constexpr float DRIVE_POSITION_1[3] = {50, 72.22, 27.78};
+// Left = C, Right = A, Back = B
+constexpr float DRIVE_POSITION_2[3] = {27.78, 50, 72.22};
+*/
 constexpr float ROTATE_POSITION_0 = 0;
 constexpr float ROTATE_POSITION_1 = 100;
 
-// Create the Steering Servos
+// Create the Steering Servos //
 extern Servo servo_A;
 extern Servo servo_B;
 extern Servo servo_C; 
 
-// Create the Drive Motors
+// Create the Drive Motors //
 extern ServoMotor motor_A;
 extern ServoMotor motor_B;
 extern ServoMotor motor_C;
+
+// RTOS handlers //
+extern TaskHandle_t xCarHandle;
+extern TaskHandle_t xCrabHandle;
+extern TaskHandle_t xSpinHandle;
+extern TaskHandle_t xDebugHandle;
 
 #endif

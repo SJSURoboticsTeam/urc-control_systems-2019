@@ -32,8 +32,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
     server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
         const char *vars[8] = {
-            "mode", "wheel_A_speed", "wheel_A_heading", "wheel_B_speed", 
-            "wheel_B_heading", "wheel_C_speed", "wheel_C_heading", "brake"
+            "mode", "speed_A", "heading_A", "speed_B", 
+            "heading_B", "speed_C", "heading_C", "brake"
         };
 
         for (int i=0; i<8; i++) {
@@ -41,23 +41,23 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 if (strcmp(vars[i], "mode")) {
                     params->mode = request->arg("mode").toInt();  
                 }
-                if (strcmp(vars[i], "wheel_A_speed")) {
-                    params->wheel_A_speed = request->arg("wheel_A_speed").toFloat();    
+                if (strcmp(vars[i], "speed_A")) {
+                    params->speed_A = request->arg("speed_A").toFloat();    
                 }
-                if (strcmp(vars[i], "wheel_A_heading")) {
-                    params->wheel_A_heading = request->arg("wheel_A_heading").toFloat();    
+                if (strcmp(vars[i], "heading_A")) {
+                    params->heading_A = request->arg("heading_A").toFloat();    
                 }
-                if (strcmp(vars[i], "wheel_B_speed")) {
-                    params->wheel_B_speed = request->arg("wheel_B_speed").toFloat();    
+                if (strcmp(vars[i], "speed_B")) {
+                    params->speed_B = request->arg("speed_B").toFloat();    
                 }
-                if (strcmp(vars[i], "wheel_B_heading")) {
-                    params->wheel_B_heading = request->arg("wheel_B_heading").toFloat();    
+                if (strcmp(vars[i], "heading_B")) {
+                    params->heading_B = request->arg("heading_B").toFloat();    
                 }
-                if (strcmp(vars[i], "wheel_C_speed")) {
-                    params->wheel_C_speed = request->arg("wheel_C_speed").toFloat();    
+                if (strcmp(vars[i], "speed_C")) {
+                    params->speed_C = request->arg("speed_C").toFloat();    
                 }
-                if (strcmp(vars[i], "wheel_C_heading")) {
-                    params->wheel_C_heading = request->arg("wheel_C_heading").toFloat();    
+                if (strcmp(vars[i], "heading_C")) {
+                    params->heading_C = request->arg("heading_C").toFloat();    
                 }
                 if (strcmp(vars[i], "brake")) {
                     params->brake = (bool) request->arg("brake").toInt();    
@@ -70,12 +70,12 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         
         printf("handle_update endpoint running\n");
         printf("    mode: %i \n", params->mode);
-        printf("    wheel_A_speed: %f \n", params->wheel_A_speed);
-        printf("    wheel_A_heading: %f \n", params->wheel_A_heading);
-        printf("    wheel_B_speed: %f \n", params->wheel_B_speed);
-        printf("    wheel_B_heading: %f \n", params->wheel_B_heading);
-        printf("    wheel_C_speed: %f \n", params->wheel_C_speed);
-        printf("    wheel_C_heading: %f \n", params->wheel_C_heading);
+        printf("    speed_A: %f \n", params->speed_A);
+        printf("    heading_A: %f \n", params->heading_A);
+        printf("    speed_B: %f \n", params->speed_B);
+        printf("    heading_B: %f \n", params->heading_B);
+        printf("    speed_C: %f \n", params->speed_C);
+        printf("    heading_C: %f \n", params->heading_C);
         printf("    brake: %i \n", params->brake);
         printf("\n");
 
@@ -280,28 +280,3 @@ char *getHeading(double gps_data);
     }
     return direction;
 }*/
-
-bool initEEPROM() 
-{
-    bool status = EEPROM.begin(EEPROM_SIZE);
-    if(!status)
-    {
-        printf("ERROR: EEPROM initialization failure.\n");
-        usleep(1000);
-    }
-    else
-    {
-        printf("Successfully initialized EEPROM, size = %d.\n", EEPROM_SIZE);
-        usleep(1000);
-    }
-    return status;    
-}
-
-int EEPROMCount(int addr)
-{
-    int data = EEPROM.read(addr);
-    data++;
-    EEPROM.write(addr, data);
-    EEPROM.commit();
-    return data;
-}

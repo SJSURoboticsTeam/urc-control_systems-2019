@@ -13,15 +13,28 @@
 extern "C" {
 #endif
 
-
+/*
+ * mode: indicates the functionality of the rover, should only hold values 0-3
+ *     0: Car Mode
+ *	   1: Crab Mode
+ *	   2: Rotate Mode
+ *	   3: Debug Mode
+ *
+ * Speeds are to be recieved in values ranging from -100 to 100 with double 
+ * floating point precision.
+ * 
+ * Headings are to be recieved in values ranging from -255 to 255.
+ * 
+ * Brake is a boolean value.
+ */
 struct ParamsStruct {
     int mode;
-    double wheel_A_speed;
-    double wheel_A_heading;
-    double wheel_B_speed;
-    double wheel_B_heading;
-    double wheel_C_speed;
-    double wheel_C_heading;
+    double speed_A;
+    double heading_A;
+    double speed_B;
+    double heading_B;
+    double speed_C;
+    double heading_C;
     bool brake;
 };
 
