@@ -32,6 +32,14 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
         strcpy(params->name, request->arg("name").c_str());
         request->send(200, "text/plain", "Success");
+
+    server->on("/update_mode", HTTP_POST, [=](AsyncWebServerRequest *request){
+        strcpy(params->mode, request->arg("mode").c_str());
+        request->send(200, "text/plain", "Success");
+
+    erver->on("/update_yaw_value", HTTP_POST, [=](AsyncWebServerRequest *request){
+        strcpy(params->yaw_value, request->arg("yaw value").c_str());
+        request->send(200, "text/plain", "Success");
     });
     
     
