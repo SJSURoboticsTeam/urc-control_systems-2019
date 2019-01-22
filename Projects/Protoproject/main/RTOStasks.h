@@ -3,7 +3,6 @@
 #include "freertos/portmacro.h"
 #include "freertos/event_groups.h"
 
-
 #ifndef RTOS_TASKS_H_
 #define RTOS_TASKS_H_
 
@@ -12,6 +11,10 @@ extern "C" {
 #endif
 
 extern "C" void vSayHelloTask(void *pvParameters);
+
+extern "C" void vModeTask(void *pvParameters);
+
+extern "C" void vYawValueTask(void *pvParameters);
 
 extern "C" void vCountTask(void *pvPArameters);
 

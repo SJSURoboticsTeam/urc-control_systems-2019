@@ -1,3 +1,5 @@
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -8,11 +10,20 @@
 extern "C" {
 #endif
 
+struct ParamsStruct {
+    char name[40]; // test parameter
+    char mode[2]; // arm or manual control mode
+    double yaw_value; // y axis value of the gimbal
+    
+};
+
+void initServer(AsyncWebServer* server, ParamsStruct* params);
+
 bool initEEPROM();
 
 int EEPROMCount(int addr);
 
-void hello_world();
+void hello_world(char* name);
 
 #ifdef _cplusplus
 }

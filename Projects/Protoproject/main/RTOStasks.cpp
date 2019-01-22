@@ -8,26 +8,50 @@
 #include "EEPROM.h"
 #include "Source.h"
 #include "constants.h"
+#include <string>
 
-extern "C" void vSayHelloTask(void *pvParameters)
-{
-    while(1)
-    {
-        hello_world();
-	vTaskDelay(500);
+
+extern "C" void vSayHelloTask(void *pvParameters) {
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
+
+    while(1) {
+        printf("Hello, %s! \n", params->name);
+	    vTaskDelay(500);
     }
 }
 
+extern "C" void vModeTask(void *pvParameters) {
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
+
+    while(1) {
+        printf("Current Mode, %s! \n", params->mode);
+	    vTaskDelay(500);
+    }
+}
+
+extern "C" void vYawValueTask(void *pvParameters) {
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
+
+    while(1) {
+        printf("Current Yaw Value, %s! \n", params->yaw_value);
+	    vTaskDelay(500);
+    }
+}
+
+/*
+    This task demonstrates how to read and write from EEPROM,
+    which is non-voltaile memory that we can use to store data on the 
+    ESP.
+*/
 extern "C" void vCountTask(void *pvParameters)
 {
     int count = 0;
     EEPROM.put(BEGINING_ADDR, count);
     EEPROM.commit();
 
-    while(1)
-    {
+    while(1) {
         count = EEPROMCount(BEGINING_ADDR);
-	printf("I have said hello %d times!\n\n\n", count);
-	vTaskDelay(500);
+        printf("I have said hello %d times!\n\n\n", count);
+        vTaskDelay(500);
     }
 }
