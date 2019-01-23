@@ -309,15 +309,88 @@ extern "C" void vCrabTask(void *pvParameters)
     double cam_offset = Params->heading_B;
     double heading = Params->heading_A;
     double wheel_A_heading = Params->heading_A;
+    bool wheel_A_dir = 0;
     double wheel_B_heading = Params->heading_A;
+    bool wheel_B_dir = 0;
     double wheel_C_heading = Params->heading_A;
+    bool wheel_C_dir = 1;
+    double speed = 0;
 
     while (1)
     {
+        // If limit speed to 30 % of top speed
+        if (abs(Params->speed_A) > 30)
+        {
+            speed = 30;
+        }
+        else
+        {
+            speed = abs(Params->speed_A);
+        }
+
+        // Adjust parameters for new instance of crab mode
+        if (cam_offset != Params->heading_B)
+        {
+            cam_offset = Params->heading_B;
+            wheel_A_heading = heading + cam_offset + 30;
+            wheel_B_heading = heading + cam_offset - 30;
+            wheel_C_heading = heading + cam_offset + 180;
+        }
+
+        // Update parameters for new heading from mission control 
         if (heading != Params->heading_A)
         {
-            
+            wheel_A_heading = wheel_A_heading + (Params->heading_A - heading);
+            wheel_B_heading = wheel_A_heading + (Params->heading_A - heading);
+            wheel_B_heading = wheel_A_heading + (Params->heading_A - heading);
         }
+
+        // If wheels hit boundaries, flip them 180 degrees and switch 
+        // direction they rotate.
+        if (wheel_A_heading < MIN_ROTATION)
+        {
+            wheel_A_heading = wheel_A_heading + 180;
+            wheel_A_dir = ~wheel_A_dir;
+            motor_A.SetDirection(wheel_A_dir);
+        }
+        else if (wheel_A_heading > MAX_ROTATION)
+        {
+            wheel_A_heading = wheel_A_heading - 180;
+            wheel_A_dir = ~wheel_A_dir;
+            motor_A.SetDirection(wheel_A_dir);
+        }
+        if (wheel_B_heading < MIN_ROTATION)
+        {
+            wheel_B_heading = wheel_B_heading + 180;
+            wheel_B_dir = ~wheel_B_dir;
+            motor_B.SetDirection(wheel_B_dir);
+        }
+        else if (wheel_B_heading > MAX_ROTATION)
+        {
+            wheel_B_heading = wheel_B_heading - 180;
+            wheel_B_dir = ~wheel_B_dir;
+            motor_B.SetDirection(wheel_B_dir);
+        }
+        if (wheel_C_heading < MIN_ROTATION)
+        {
+            wheel_C_heading = wheel_C_heading + 180;
+            wheel_C_dir = ~wheel_C_dir;
+            motor_C.SetDirection(wheel_C_dir);
+        }
+        else if (wheel_C_heading > MAX_ROTATION)
+        {
+            wheel_C_heading = wheel_C_heading - 180;
+            wheel_C_dir = ~wheel_C_dir;
+            motor_C.SetDirection(wheel_C_dir);
+        }
+
+        // Update servo positions and speed
+        servo_A.SetPositionPercent(100 * wheel_A_heading/MAX_ROTATION);
+        servo_B.SetPositionPercent(100 * wheel_B_heading/MAX_ROTATION);
+        servo_C.SetPositionPercent(100 * wheel_C_heading/MAX_ROTATION);
+        setSpeedAllWheels(speed);
+
+        vTaskDelay(5);
     }
 }
 

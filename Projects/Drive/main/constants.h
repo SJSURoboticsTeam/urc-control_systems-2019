@@ -50,8 +50,8 @@ constexpr float MOTOR_MAX = 8.5;
 constexpr float DEAD_MIN = 7.67;
 constexpr float DEAD_MAX = 7.71;
 
-// Initial positions for different steering modes
-/* test servos */
+// Initial positions for Car Mode (percent)
+/* Test servos */
 // Left = A, Right = B, Back = C
 constexpr float DRIVE_POSITION_0[3] = {83.33, 16.67, 50};
 // Left = B, Right = C, Back = A
@@ -67,8 +67,26 @@ constexpr float DRIVE_POSITION_1[3] = {50, 72.22, 27.78};
 // Left = C, Right = A, Back = B
 constexpr float DRIVE_POSITION_2[3] = {27.78, 50, 72.22};
 */
+
+// Positions for Spin Mode (percent)
+/* Test Servos */
 constexpr float ROTATE_POSITION_0 = 0;
 constexpr float ROTATE_POSITION_1 = 100;
+
+/* Real Servos
+constexpr float ROTATE_POSITION_0 = 16.67;
+constexor float ROTATE_POSITION_1 = 83.33;
+*/
+
+// Boandaries for Crab Mode (degrees)
+/* Test Servos */
+constexpr double MAX_ROTATION = 180;
+constexpr double MIN_ROTATION = 0;
+
+/* Real Servos
+constexpr double MAX_ROTATION = 270;
+constexpr double MIN_ROTATION = 0;
+*/
 
 // Create the Steering Servos //
 extern Servo servo_A;
