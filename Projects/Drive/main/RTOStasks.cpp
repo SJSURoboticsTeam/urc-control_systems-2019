@@ -53,9 +53,11 @@ extern "C" void vModeTaskHandler (void *pvParameters)
                     vTaskResume(xCarHandle);
                     break;
                 case 1:
+                    initCrabMode();
                     vTaskResume(xCrabHandle);
                     break;
                 case 2:
+                    initSpinMode(Params->heading_A);
                     vTaskResume(xSpinHandle);
                     break;
                 case 3:
@@ -231,7 +233,7 @@ extern "C" void vCarTask(void *pvParameters)
         if (Params->heading_A < 0)
         {
             // A 1058.355 in radius turns the inner wheel 1 degree
-            radius_rover = (255 - abs(Params->heading_A))/255 * 1058.355;
+            radius_rover = (255 - abs(Params->heading_A))/255 * MAX_DIST;
             radius_left = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_right = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
@@ -249,7 +251,7 @@ extern "C" void vCarTask(void *pvParameters)
         if (Params->heading_A < 0)
         {
             // A 1058.355 in radius turns the inner wheel 1 degree
-            radius_rover = (255 - abs(Params->heading_A))/255 * 1058.355;
+            radius_rover = (255 - abs(Params->heading_A))/255 * MAX_DIST;
             radius_right = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_left = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
@@ -296,18 +298,37 @@ extern "C" void vCarTask(void *pvParameters)
             right_motor.SetSpeed((((speed_right)/3.1416)/0.833)*100);
             back_motor.SetSpeed((((speed_back)/3.1416)/0.833)*100);
         }
-
+        vTaskDelay(5);
     }
-
-    vTaskDelay(5);
 }
 
 extern "C" void vCrabTask(void *pvParameters)
 {
+    ParamsStruct *Params = (ParamsStruct *) pvParameters;
 
+    double cam_offset = Params->heading_B;
+    double heading = Params->heading_A;
+    double wheel_A_heading = Params->heading_A;
+    double wheel_B_heading = Params->heading_A;
+    double wheel_C_heading = Params->heading_A;
+
+    while (1)
+    {
+        if (heading != Params->heading_A)
+        {
+            
+        }
+    }
 }
 
 extern "C" void vSpinTask(void *pvParameters)
 {
-
+    ParamsStruct *Params = (ParamsStruct *) pvParameters;
+    while(1)
+    {
+        initSpinMode(Params->heading_A);
+        setDirectionAllWheels((Params->speed_A < 0) ? 0:1);
+        setSpeedAllWheels(abs(Params->speed_A));
+        vTaskDelay(5);
+    }
 }

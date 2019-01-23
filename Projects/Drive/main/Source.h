@@ -23,7 +23,10 @@ extern "C" {
  * Speeds are to be recieved in values ranging from -100 to 100 with double 
  * floating point precision.
  * 
- * Headings are to be recieved in values ranging from -255 to 255.
+ * Headings are to be recieved in values ranging from -255 to 255 except in Crab
+ * mode where A and B will be as follows:
+ *     heading_A: 0 - 360 degrees with double floating point precision.
+ *	   heading_B: -180 - 180 degrees with double floating point precision.
  * 
  * Brake is a boolean value.
  */
@@ -67,7 +70,7 @@ void initDriveMode(uint32_t heading);
  * gives the signal to move. As of 10/5/18, this is a conceptual function, and 
  * has not yet been implemented.
  */
-void initRotateMode(bool direction);
+void initSpinMode(bool direction);
 
 /**
  * This function takes all of the necessary steps required to prep the drive
@@ -76,7 +79,7 @@ void initRotateMode(bool direction);
  * rover to safely and accurately spin and turn at any given velocity. As of 
  * 10/5/18, this is a conceptual function, and has not yet been implemented.
  */
-void initTranslateMode();
+void initCrabMode();
 
 /**
  * This function determines which direction all the wheels should spin. 

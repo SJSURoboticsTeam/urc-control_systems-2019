@@ -168,7 +168,7 @@ void initDriveMode(uint32_t heading)
     }
 }
 
-void initRotateMode(bool direction)
+void initSpinMode(bool direction)
 {
     if (!direction)
     {
@@ -184,9 +184,11 @@ void initRotateMode(bool direction)
     }
 }
 
-void initTranslateMode()
+void initCrabMode()
 {
-    
+    servo_A.SetPositionPercent(50);
+    servo_B.SetPositionPercent(50);
+    servo_C.SetPositionPercent(50);
 }
 
 void setDirectionAllWheels(bool direction)

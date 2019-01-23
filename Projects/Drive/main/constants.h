@@ -16,6 +16,7 @@
 constexpr double SIDE = 40.25;
 constexpr double SIDE_2_MID = 11.619;
 constexpr double CORNER_2_MID = 23.238;
+constexpr double MAX_DIST = 1058.35; // Distance where out wheel turns 1 degree
 
 // Constants for the steering servos //
 constexpr uint32_t SERVO_A_PIN = 15;
