@@ -34,9 +34,9 @@ constexpr float SERVO_MIN = 2.2;
 constexpr float SERVO_MAX = 11;
 
 // Constants for the drive motors //
-constexpr uint32_t MOTOR_A_PIN = 21;
+constexpr uint32_t MOTOR_A_PIN = 23;
 constexpr uint32_t MOTOR_B_PIN = 22;
-constexpr uint32_t MOTOR_C_PIN = 23;
+constexpr uint32_t MOTOR_C_PIN = 21;
 
 constexpr uint32_t MOTOR_A_CHANNEL = 3;
 constexpr uint32_t MOTOR_B_CHANNEL = 4;

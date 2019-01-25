@@ -13,7 +13,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
     WiFi.softAP("Drive", "drive1234");
     Serial.println();
-    Serial.print("IP address: ");
+    Serial.print("IP address: 192.168.1.4");
     Serial.println(WiFi.softAPIP());
 
     

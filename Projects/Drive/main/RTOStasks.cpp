@@ -31,39 +31,49 @@ extern "C" void vModeTaskHandler (void *pvParameters)
         if (Params->mode != previous_mode)
         {
             setSpeedAllWheels(0);
+            printf("Previous mode:\n    ");
             switch(previous_mode)
             {
                 case 0: 
                     vTaskSuspend(xCarHandle);
+                    printf("Car\n");
                     break;
                 case 1:
                     vTaskSuspend(xCrabHandle);
+                    printf("Crab\n");
                     break;
                 case 2:
                     vTaskSuspend(xSpinHandle);
+                    printf("Spin\n");
                     break;
                 case 3:
                     vTaskSuspend(xDebugHandle);
+                    printf("Debug\n");
                     break;
-                default: break;
+                default: printf("Invalid\n"); break;
             }
+            printf("New mode:\n    ");
             switch(Params->mode)
             {
                 case 0:
                     vTaskResume(xCarHandle);
+                    printf("Car\n");
                     break;
                 case 1:
                     initCrabMode();
                     vTaskResume(xCrabHandle);
+                    printf("Crab\n");
                     break;
                 case 2:
                     initSpinMode(Params->heading_A);
                     vTaskResume(xSpinHandle);
+                    printf("Spin\n");
                     break;
                 case 3:
                     vTaskResume(xDebugHandle);
+                    printf("Debug\n");
                     break;
-                default: break; 
+                default: printf("Invalid\n"); break; 
             }
             previous_mode = Params->mode;
         }
