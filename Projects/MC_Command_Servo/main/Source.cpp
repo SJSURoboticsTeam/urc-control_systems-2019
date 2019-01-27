@@ -33,6 +33,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     */
     server->on("/Arm", HTTP_POST, [=](AsyncWebServerRequest *request){
         params->heading = atoi(request->arg("heading").c_str());
+        params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
         // params->heading = request->arg("heading");
         printf("Updated Heading: %i!\n", params->heading);
         // strcpy(params->name, request->arg("heading").c_str());

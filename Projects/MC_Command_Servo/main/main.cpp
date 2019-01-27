@@ -37,7 +37,9 @@ extern "C" void app_main() {
     }
 
     //Create freeRTOS tasks.
-    xTaskCreate(vSayHelloTask, "Hello", 4096, &params, 1, NULL);
-    xTaskCreate(vServoTask, "Servo", 4096, &params, 1, NULL);
+    // xTaskCreate(vSayHelloTask, "Hello", 4096, &params, 1, NULL);
+    // xTaskCreate(vServoTask, "Servo", 4096, &params, 1, NULL);
+    xTaskCreate(vRotundaTask, "Rotunda", 4096, &params, 1, NULL);
+
 }
 

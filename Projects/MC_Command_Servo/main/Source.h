@@ -11,14 +11,46 @@ extern "C" {
 #endif
 
 
-constexpr int rotundaPosMin = 0;
-constexpr int rotundaPosmax = 3600;
+constexpr int kRotundaPosMin = 0;
+constexpr int kRotundaPosmaxk = 3600;
+constexpr double kRotundaStartPos = 1800;
+constexpr double kRotundaStartDuty = 50.0;
 
-constexpr int ElbowPosMin = 0;
-constexpr int ElbowPosmax = 90;
+constexpr int kElbowPosMin = 0;
+constexpr int kElbowPosmax = 90;
 
-constexpr int shoulderPosMin = 0;
-constexpr int shoulderPosmax = 90;
+constexpr int kShoulderPosMin = 0;
+constexpr int kShoulderPosmax = 90;
+constexpr int kShoulderEnablePWMMin = 0;	//percentage
+constexpr int kShoulderEnablePWMMax = 50;	//percentage
+
+/* PINOUTS:
+	Servo 1: GPIO 6
+	Servo 2: CPIO 7
+
+	i2c:
+		SDA: GPIO 23
+		SCL: GPIO 21
+
+	Motors:
+		Motor Driver 1:
+			VPROPI: GPIO 39
+			Mode 2: GPIO 27
+			Phase:	GPIO 16
+			Enable:	GPIO 4
+
+		Motor Driver 2:
+			VPROPI: GPIO 36
+			Mode 2: GPIO 1
+			Phase:	GPIO 5
+			Enable:	GPIO 17
+
+		Motor Driver 3:
+			VPROPI: GPIO 34
+			Mode 2: GPIO 3
+			Phase:	GPIO 0
+			Enable:	GPIO 2
+/*
 
 
 /*
@@ -58,6 +90,7 @@ constexpr int shoulderPosmax = 90;
 struct ParamsStruct {
     // char name[40];
 	int heading = 5;
+	double RotundaTarget = -180.0; //range of -180 to 180
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);

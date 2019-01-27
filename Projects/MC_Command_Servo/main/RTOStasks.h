@@ -16,6 +16,8 @@ extern "C" void vCountTask(void *pvPArameters);
 
 extern "C" void vServoTask(void *pvParameters);
 
+extern "C" void vRotundaTask(void *pvParameters);
+
 #ifdef _cplusplus
 }
 #endif
