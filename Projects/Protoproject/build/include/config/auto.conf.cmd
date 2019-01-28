@@ -27,6 +27,7 @@ deps_config := \
 	/home/wilsonchung/Documents/controlsystems2019/esp-idf/components/tcpip_adapter/Kconfig \
 	/home/wilsonchung/Documents/controlsystems2019/esp-idf/components/vfs/Kconfig \
 	/home/wilsonchung/Documents/controlsystems2019/esp-idf/components/wear_levelling/Kconfig \
+	/home/wilsonchung/Documents/controlsystems2019/Projects/Protoproject/components/arduino/Kconfig.projbuild \
 	/home/wilsonchung/Documents/controlsystems2019/esp-idf/components/bootloader/Kconfig.projbuild \
 	/home/wilsonchung/Documents/controlsystems2019/esp-idf/components/esptool_py/Kconfig.projbuild \
 	/home/wilsonchung/Documents/controlsystems2019/esp-idf/components/partition_table/Kconfig.projbuild \

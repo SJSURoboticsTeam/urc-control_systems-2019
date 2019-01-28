@@ -11,10 +11,14 @@ extern "C" {
 #endif
 
 struct ParamsStruct {
+<<<<<<< HEAD
     char name[40]; // test parameter
     int mode; // arm or manual control mode
     double pitch_value; // y axis value of the gimbal
     
+=======
+    char name[40];
+>>>>>>> f98b6e9e4ef0b1394cad1d5506dec987de5c5f5c
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
