@@ -20,24 +20,6 @@ extern "C" void vSayHelloTask(void *pvParameters) {
     }
 }
 
-extern "C" void vModeTask(void *pvParameters) {
-    ParamsStruct* params = (ParamsStruct*) pvParameters;
-
-    while(1) {
-        printf("Current Mode, %s! \n", params->mode);
-	    vTaskDelay(500);
-    }
-}
-
-extern "C" void vYawValueTask(void *pvParameters) {
-    ParamsStruct* params = (ParamsStruct*) pvParameters;
-
-    while(1) {
-        printf("Current Yaw Value, %s! \n", params->yaw_value);
-	    vTaskDelay(500);
-    }
-}
-
 /*
     This task demonstrates how to read and write from EEPROM,
     which is non-voltaile memory that we can use to store data on the 

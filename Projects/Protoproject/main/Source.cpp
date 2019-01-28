@@ -29,17 +29,33 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         Note: for ANY parameters you want to use, you must add them to
         the paramsStruct struct located in Source.h first. 
     */
-    server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
-        strcpy(params->name, request->arg("name").c_str());
-        request->send(200, "text/plain", "Success");
+    server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
+        const char *variables[3] = {
+            "name", "mode", "pitch_value"
+        };
 
-    server->on("/update_mode", HTTP_POST, [=](AsyncWebServerRequest *request){
-        strcpy(params->mode, request->arg("mode").c_str());
-        request->send(200, "text/plain", "Success");
+    for (int i = 0; i < 3; i++) {
+        if (request->hasArg(variables[i])) {
+            if (strcmp(vars[i], "name")) {
+                params->name = request->arg("name").toCharArray();
+            }
+            if (strcmp(vars[i], "mode")) {
+                params->mode = request->arg("mode").toInt();
+            }
+            if (strcmp(vars[i], "pitch_value")) {
+                params->pitch_value = request->arg("pitch_value").toFloat();
+            }
+        }
+        else {
+            printf("There is no %s", vars[i]);
+        }
+    }
 
-    erver->on("/update_yaw_value", HTTP_POST, [=](AsyncWebServerRequest *request){
-        strcpy(params->yaw_value, request->arg("yaw value").c_str());
-        request->send(200, "text/plain", "Success");
+    printf("handle_update\n");
+    printf("name: %s \n", params->name);
+    printf("mode: %i \n", params->mode);
+    printf("pitch_value: %i \n", params->pitch_value)
+
     });
     
     

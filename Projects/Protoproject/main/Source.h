@@ -12,8 +12,8 @@ extern "C" {
 
 struct ParamsStruct {
     char name[40]; // test parameter
-    char mode[2]; // arm or manual control mode
-    double yaw_value; // y axis value of the gimbal
+    int mode; // arm or manual control mode
+    double pitch_value; // y axis value of the gimbal
     
 };
 
