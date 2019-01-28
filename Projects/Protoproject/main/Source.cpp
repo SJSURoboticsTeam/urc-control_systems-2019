@@ -29,7 +29,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         Note: for ANY parameters you want to use, you must add them to
         the paramsStruct struct located in Source.h first. 
     */
-<<<<<<< HEAD
+   
     server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
         const char *variables[3] = {
             "name", "mode", "pitch_value"
@@ -56,12 +56,6 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     printf("name: %s \n", params->name);
     printf("mode: %i \n", params->mode);
     printf("pitch_value: %i \n", params->pitch_value)
-
-=======
-    server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
-        strcpy(params->name, request->arg("name").c_str());
-        request->send(200, "text/plain", "Success");
->>>>>>> f98b6e9e4ef0b1394cad1d5506dec987de5c5f5c
     });
     
     

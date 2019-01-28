@@ -12,6 +12,10 @@ extern "C" {
 
 extern "C" void vSayHelloTask(void *pvParameters);
 
+extern "C" void vModeTask(void *pvParameters);
+
+extern "C" void vYawValueTask(void *pvParameters);
+
 extern "C" void vCountTask(void *pvPArameters);
 
 #ifdef _cplusplus
