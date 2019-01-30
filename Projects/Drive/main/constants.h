@@ -18,10 +18,15 @@ constexpr double SIDE_2_MID = 11.619;
 constexpr double CORNER_2_MID = 23.238;
 constexpr double MAX_DIST = 1058.35; // Distance where out wheel turns 1 degree
 
+// HAL Sensor Pins //
+constexpr uint32_t HAL_A_PIN = 27;
+constexpr uint32_t HAL_B_PIN = 0;
+constexpr uint32_t HAL_C_PIN = 4;
+
 // Constants for the steering servos //
-constexpr uint32_t SERVO_A_PIN = 15;
-constexpr uint32_t SERVO_B_PIN = 16;
-constexpr uint32_t SERVO_C_PIN = 17;
+constexpr uint32_t SERVO_A_PIN = 25;
+constexpr uint32_t SERVO_B_PIN = 10;
+constexpr uint32_t SERVO_C_PIN = 11;
 
 constexpr uint32_t SERVO_A_CHANNEL = 0;
 constexpr uint32_t SERVO_B_CHANNEL = 1;
@@ -34,16 +39,31 @@ constexpr float SERVO_MIN = 2.2;
 constexpr float SERVO_MAX = 11;
 
 // Constants for the drive motors //
-constexpr uint32_t MOTOR_A_PIN = 23;
-constexpr uint32_t MOTOR_B_PIN = 22;
-constexpr uint32_t MOTOR_C_PIN = 21;
+constexpr uint32_t MOTOR_A_PIN = 33;
+constexpr uint32_t MOTOR_B_PIN = 2;
+constexpr uint32_t MOTOR_C_PIN = 23;
+
+constexpr uint32_t MOTOR_A_DIR = 32;
+constexpr uint32_t MOTOR_B_DIR = 8;
+constexpr uint32_t MOTOR_C_DIR = 22;
+
+constexpr uint32_t MOTOR_A_BRAKE = 9;
+constexpr uint32_t MOTOR_B_BRAKE = 16;
+constexpr uint32_t MOTOR_C_BRAKE = 21;
 
 constexpr uint32_t MOTOR_A_CHANNEL = 3;
 constexpr uint32_t MOTOR_B_CHANNEL = 4;
 constexpr uint32_t MOTOR_C_CHANNEL = 5;
 
+constexpr uint32_t BRAKE_CHANNEL = 6;
+
 constexpr uint32_t MOTOR_TIMER = 1;
+
+/* Test servos */
 constexpr uint32_t MOTOR_FREQUENCY = 50;
+/* Real Motors DH-03x
+constexpr uint32_t MOTOR_FREQUENCY = 78000
+*/
 
 constexpr float MOTOR_MIN = 6.5;
 constexpr float MOTOR_MAX = 8.5;
@@ -59,13 +79,13 @@ constexpr float DRIVE_POSITION_1[3] = {50, 83.33, 16.67};
 // Left = C, Right = A, Back = B
 constexpr float DRIVE_POSITION_2[3] = {16.67, 50, 83.33};
 
-/* Real Servos
+/* Real Servos DH-03X
 // Left = A, Right = B, Back = C
-constexpr float DRIVE_POSITION_0[3] = {72.22, 27.78, 50};
+constexpr float DRIVE_POSITION_0[3] = {70.00, 30.00, 50};
 // Left = B, Right = C, Back = A
-constexpr float DRIVE_POSITION_1[3] = {50, 72.22, 27.78};
+constexpr float DRIVE_POSITION_1[3] = {50, 70.00, 30.00};
 // Left = C, Right = A, Back = B
-constexpr float DRIVE_POSITION_2[3] = {27.78, 50, 72.22};
+constexpr float DRIVE_POSITION_2[3] = {30.00, 50, 70.00};
 */
 
 // Positions for Spin Mode (percent)
@@ -73,9 +93,9 @@ constexpr float DRIVE_POSITION_2[3] = {27.78, 50, 72.22};
 constexpr float ROTATE_POSITION_0 = 0;
 constexpr float ROTATE_POSITION_1 = 100;
 
-/* Real Servos
-constexpr float ROTATE_POSITION_0 = 16.67;
-constexor float ROTATE_POSITION_1 = 83.33;
+/* Real Servos DH-03x
+constexpr float ROTATE_POSITION_0 = 20.00;
+constexor float ROTATE_POSITION_1 = 80.00;
 */
 
 // Boandaries for Crab Mode (degrees)
@@ -83,8 +103,8 @@ constexor float ROTATE_POSITION_1 = 83.33;
 constexpr double MAX_ROTATION = 180;
 constexpr double MIN_ROTATION = 0;
 
-/* Real Servos
-constexpr double MAX_ROTATION = 270;
+/* Real Servos DH-03X
+constexpr double MAX_ROTATION = 300;
 constexpr double MIN_ROTATION = 0;
 */
 
@@ -97,6 +117,11 @@ extern Servo servo_C;
 extern ServoMotor motor_A;
 extern ServoMotor motor_B;
 extern ServoMotor motor_C;
+/*
+extern Motor motor_A;
+extern Motor motor_B;
+extern Motor motor_C;
+*/
 
 // RTOS handlers //
 extern TaskHandle_t xCarHandle;

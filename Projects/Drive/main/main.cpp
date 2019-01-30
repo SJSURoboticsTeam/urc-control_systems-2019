@@ -22,9 +22,15 @@ Servo servo_B;
 Servo servo_C; 
 
 // Create the Drive Motors
+/* Test Servos */
 ServoMotor motor_A;
 ServoMotor motor_B;
 ServoMotor motor_C;
+/* Real Motors DH-03X
+Motor motor_A;
+Motor motor_B;
+Motor motor_C;
+*/
 
 // Create task handlers
 TaskHandle_t xCarHandle;

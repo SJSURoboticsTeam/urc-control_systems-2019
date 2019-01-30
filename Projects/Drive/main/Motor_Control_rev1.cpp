@@ -8,6 +8,7 @@ void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake,
 				      uint32_t b_channel, uint32_t timer, uint32_t frequency,
 				      float min, float max)
 {
+	// Initialize Private variables
 	signal_pin = pin_signal;
 	brake_pin = pin_brake;
 	direction_pin = pin_direction;
