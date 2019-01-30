@@ -176,10 +176,17 @@ extern "C" void vCarTask(void *pvParameters)
     Servo right_servo = servo_B;
     Servo back_servo = servo_C;
     
+    /* Test Servos
     ServoMotor left_motor = motor_A;
     ServoMotor right_motor = motor_B;
     ServoMotor back_motor = motor_C;
-    
+    */
+
+    /* Real Motors */
+    Motor left_motor = motor_A;
+    Motor right_motor = motor_B;
+    Motor back_motor = motor_C;
+
     ParamsStruct* Params = (ParamsStruct *) pvParameters;
     
     uint32_t front = (uint32_t) Params->heading_B;
@@ -226,16 +233,17 @@ extern "C" void vCarTask(void *pvParameters)
                     back_motor = motor_C;
                     break;
             }
-            /* following angle values for testing rig (hobby servos) */
+            /* following angle values for testing rig (hobby servos) 
             angle_left = 150;
             angle_right = 30;
             angle_back = 90;
-
-            /* following angle values for actual servos
-            angle_left = 195;
-            angle_right = 75;
-            angle_back = 135;
             */
+
+            /* following angle values for actual servos */
+            angle_left = 210;
+            angle_right = 90;
+            angle_back = 150;
+            
 
             front = Params->heading_B;
         }
@@ -283,16 +291,16 @@ extern "C" void vCarTask(void *pvParameters)
         {
             initDriveMode(Params->heading_B);
             setSpeedAllWheels(abs(Params->speed_A));
-            /* following angle values for testing rig (hobby servos) */
+            /* following angle values for testing rig (hobby servos)
             angle_left = 150;
             angle_right = 30;
             angle_back = 90;
-
-            /* following angle values for actual servos
-            angle_left = 195;
-            angle_right = 75;
-            angle_back = 135;
             */
+            /* following angle values for actual motors */
+            angle_left = 210;
+            angle_right = 90;
+            angle_back = 150;
+            
         }
         else
         {
