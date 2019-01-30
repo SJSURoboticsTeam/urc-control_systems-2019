@@ -12,7 +12,7 @@ class Motor
     ledc_timer_t pwm_timer;
     uint32_t signal_pin;
     uint32_t brake_pin;
-    uint32_t direction pin;
+    uint32_t direction_pin;
     uint32_t pwm_frequency;
     uint32_t signal_duty_cycle;
     uint32_t brake_duty_cycle;
