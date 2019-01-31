@@ -6,6 +6,7 @@
 #include "Arduino.h"
 #include "EEPROM.h"
 #include "constants.h"
+#include "Servo_Control.hpp"
 
 
 
@@ -29,7 +30,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         Note: for ANY parameters you want to use, you must add them to
         the paramsStruct struct located in Source.h first. 
     */
-   
+
     server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
         const char *variables[3] = {
             "name", "mode", "pitch_value"
@@ -37,25 +38,25 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
     for (int i = 0; i < 3; i++) {
         if (request->hasArg(variables[i])) {
-            if (strcmp(vars[i], "name")) {
-                params->name = request->arg("name").toCharArray();
+            if (strcmp(variables[i], "name")) {
+                params->name = request->arg("name").toInt();
             }
-            if (strcmp(vars[i], "mode")) {
+            if (strcmp(variables[i], "mode")) {
                 params->mode = request->arg("mode").toInt();
             }
-            if (strcmp(vars[i], "pitch_value")) {
+            if (strcmp(variables[i], "pitch_value")) {
                 params->pitch_value = request->arg("pitch_value").toFloat();
             }
         }
         else {
-            printf("There is no %s", vars[i]);
+            printf("There is no %s", variables[i]);
         }
     }
 
     printf("handle_update\n");
-    printf("name: %s \n", params->name);
+    printf("name: %i \n", params->name);
     printf("mode: %i \n", params->mode);
-    printf("pitch_value: %i \n", params->pitch_value)
+    printf("pitch_value: %f \n", params->pitch_value);
     });
     
     
@@ -126,8 +127,12 @@ int EEPROMCount(int addr)
     EEPROM.write(addr, data);
     EEPROM.commit();
     return data;
-<<<<<<< HEAD
 }
-=======
+
+void initPitchMove() {
+    printf("Pitch servo has been initialized for movement.\n");
+    Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
+                      SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
+
+    Pitch_Servo.SetPositionPercent(100);
 }
->>>>>>> f98b6e9e4ef0b1394cad1d5506dec987de5c5f5c

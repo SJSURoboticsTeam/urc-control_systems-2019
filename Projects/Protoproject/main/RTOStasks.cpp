@@ -11,31 +11,22 @@
 #include <string>
 
 
+
 extern "C" void vSayHelloTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
     while(1) {
-        printf("Hello, %s! \n", params->name);
+        printf("Hello, %i! \n", params->name);
 	    vTaskDelay(500);
     }
 }
 
-extern "C" void vModeTask(void *pvParameters) {
-    ParamsStruct* params = (ParamsStruct*) pvParameters;
-
+extern "C" void vPitchTask(void *pvParameters) {
     while(1) {
-        printf("Current Mode, %s! \n", params->mode);
-	    vTaskDelay(500);
-    }
-}
-
-extern "C" void vYawValueTask(void *pvParameters) {
-    ParamsStruct* params = (ParamsStruct*) pvParameters;
-
-    while(1) {
-        printf("Current Yaw Value, %s! \n", params->yaw_value);
-	    vTaskDelay(500);
-    }
+        printf("The pitch servo is now operating! \n");
+        Pitch_Servo.SetPositionPercent(100);
+        vTaskDelay(500);
+    }   
 }
 
 /*

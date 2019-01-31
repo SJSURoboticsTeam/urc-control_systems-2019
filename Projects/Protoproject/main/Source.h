@@ -2,6 +2,8 @@
 #include <ESPAsyncWebServer.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "Servo_Control.hpp"
+#include "constants.h"
 
 #ifndef PROTOPROJECT_H_
 #define PROTOPROJECT_H_
@@ -11,7 +13,7 @@ extern "C" {
 #endif
 
 struct ParamsStruct {
-    char name[40]; // test parameter
+    int name; // test parameter
     int mode; // arm or manual control mode
     double pitch_value; // y axis value of the gimbal
 };
@@ -23,6 +25,8 @@ bool initEEPROM();
 int EEPROMCount(int addr);
 
 void hello_world(char* name);
+
+void initPitchMove();
 
 #ifdef _cplusplus
 }

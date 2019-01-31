@@ -12,28 +12,34 @@
 // function descriptions for usage.                                           //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
-#include <stdlib.h>
-#include "driver/ledc.h"
-
 #ifndef SERVOCONTROL_H_
 #define SERVOCONTROL_H_
+
+#include <stdlib.h>
+#include "driver/ledc.h"
 
 class Servo
 {
     private:
-	ledc_channel_t pwm_channel;
-	ledc_timer_t pwm_timer;
-	uint32_t gpio_pin;
-	uint32_t pwm_frequency;
-	uint32_t duty_cycle;
-	uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) - 1);
-	uint32_t top_duty;
-	uint32_t base_duty;
-        uint32_t range;	
-	ledc_timer_config_t servo_timer;
-	ledc_channel_config_t servo;
+    ledc_channel_t pwm_channel;
+    ledc_timer_t pwm_timer;
+    uint32_t gpio_pin;
+    uint32_t pwm_frequency;
+    uint32_t duty_cycle;
+    uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) - 1);
+    uint32_t top_duty;
+    uint32_t base_duty;
+    uint32_t range;	
+    ledc_timer_config_t servo_timer;
+    ledc_channel_config_t servo;
 
     public:
+        Servo()
+        {
+            // Does nothing
+        }        
+
+
         /**
          * Parameters:
          *            pin       - The GPIO pin the servo has been assigned to.
@@ -47,8 +53,8 @@ class Servo
          *            min       - The minimum percentage duty cycle as specified
          *                        by the servo manufacturer.
          */
-        Servo(uint32_t pin, uint32_t channel, uint32_t timer, uint32_t frequency, 
-              float max, float min);
+        void InitServo(uint32_t pin, uint32_t channel, uint32_t timer, 
+                       uint32_t frequency, float min, float max);       
         
         /**
          * This function sets the frequency of the PWM in hertz by updating the 
@@ -58,7 +64,7 @@ class Servo
          */
         void SetFrequency(uint32_t frequency);
 
-	/**
+	    /**
          * This function calculates and implements the proper pwm signal based 
          * upon the range percentage input to this function and the maximum and 
          * minimum duty cycle percentages specified in the constructor.
@@ -69,7 +75,7 @@ class Servo
          * This function updates the duty_cycle variable of the Servo class
          * object and updates the esp32's registers to implement this duty cycle 
          * in the pwm output. duty should reference the value at which the timer
-	 * sets the signal low.
+	     * sets the signal low.
          */
         void SetPositionDuty(uint32_t duty);
         /**
@@ -79,10 +85,10 @@ class Servo
          */
         double GetPercentage(uint32_t max_rotation, double angle);
 
-	/**
+	    /**
          * deconstructor
          */
-	~Servo() {}
+	    ~Servo() {}
 };
 
 class ServoMotor
@@ -93,19 +99,23 @@ class ServoMotor
         uint32_t gpio_pin;
         uint32_t pwm_frequency;
         uint32_t duty_cycle;
-	uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) -1);
+	    uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) -1);
         uint32_t full_forward;
         uint32_t full_reverse;
-	uint32_t stop_minimum;;
-	uint32_t stop_maximum;
-	uint32_t stop_range;
-	uint32_t upper_range;
-	uint32_t lower_range;
-	bool direction;
+	    uint32_t stop_minimum;;
+	    uint32_t stop_maximum;
+	    uint32_t stop_range;
+	    uint32_t upper_range;
+	    uint32_t lower_range;
+	    bool direction;
         ledc_timer_config_t motor_timer;
         ledc_channel_config_t motor;
 
     public:
+        ServoMotor()
+        {
+            // do nothing
+        }
 
         /**
          * Parameters:
@@ -126,14 +136,15 @@ class ServoMotor
          *                        motor will not move, as specified by the
          *                        manufacturer.
          */
-        ServoMotor(uint32_t pin, uint32_t channel, uint32_t timer, uint32_t frequency, 
-              float max, float min, float dead_min, float dead_max);
+        void InitServoMotor(uint32_t pin, uint32_t channel, uint32_t timer, 
+                            uint32_t frequency, float max, float min, 
+                            float dead_min, float dead_max);
 
         /**
          * This function sets the frequency of the PWM in hertz by updating the 
-         * timer that has been assigned to the signal. There are only four timers 
-         * available, so setting the frequency here will update the frequency 
-         * for all objects assigned to the same timer.
+         * timer that has been assigned to the signal. There are only four 
+         * timers available, so setting the frequency here will update the 
+         * frequency for all objects assigned to the same timer.
          */
         void SetFrequency(uint32_t frequency);
 
@@ -178,4 +189,3 @@ class ServoMotor
 };
  
 #endif
-
