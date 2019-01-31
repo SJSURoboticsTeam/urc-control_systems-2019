@@ -38,7 +38,7 @@ struct ParamsStruct {
     double heading_B;
     double speed_C;
     double heading_C;
-    bool brake;
+    double brake;
 };
 
 enum DriveMode {
@@ -104,6 +104,11 @@ void setSpeed(uint32_t wheel, uint32_t speed);
  * This function sets the heading of the specified wheel.
  */
 void setHeading(uint32_t wheel, double percentage);
+
+/**
+ * This function Applies PWM to all the brake pins.
+ */
+void applyBrakes(double percentage);
 
 /**
  * This function determines the current heading of the rover based on raw GPS

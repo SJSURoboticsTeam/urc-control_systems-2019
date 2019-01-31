@@ -61,7 +61,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->heading_C = request->arg("heading_C").toFloat();    
                 }
                 if (strcmp(vars[i], "brake")) {
-                    params->brake = (bool) request->arg("brake").toInt();    
+                    params->brake = (bool) request->arg("brake").toFloat();    
                 }
             }
             else {
@@ -268,6 +268,13 @@ void setHeading(uint32_t wheel, double percentage)
             break;
         default: break;
     }
+}
+
+void applyBrakes(double percentage)
+{
+    motor_A.Brake(percentage);
+    motor_B.Brake(percentage);
+    motor_C.Brake(percentage);
 }
 
 /*

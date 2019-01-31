@@ -152,6 +152,13 @@ extern "C" void vDebugTask(void *pvParameters)
             printf("    heading_C: %f \n", Params->heading_C);
             PrevParams.heading_C = Params->heading_C;
         }
+        // adjust brakes pwm if told to
+        if (Params->brake != PrevParams.brake)
+        {
+            applyBrakes(Params->brake);
+            printf("    brake: %f \n", Params->brake);
+            PrevParams.brake = Params->brake;
+        }
     // Delay for half a second
     vTaskDelay(500); 
     }
