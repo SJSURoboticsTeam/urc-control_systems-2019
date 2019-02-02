@@ -31,34 +31,10 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         the paramsStruct struct located in Source.h first. 
     */
 
-    server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
-        const char *variables[3] = {
-            "name", "mode", "pitch_value"
-        };
-
-    for (int i = 0; i < 3; i++) {
-        if (request->hasArg(variables[i])) {
-            if (strcmp(variables[i], "name")) {
-                params->name = request->arg("name").toInt();
-            }
-            if (strcmp(variables[i], "mode")) {
-                params->mode = request->arg("mode").toInt();
-            }
-            if (strcmp(variables[i], "pitch_value")) {
-                params->pitch_value = request->arg("pitch_value").toFloat();
-            }
-        }
-        else {
-            printf("There is no %s", variables[i]);
-        }
-    }
-
-    printf("handle_update\n");
-    printf("name: %i \n", params->name);
-    printf("mode: %i \n", params->mode);
-    printf("pitch_value: %f \n", params->pitch_value);
+   server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
+        strcpy(params->name, request->arg("name").c_str());
+        request->send(200, "text/plain", "Success");
     });
-    
     
     /* SSE Example.
         - SSEs will be used to continuously send data that was
@@ -129,10 +105,32 @@ int EEPROMCount(int addr)
     return data;
 }
 
-void initPitchMove() {
-    printf("Pitch servo has been initialized for movement.\n");
+void initGimbal() {
+    printf("Gimbal has been initialized for movement.\n");
     Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
                       SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
 
-    Pitch_Servo.SetPositionPercent(100);
+    // void InitServoMotor(uint32_t pin, uint32_t channel, uint32_t timer, 
+    //                         uint32_t frequency, float max, float min, 
+    //                         float dead_min, float dead_max);
+
+    // Pitch_Servo.InitServoMotor(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER,
+    //                     SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN, )
+
+
+}
+
+void manualMovePitch(double percent) {
+    printf("The pitch position is now %f %%.\n", percent);
+    Pitch_Servo.SetPositionPercent(percent);
+}
+
+void sweepMovePitch() {
+    double pos = 0;
+    for (pos = 0; pos <= 180; pos++) {
+         manualMovePitch(pos);
+    } 
+    for (pos = 180; pos >= 0; pos--) {
+         manualMovePitch(pos);
+    }      
 }

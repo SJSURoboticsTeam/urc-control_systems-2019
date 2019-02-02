@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 struct ParamsStruct {
-    int name; // test parameter
+    char name[20]; // test parameter
     int mode; // arm or manual control mode
     double pitch_value; // y axis value of the gimbal
 };
@@ -26,7 +26,11 @@ int EEPROMCount(int addr);
 
 void hello_world(char* name);
 
-void initPitchMove();
+void initGimbal();
+
+void manualMovePitch(double percent);
+
+void sweepMovePitch();
 
 #ifdef _cplusplus
 }

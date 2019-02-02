@@ -16,15 +16,15 @@ extern "C" void vSayHelloTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
     while(1) {
-        printf("Hello, %i! \n", params->name);
+        printf("Hello, %s! \n", params->name);
 	    vTaskDelay(500);
     }
 }
 
 extern "C" void vPitchTask(void *pvParameters) {
     while(1) {
-        printf("The pitch servo is now operating! \n");
-        Pitch_Servo.SetPositionPercent(100);
+        initGimbal();
+        sweepMovePitch(); 
         vTaskDelay(500);
     }   
 }

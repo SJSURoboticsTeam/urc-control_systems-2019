@@ -28,6 +28,9 @@ constexpr uint32_t SERVO_FREQUENCY = 50;
 constexpr float SERVO_MIN = 2.2;
 constexpr float SERVO_MAX = 11;
 
+// Pitch Variables //
+
+
 
 // Pitch Servo //
 extern Servo Pitch_Servo;

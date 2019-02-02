@@ -40,6 +40,6 @@ extern "C" void app_main() {
     xTaskCreate(vPitchTask, "Pitch", 4096, NULL, 1, NULL);
     xTaskCreate(vCountTask, "Count", 4096, NULL, 1, NULL);
 
-    initPitchMove();
+    //initPitchMove();
 }
 
