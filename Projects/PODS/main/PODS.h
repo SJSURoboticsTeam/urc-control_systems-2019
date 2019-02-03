@@ -1,6 +1,8 @@
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "constants.h"
+
 
 #ifndef PODS_H_
 #define PODS_H_
@@ -9,22 +11,43 @@
 extern "C" {
 #endif
 
-void dispenseFluid(int x);
+struct ParamsStruct{
+	char name[40];
+	int id;
+};
 
-void sealPODS(int x);
+
+struct GygerCounter
+	{
+		float cps = 0;
+		int cpm = 0;
+		int count = 0;
+		bool start = false;
+
+	};
+void initServer(AsyncWebServer* server, ParamsStruct* params);
+
+void dispenseFluid(int x);// dispenses fluid for pod x
+
+void sealPODS(int x); //seals POD x
 
 int servoInoculationPin(int x); //returns servo pin for PODS #x that controls the incoculationi fluid
 
-int servoHatchPin(int x);// returns servo pin on PODS #x that seals the PODS
+int servoLidPin(int x);// returns servo pin on PODS #x that seals the PODS
 
-void startPOD(bool start, int x);
+void startPOD(bool start, int x);//takes boolean to start/stop gygercounter x
 
-void killAll(bool x);
+void killAll(bool x);//  unwritten
 
-int getPercent(int angle);
+double getPercent(int angle);//returns a % duty cycle for a given angle
 
-void initInteruptPins();
+void initInteruptPins(); // initialize interupt pins that the gyger counters are cconected to
 
+int callData(int id);
+
+
+
+//interupt finctions that count the number of emmisions detected
 void emissionCount0();
 void emissionCount1();
 void emissionCount2();

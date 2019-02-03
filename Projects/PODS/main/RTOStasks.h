@@ -11,13 +11,12 @@
 extern "C" {
 #endif
 
-extern "C" void vSealPODS(void *pvParameters);
 
 extern "C" void vGygerTask(void *pvParameters);
 
-extern "C" void vHandleData(void *pvParameters);
 
 extern "C" void vTest(void *pvParameters);
+
 
 #ifdef _cplusplus
 }

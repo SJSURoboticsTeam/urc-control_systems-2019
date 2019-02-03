@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
 #include <unistd.h>
+#include <string>
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include "Arduino.h"
@@ -9,27 +11,43 @@
 #include "RTOStasks.h"
 #include "PODS.h"
 #include "constants.h"
+#include "freertos/semphr.h"
+
+ParamsStruct params;
+
+AsyncWebServer server(80);
 
 extern "C" void app_main()
 {
+    Serial.begin(115200);
     initArduino();
-    pinMode(4, OUTPUT);
-    digitalWrite(4, HIGH);
+    initServer(&server, &params);
 
     initInteruptPins();	
-	TaskHandle_t xGyger0, xGyger1, xGyger2, xGyger3, xGyger4, xGyger5, xGyger6;
 
-	//xTaskCreate(vSealPODS, "seal pod", 4060, NULL, 1, NULL);
 
-	xTaskCreate(vGygerTask, "gyger0 data", 4060, (void*)0, 1, &xGyger0); 
+
 	xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)1, 2, &xGyger1); 
+	vTaskDelay(50/portTICK_PERIOD_MS);
+	
+	/*
 	xTaskCreate(vGygerTask, "gyger2 data", 4060, (void*)2, 3, &xGyger2); 
-	xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 4, &xGyger3); 
-	xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 5, &xGyger4); 
-	xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 6, &xGyger5); 
-	xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 7, &xGyger6); 
+	vTaskDelay(50/portTICK_PERIOD_MS);
 
-	xTaskCreate(vHandleData, "transmit/recieve gyger data", 4060, NULL, 8, NULL);
+	xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 4, &xGyger3); 
+	vTaskDelay(50/portTICK_PERIOD_MS);
+
+	xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 5, &xGyger4); 
+	vTaskDelay(50/portTICK_PERIOD_MS);
+	
+	xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 6, &xGyger5); 
+	vTaskDelay(50/portTICK_PERIOD_MS);
+	
+	xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 7, &xGyger6); 
+	vTaskDelay(50/portTICK_PERIOD_MS);
+
+	*/
+
 
 		
   	// xTaskCreate(vTest, "test servo and motor", 4060, NULL, 1, NULL);
