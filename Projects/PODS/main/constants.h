@@ -12,6 +12,8 @@
 
 static TaskHandle_t xGyger0, xGyger1, xGyger2, xGyger3, xGyger4, xGyger5, xGyger6;
 
+extern SemaphoreHandle_t xButtonInterruptSemaphore;
+
 
 /*********************
 pins for gyger counter interupts

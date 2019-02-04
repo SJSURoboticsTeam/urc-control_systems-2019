@@ -48,13 +48,8 @@ int callData(int id);
 
 
 //interupt finctions that count the number of emmisions detected
-void emissionCount0();
-void emissionCount1();
-void emissionCount2();
-void emissionCount3();
-void emissionCount4();
-void emissionCount5();
-void emissionCount6();
+void emissionCount(void* id);
+
 
 
 

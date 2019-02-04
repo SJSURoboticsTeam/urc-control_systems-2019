@@ -283,28 +283,16 @@ int servoLidPin(int x)
 
 void initInteruptPins()
 {
-	pinMode(gyger0_pin, INPUT_PULLUP);
-	attachInterrupt(digitalPinToInterrupt(gyger0_pin), emissionCount0, RISING);
+    //Init GPIO pin and interrupts
+    gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
+    gpio_pad_select_gpio((gpio_num_t)gyger0_pin);
+    gpio_set_direction((gpio_num_t)gyger0_pin, static_cast<gpio_mode_t>(GPIO_MODE_INPUT));
+    gpio_set_pull_mode((gpio_num_t)gyger0_pin, GPIO_PULLDOWN_ONLY);
+    gpio_set_intr_type((gpio_num_t)gyger0_pin, GPIO_INTR_POSEDGE);
+    gpio_intr_enable((gpio_num_t)gyger0_pin);
+    gpio_isr_handler_add((gpio_num_t)gyger0_pin, emissionCount, (void *)gyger0_pin);
+    printf("gpio pin set up\n");
 
-	pinMode(gyger1_pin, INPUT_PULLUP);
-	//attachInterrupt(digitalPinToInterrupt(gyger1_pin), emissionCount1, FALLING);
-	
-	pinMode(gyger2_pin, INPUT_PULLUP);
-	//attachInterrupt(digitalPinToInterrupt(gyger2_pin), emissionCount2, FALLING);
-	
-	pinMode(gyger3_pin, INPUT_PULLUP);
-	//attachInterrupt(digitalPinToInterrupt(gyger3_pin), emissionCount3, FALLING);
-	
-	pinMode(gyger4_pin, INPUT_PULLUP);
-	//attachInterrupt(digitalPinToInterrupt(gyger4_pin), emissionCount4, FALLING);
-	
-	pinMode(gyger5_pin, INPUT_PULLUP);
-	//attachInterrupt(digitalPinToInterrupt(gyger5_pin), emissionCount5, FALLING);
-	
-	pinMode(gyger6_pin, INPUT_PULLUP);
-	//attachInterrupt(digitalPinToInterrupt(gyger6_pin), emissionCount6, FALLING);
-	
-	std::cout <<"interrupt pins initialized \n";
 }
 
 
@@ -332,38 +320,33 @@ int callData(int id)
 
 
 /****************************
-	interupt ffunctions
+	interupt ffunction
 *****************************/
-void emissionCount0()
+void emissionCount(void* id)
 {
-	
-  	eCount0 ++;
-}
+	    int yield = 0;
 
-void emissionCount1()
-{
-	eCount1++;
-}
+  		switch ((int) id)
+	{
+		case 0:  eCount0++;
+				printf(eCount0);
+			break;
+		case 1:  eCount1++;
+			break;
+		case 2:  eCount2++;
+			break;
+		case 3:  eCount3++;
+			break;
+		case 4:  eCount4++;
+			break;
+		case 5:  eCount5++;
+			break;
+		default:  ;
+			break;
+	}
 
-void emissionCount2()
-{
-	eCount2++;
-}
-void emissionCount3()
-{
-	eCount3++;
-}
-void emissionCount4()
-{
-	eCount4++;
-}
-void emissionCount5()
-{
-	eCount5++;
-}
-void emissionCount6()
-{
-	eCount6++;
+
+
 }
 /////////////////////////////////////////////////////////////////////////////////                               CODE ENDS HERE                               //
 ////////////////////////////////////////////////////////////////////////////////

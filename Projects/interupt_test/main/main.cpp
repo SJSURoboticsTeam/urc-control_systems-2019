@@ -30,7 +30,7 @@ extern "C" void app_main() {
     gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
     gpio_pad_select_gpio(GPIO_NUM_23);
     gpio_set_direction(GPIO_NUM_23, static_cast<gpio_mode_t>(GPIO_MODE_INPUT));
-    gpio_set_pull_mode(GPIO_NUM_23, GPIO_PULLUP_ONLY);
+    gpio_set_pull_mode(GPIO_NUM_23, GPIO_PULLDOWN_ONLY);
     gpio_set_intr_type(GPIO_NUM_23, GPIO_INTR_POSEDGE);
     gpio_intr_enable(GPIO_NUM_23);
     gpio_isr_handler_add(GPIO_NUM_23, ButtonISR, (void *)x);

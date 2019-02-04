@@ -66,7 +66,7 @@ extern "C" void vGygerTask(void *pvParameters)
 	*cpm = -1;
 	
 	std::cout <<"setup of gyger " << id << " complete \n";
-	std::cout <<"suspending gyger task: " << id << " \n";
+	//std::cout <<"suspending gyger task: " << id << " \n";
 
 	//vTaskSuspend(NULL);//suspend until mission ccontrol says otherwise
 
@@ -76,7 +76,7 @@ extern "C" void vGygerTask(void *pvParameters)
     while(1)
     {
 
-    	*eCount += rand() % 10;
+    	//*eCount += rand() % 10;
 
    		if(data > 10 and !fluid_dump)
    		{
@@ -87,7 +87,7 @@ extern "C" void vGygerTask(void *pvParameters)
    		if(count <= cutoff and millis() - time > sample_time)
    		{
     		    count += *eCount;
-    			std::cout << "new data \n" << count << "\n";	
+    			std::cout << "new data \n" << eCount0 << "\n";	
     			//std::cout << "analog read \n" << analogRead(gyger0_pin) << "\n";	
     			time = millis();
     			total_sample_time += sample_time;
