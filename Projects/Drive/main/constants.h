@@ -27,7 +27,7 @@ constexpr uint32_t HAL_C_PIN = 4;
 // Constants for the steering servos //
 constexpr uint32_t SERVO_A_PIN = 25;
 constexpr uint32_t SERVO_B_PIN = 10;
-constexpr uint32_t SERVO_C_PIN = 11;
+constexpr uint32_t SERVO_C_PIN = 19;
 
 constexpr uint32_t SERVO_A_CHANNEL = 0;
 constexpr uint32_t SERVO_B_CHANNEL = 1;
@@ -36,8 +36,8 @@ constexpr uint32_t SERVO_C_CHANNEL = 2;
 constexpr uint32_t SERVO_TIMER = 0;
 constexpr uint32_t SERVO_FREQUENCY = 50;
 
-constexpr float SERVO_MIN = 2.2;
-constexpr float SERVO_MAX = 11;
+constexpr float SERVO_MIN = 2.5;
+constexpr float SERVO_MAX = 12.5;
 
 // Constants for the drive motors //
 constexpr uint32_t MOTOR_A_PIN = 33;
@@ -45,10 +45,10 @@ constexpr uint32_t MOTOR_B_PIN = 2;
 constexpr uint32_t MOTOR_C_PIN = 23;
 
 constexpr uint32_t MOTOR_A_DIR = 32;
-constexpr uint32_t MOTOR_B_DIR = 8;
+constexpr uint32_t MOTOR_B_DIR = 18;
 constexpr uint32_t MOTOR_C_DIR = 22;
 
-constexpr uint32_t MOTOR_A_BRAKE = 9;
+constexpr uint32_t MOTOR_A_BRAKE = 26;
 constexpr uint32_t MOTOR_B_BRAKE = 16;
 constexpr uint32_t MOTOR_C_BRAKE = 21;
 
@@ -60,14 +60,15 @@ constexpr uint32_t BRAKE_CHANNEL = 6;
 
 constexpr uint32_t MOTOR_TIMER = 1;
 
-/* Test servos */
+/* Test servos 
 constexpr uint32_t MOTOR_FREQUENCY = 50;
-/* Real Motors DH-03x
-constexpr uint32_t MOTOR_FREQUENCY = 78000
 */
+/* Real Motors DH-03x */
+constexpr uint32_t MOTOR_FREQUENCY = 78000;
 
-constexpr float MOTOR_MIN = 6.5;
-constexpr float MOTOR_MAX = 8.5;
+
+constexpr float MOTOR_MIN = 0;
+constexpr float MOTOR_MAX = 100;
 constexpr float DEAD_MIN = 7.67;
 constexpr float DEAD_MAX = 7.71;
 

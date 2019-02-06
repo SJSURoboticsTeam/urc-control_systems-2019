@@ -43,9 +43,9 @@ extern "C" void app_main() {
     Serial.begin(115200);
     initArduino();
     initServer(&server, &params);
-
+    //printf("Server Initialized\n");
     initComponents();
-
+    
     //Create freeRTOS tasks.
     xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, &xDebugHandle);
     xTaskCreate(vCarTask, "Car", 4096, (void *) &params, 1, &xCarHandle);

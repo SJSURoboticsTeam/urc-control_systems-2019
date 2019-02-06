@@ -11,6 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdlib.h>
 #include "driver/ledc.h"
+#include "esp_intr_alloc.h"
 #include "Servo_Control.hpp"
 
 void Servo::InitServo(uint32_t pin, uint32_t channel, uint32_t timer, 
@@ -20,14 +21,14 @@ void Servo::InitServo(uint32_t pin, uint32_t channel, uint32_t timer,
     gpio_pin = pin;
     pwm_frequency = frequency;
     duty_cycle = 0;
-    top_duty = max_duty * max / 100;
+    top_duty = max_duty * max / 100;    
     base_duty = max_duty * min / 100;
     range = top_duty - base_duty;
     pwm_timer = (ledc_timer_t) timer;
     pwm_channel = (ledc_channel_t) channel;
 
     // Initialize PWM Timer //
-    servo_timer.duty_resolution = LEDC_TIMER_10_BIT;
+    servo_timer.duty_resolution = LEDC_TIMER_20_BIT;
     servo_timer.freq_hz = pwm_frequency;
     servo_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
     servo_timer.timer_num = pwm_timer;
@@ -40,6 +41,7 @@ void Servo::InitServo(uint32_t pin, uint32_t channel, uint32_t timer,
     servo.intr_type = LEDC_INTR_DISABLE;
     servo.speed_mode = LEDC_HIGH_SPEED_MODE;
     servo.timer_sel = pwm_timer;
+    servo.hpoint = 0xfffff;
     ledc_channel_config(&servo);
 }
 
@@ -54,6 +56,8 @@ void Servo::SetPositionPercent(double percentage)
 {
     // Calculates the duty cycle based upon the input percentage //
     duty_cycle = base_duty + (range * percentage / 100);
+    printf("percentage: %f\n", percentage);
+    printf("duty_cycle: %d\n", duty_cycle);
     
     // Safety net in case the percentage exceeds the boundaries //
     if (duty_cycle > top_duty)
@@ -66,8 +70,8 @@ void Servo::SetPositionPercent(double percentage)
     }
 
     // Set the Duty Cycle //
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
     // printf("Position set to %f percent of total range.\n", percentage);
 }
 
@@ -75,8 +79,8 @@ void Servo::SetPositionDuty(uint32_t duty)
 {
     //  Sets the Duty Cycle to the input value //
     duty_cycle = duty;
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
 }
 
 double Servo::GetPercentage(uint32_t max_rotation, double angle)
@@ -133,6 +137,7 @@ void ServoMotor::InitServoMotor(uint32_t pin, uint32_t channel, uint32_t timer,
     motor.intr_type = LEDC_INTR_DISABLE;
     motor.speed_mode = LEDC_HIGH_SPEED_MODE;
     motor.timer_sel = pwm_timer;
+    motor.hpoint = 0xfffff;
     ledc_channel_config(&motor);
     
     // Set Duty Cycle to within 'dead zone' bounds //
@@ -171,8 +176,8 @@ void ServoMotor::SetSpeed(double percentage)
     }
 
     // Sets duty cycle to calculated value //
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
     // printf("Speed set to %f percent.\n", percentage);
 }
 
@@ -187,8 +192,8 @@ void ServoMotor::SetSpeedDuty(uint32_t duty)
 {
     // Sets the duty cycle to input value and determines the new direction //
     duty_cycle = duty;
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
     if(duty_cycle < stop_minimum)
     {
         direction = 0;
@@ -212,8 +217,8 @@ void ServoMotor::SetDirection(bool dir)
          * range, and then adding that value to the base duty cycle range.
          */
         duty_cycle = full_reverse + (full_forward - (duty_cycle + stop_range));
-        ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
-        ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
+        ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle, 0xfffff);
+        //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
 	direction = !direction;
     }
 }

@@ -26,7 +26,7 @@ class Servo
     uint32_t gpio_pin;
     uint32_t pwm_frequency;
     uint32_t duty_cycle;
-    uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) - 1);
+    uint32_t max_duty = ((1 << LEDC_TIMER_20_BIT) - 1);
     uint32_t top_duty;
     uint32_t base_duty;
     uint32_t range;	
@@ -52,6 +52,8 @@ class Servo
          *                        by the servo manufacturer.
          *            min       - The minimum percentage duty cycle as specified
          *                        by the servo manufacturer.
+         * Note: must call ledc_fade_func_install(int intr_alloc_flags) before 
+         *       Servo functions are called.
          */
         void InitServo(uint32_t pin, uint32_t channel, uint32_t timer, 
                        uint32_t frequency, float min, float max);       
@@ -135,6 +137,8 @@ class ServoMotor
          *            dead_max  - The ending percentage of the range where the
          *                        motor will not move, as specified by the
          *                        manufacturer.
+         * Note: must call ledc_fade_func_install(int intr_alloc_flags) before 
+         *       ServoMotor functions are called.
          */
         void InitServoMotor(uint32_t pin, uint32_t channel, uint32_t timer, 
                             uint32_t frequency, float max, float min, 

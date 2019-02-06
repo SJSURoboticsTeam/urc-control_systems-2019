@@ -20,11 +20,11 @@
 extern "C" void vModeTaskHandler (void *pvParameters)
 {
     ParamsStruct* Params = (ParamsStruct *) pvParameters;
-    int previous_mode = 4;
+    int previous_mode = 0; // Should be never be set to 4 after this
     vTaskSuspend(xCarHandle);
     vTaskSuspend(xCrabHandle);
     vTaskSuspend(xSpinHandle);
-    vTaskSuspend(xDebugHandle);
+    //vTaskSuspend(xDebugHandle);
 
     while (1)
     {
@@ -35,8 +35,8 @@ extern "C" void vModeTaskHandler (void *pvParameters)
             switch(previous_mode)
             {
                 case 0: 
-                    vTaskSuspend(xCarHandle);
-                    printf("Car\n");
+                    vTaskSuspend(xDebugHandle);
+                    printf("Debug\n");
                     break;
                 case 1:
                     vTaskSuspend(xCrabHandle);
@@ -47,8 +47,8 @@ extern "C" void vModeTaskHandler (void *pvParameters)
                     printf("Spin\n");
                     break;
                 case 3:
-                    vTaskSuspend(xDebugHandle);
-                    printf("Debug\n");
+                    vTaskSuspend(xCarHandle);
+                    printf("Car\n");
                     break;
                 default: printf("Invalid\n"); break;
             }
@@ -56,8 +56,8 @@ extern "C" void vModeTaskHandler (void *pvParameters)
             switch(Params->mode)
             {
                 case 0:
-                    vTaskResume(xCarHandle);
-                    printf("Car\n");
+                    vTaskResume(xDebugHandle);
+                    printf("Debug\n");
                     break;
                 case 1:
                     initCrabMode();
@@ -70,8 +70,8 @@ extern "C" void vModeTaskHandler (void *pvParameters)
                     printf("Spin\n");
                     break;
                 case 3:
-                    vTaskResume(xDebugHandle);
-                    printf("Debug\n");
+                    vTaskResume(xCarHandle);
+                    printf("Car\n");
                     break;
                 default: printf("Invalid\n"); break; 
             }
@@ -84,13 +84,13 @@ extern "C" void vModeTaskHandler (void *pvParameters)
 extern "C" void vDebugTask(void *pvParameters)
 {
     ParamsStruct* Params = (ParamsStruct*) pvParameters;
-    setDirection(0, ((Params->speed_A>0)?1:0));
+    setDirection(0, ((Params->speed_A > 0) ? 1:0));
     setSpeed(0, Params->speed_A);
     setHeading(0, Params->heading_A);
-    setDirection(1, ((Params->speed_B>0)?1:0));
+    setDirection(1, ((Params->speed_B > 0) ? 1:0));
     setSpeed(1, Params->speed_B);
     setHeading(1, Params->heading_B);
-    setDirection(2, ((Params->speed_C>0)?1:0));
+    setDirection(2, ((Params->speed_C > 0) ? 1:0));
     setSpeed(2, Params->speed_C);
     setHeading(2, Params->heading_C);
     ParamsStruct PrevParams; 
@@ -116,7 +116,7 @@ extern "C" void vDebugTask(void *pvParameters)
         // adjust heading of wheel A if told to
         if (Params->heading_A != PrevParams.heading_A)
         {
-            setHeading(0, Params->heading_A);
+            servo_A.SetPositionPercent(Params->heading_A);
             PrevParams.heading_A = Params->heading_A;
             printf("    heading_A: %f \n", Params->heading_A);            
         }
@@ -132,7 +132,7 @@ extern "C" void vDebugTask(void *pvParameters)
         // adjust heading of wheel B if told to
         if (Params->heading_B != PrevParams.heading_B)
         {
-            setHeading(1, Params->heading_B);
+            servo_B.SetPositionPercent(Params->heading_B);
             printf("    heading_B: %f \n", Params->heading_B);
             PrevParams.heading_B = Params->heading_B;
 
@@ -148,7 +148,7 @@ extern "C" void vDebugTask(void *pvParameters)
         // adjust heading of wheel C if told to
         if (Params->heading_C != PrevParams.heading_C)
         {
-            setHeading(2, Params->heading_C);
+            servo_C.SetPositionPercent(Params->heading_C);
             printf("    heading_C: %f \n", Params->heading_C);
             PrevParams.heading_C = Params->heading_C;
         }

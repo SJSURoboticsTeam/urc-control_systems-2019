@@ -12,7 +12,7 @@ class Motor
     ledc_timer_t pwm_timer;
     uint32_t signal_pin;
     uint32_t brake_pin;
-    uint32_t direction_pin;
+    uint64_t direction_pin;
     uint32_t pwm_frequency;
     uint32_t signal_duty_cycle;
     uint32_t brake_duty_cycle;
@@ -38,7 +38,7 @@ class Motor
 		 *     direction - Indicates the pin to be used as the direction signal.
 		 *     s_channel - Value 0 - 7, must be unique for each motor.
 		 *     b_channel - Value 0 - 7, must be same for all motors.
-		 *     timer     - Value 0 - 3, determines whic set frequency the motor 
+		 *     timer     - Value 0 - 3, determines which set frequency the motor 
 		 *                 will use.
 		 *     frequency - The specified frequency of the RC circuit in Hz as 
 		 *				   specified by the EE assigned to the subsystem.

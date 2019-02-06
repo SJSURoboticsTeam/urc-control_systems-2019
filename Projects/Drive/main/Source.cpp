@@ -14,9 +14,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
     WiFi.softAP("Drive", "drive1234");
     Serial.println();
-    Serial.print("IP address: 192.168.1.4");
+    Serial.print("IP address: ");
     Serial.println(WiFi.softAPIP());
-
     
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
@@ -36,7 +35,6 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             "mode", "speed_A", "heading_A", "speed_B", 
             "heading_B", "speed_C", "heading_C", "brake"
         };
-
         for (int i=0; i<8; i++) {
             if (request->hasArg(vars[i])) {
                 if (strcmp(vars[i], "mode")) {
@@ -61,7 +59,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->heading_C = request->arg("heading_C").toFloat();    
                 }
                 if (strcmp(vars[i], "brake")) {
-                    params->brake = (bool) request->arg("brake").toFloat();    
+                    params->brake = request->arg("brake").toFloat();    
                 }
             }
             else {
@@ -77,12 +75,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("    heading_B: %f \n", params->heading_B);
         printf("    speed_C: %f \n", params->speed_C);
         printf("    heading_C: %f \n", params->heading_C);
-        printf("    brake: %i \n", params->brake);
+        printf("    brake: %f \n", params->brake);
         printf("\n");
 
         request->send(200, "text/plain", "Success");
     });
-    
     /* SSE Example.
         - SSEs will be used to continuously send data that was
         not necessarily requested by mission control
@@ -122,16 +119,22 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
     //Start server.
     server->begin();
+    //printf("initServer done\n");
 }
 
 void initComponents()
 {
+    ledc_fade_func_install(ESP_INTR_FLAG_LEVEL1);
+
     servo_A.InitServo(SERVO_A_PIN, SERVO_A_CHANNEL, SERVO_TIMER, 
                       SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
+
     servo_B.InitServo(SERVO_B_PIN, SERVO_B_CHANNEL, SERVO_TIMER,
                       SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
+
     servo_C.InitServo(SERVO_C_PIN, SERVO_C_CHANNEL, SERVO_TIMER,
                       SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
+
 
     /* Testing Servos 
     motor_A.InitServoMotor(MOTOR_A_PIN, MOTOR_A_CHANNEL, MOTOR_TIMER, 
@@ -148,13 +151,16 @@ void initComponents()
     motor_A.InitMotor(MOTOR_A_PIN, MOTOR_A_BRAKE, MOTOR_A_DIR, MOTOR_A_CHANNEL,
                       BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN,
                       MOTOR_MAX);
+
+    fflush(stdout);
     motor_B.InitMotor(MOTOR_B_PIN, MOTOR_B_BRAKE, MOTOR_B_DIR, MOTOR_B_CHANNEL,
                       BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN,
                       MOTOR_MAX);
+    
     motor_C.InitMotor(MOTOR_C_PIN, MOTOR_C_BRAKE, MOTOR_C_DIR, MOTOR_C_CHANNEL,
                       BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN,
                       MOTOR_MAX);
-    
+
 }
 
 void initDriveMode(uint32_t heading)

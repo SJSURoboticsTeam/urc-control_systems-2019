@@ -14,6 +14,7 @@ void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake,
 	direction_pin = pin_direction;
 	signal_duty_cycle = 0;
 	brake_duty_cycle = 0;
+    pwm_frequency = frequency;
 
 	top_duty = max_duty * max / 100;
     base_duty = max_duty * min / 100;
@@ -36,6 +37,7 @@ void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake,
     motor.intr_type = LEDC_INTR_DISABLE;
     motor.speed_mode = LEDC_HIGH_SPEED_MODE;
     motor.timer_sel = pwm_timer;
+    motor.hoint = 0xfffff;
     ledc_channel_config(&motor);
 
     // Initialize PWM Brake Channel //
@@ -45,10 +47,11 @@ void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake,
     brake.intr_type = LEDC_INTR_DISABLE;
     brake.speed_mode = LEDC_HIGH_SPEED_MODE;
     brake.timer_sel = pwm_timer;
+    brake.hpoint = 0xfffff;
     ledc_channel_config(&brake);
 
     // Initialiaze Direction Pin //
-    direction.pin_bit_mask = direction_pin;
+    direction.pin_bit_mask = (1ULL << direction_pin);
     direction.mode = GPIO_MODE_OUTPUT;
     direction.pull_up_en = GPIO_PULLUP_DISABLE;
     direction.pull_down_en = GPIO_PULLDOWN_DISABLE;
@@ -80,8 +83,8 @@ void Motor::SetSpeed(double percentage)
     }
 
     // Set the Duty Cycle //
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
     // printf("Speed set to %f percent of total range.\n", percentage);
 }
 
@@ -101,8 +104,8 @@ void Motor::SetSpeedAndDirection(double percentage, bool direction)
     }
 
     // Set the Duty Cycle //
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
     // printf("Speed set to %f percent of total range.\n", percentage);
 
     // Set the Direction //
@@ -112,8 +115,8 @@ void Motor::SetSpeedAndDirection(double percentage, bool direction)
 void Motor::SetSpeedDuty(uint32_t duty)
 {
 	signal_duty_cycle = duty;
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
 }
 
 void Motor::SetDirection(bool dir)
@@ -138,7 +141,7 @@ void Motor::Brake(double percentage)
 	}
 
 	// Set the Duty Cycle //
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_b_channel, brake_duty_cycle);
-    ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_b_channel);
+    ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_b_channel, brake_duty_cycle, 0xfffff);
+    //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_b_channel);
     // printf("Brake set to %f percent.\n", percentage);
 }
