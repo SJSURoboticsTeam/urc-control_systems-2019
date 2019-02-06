@@ -9,111 +9,32 @@
 #include "constants.h"
 #include "PODS.h"
 #include "Servo_Control.hpp"
+#include "freertos/semphr.h"
 
 
 extern "C" void vGygerTask(void *pvParameters)
 {
-    bool fluid_dump = false; //has fluid beeen poured yet
-    int id = (int)pvParameters; // PODS identifier number
-    int x = id;
 
-	uint16_t sample_time = 1000;// sample time in milliseconds
-	uint32_t total_sample_time = 0;
-	int data = 0; // number of data points taken
-	volatile int *eCount = NULL;
-    uint16_t cutoff = 10;
-	unsigned long time = 0;// previous time for timer
-	uint count =0;
-	int* cpm = NULL;// emmoission counts per minute
-	//determin which interupt counter to read from
+	uint timer = 0;
+	int count = 0; 
 
-	std::cout << "starting gyger task \n";
-
-	switch(x)
+	while(1)
 	{
-		case 0: eCount = &eCount0;
-				cpm = &cpm0;
-				std::cout << "counter #: " << id << "\n";
-			break;
-		case 1: eCount = &eCount1;
-				cpm = &cpm0;
-				std::cout << "counter #: " << id << "\n";
-			break;
-		case 2: eCount = &eCount2;
-				cpm = &cpm2;
-				std::cout << "counter #: " << id << "\n";
-			break;
-		case 3: eCount = &eCount3;
-				cpm = &cpm3;
-				std::cout << "counter #: " << id << "\n";
-			break;
-		case 4: eCount = &eCount4;
-				cpm = &cpm4;
-				std::cout << "counter #: " << id << "\n";
-			break;
-		case 5: eCount = &eCount5;
-				cpm = &cpm5;
-				std::cout << "counter #: " << id << "\n";
-			break;
-		case 6: eCount = &eCount6;
-				cpm = &cpm6;
-				std::cout << "counter #: " << id << "\n";
-			break;
-		default: 
-			break;
+
+        if(xSemaphoreTake(xButtonInterruptSemaphore, portMAX_DELAY))
+        {
+        	count++;
+        }
+
+		if(millis() - timer > 2000)
+		{
+
+			printf("interupt trigered %d times \n",count);
+			timer = millis();
+		}
+
 	}
 
-	*cpm = -1;
-	
-	std::cout <<"setup of gyger " << id << " complete \n";
-	//std::cout <<"suspending gyger task: " << id << " \n";
-
-	//vTaskSuspend(NULL);//suspend until mission ccontrol says otherwise
-
-   // sealPODS(*id);
-	//vTaskDelay(5000/portTICK_PERIOD_MS);
-    
-    while(1)
-    {
-
-    	//*eCount += rand() % 10;
-
-   		if(data > 10 and !fluid_dump)
-   		{
-			dispenseFluid(id);
-			fluid_dump = true;
-		}    	
-
-   		if(count <= cutoff and millis() - time > sample_time)
-   		{
-    		    count += *eCount;
-    			std::cout << "new data \n" << eCount0 << "\n";	
-    			//std::cout << "analog read \n" << analogRead(gyger0_pin) << "\n";	
-    			time = millis();
-    			total_sample_time += sample_time;
-    			*eCount = 0;
-			
-
-   		}
-
-   		else if (count > cutoff)
-   		{
-    	
-
-    	*cpm = float(count) / total_sample_time;//radiation in emissions/minute
-    	count = 0;
-
-   		total_sample_time = 0;
-
-
-   		std::cout << "cps: " << *cpm / 60 << "\n";
-   		std::cout << "cpm: " << *cpm <<  "\n";
-
-   		}
-
-   		vTaskDelay(50/portTICK_PERIOD_MS);
-    		
-	}
 
 }
 

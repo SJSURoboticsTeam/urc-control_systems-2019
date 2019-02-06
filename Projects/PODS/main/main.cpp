@@ -12,10 +12,7 @@
 #include "PODS.h"
 #include "constants.h"
 #include "freertos/semphr.h"
-#include "esp_intr_alloc.h"
 
-
-SemaphoreHandle_t xButtonInterruptSemaphore;
 ParamsStruct params;
 AsyncWebServer server(80);
 
@@ -25,11 +22,20 @@ extern "C" void app_main()
     initArduino();
     initServer(&server, &params);
 
-    xButtonInterruptSemaphore = xSemaphoreCreateBinary();
+    xGygerSemaphore0 = xSemaphoreCreateBinary();
+    xGygerSemaphore1 = xSemaphoreCreateBinary();
+    xGygerSemaphore2 = xSemaphoreCreateBinary();
+    xGygerSemaphore3 = xSemaphoreCreateBinary();
+    xGygerSemaphore4 = xSemaphoreCreateBinary();
+    xGygerSemaphore5 = xSemaphoreCreateBinary();
+    xGygerSemaphore6 = xSemaphoreCreateBinary();
 
+    
+    printf("semaphore created\n");
+    
     initInteruptPins();	
 
-	xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)1, 2, &xGyger1); 
+	xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 2, &xGyger1); 
 	vTaskDelay(50/portTICK_PERIOD_MS);
 	
 	/*

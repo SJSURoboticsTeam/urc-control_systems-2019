@@ -13,6 +13,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "RTOStasks.h"
+#include "esp_intr_alloc.h"
+#include "freertos/semphr.h"
+
 using namespace std;
 //portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,10 +187,14 @@ float servo1_max = 10;
 int up = 90;
 int down = -90;
 
+
+	if(x = 7)
+	{
 		//servo object for sterilization fluid
+	
 	Servo servo2(inoculation_servo7_pin,servo1_channel,servo1_timer, 
 					servo1_frequency, servo1_max, servo1_min);
-
+	}
 		//servo object for inoculation fluid
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
@@ -318,35 +325,30 @@ int callData(int id)
 }
 
 
+//type: 
+int data(bool type, int id, int val)
+{
+	int x = 0;
+
+
+	return x++;
+}
 
 /****************************
-	interupt ffunction
+	interupt function
 *****************************/
 void emissionCount(void* id)
 {
-	    int yield = 0;
 
-  		switch ((int) id)
+	if(eCount0 == 0 or eCount0 > 0)
 	{
-		case 0:  eCount0++;
-				printf(eCount0);
-			break;
-		case 1:  eCount1++;
-			break;
-		case 2:  eCount2++;
-			break;
-		case 3:  eCount3++;
-			break;
-		case 4:  eCount4++;
-			break;
-		case 5:  eCount5++;
-			break;
-		default:  ;
-			break;
+		eCount0++;
 	}
-
-
-
+	
+	    int yield = 0;
+    //portENTER_CRITICAL_ISR(&mux);
+    xSemaphoreGiveFromISR(xButtonInterruptSemaphore, &yield);
+    portYIELD_FROM_ISR();
 }
 /////////////////////////////////////////////////////////////////////////////////                               CODE ENDS HERE                               //
 ////////////////////////////////////////////////////////////////////////////////

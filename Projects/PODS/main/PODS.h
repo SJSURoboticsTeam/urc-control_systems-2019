@@ -45,7 +45,7 @@ void initInteruptPins(); // initialize interupt pins that the gyger counters are
 
 int callData(int id);
 
-
+int data(bool type, int id, int val);
 
 //interupt finctions that count the number of emmisions detected
 void emissionCount(void* id);

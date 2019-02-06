@@ -12,13 +12,15 @@
 
 static TaskHandle_t xGyger0, xGyger1, xGyger2, xGyger3, xGyger4, xGyger5, xGyger6;
 
-extern SemaphoreHandle_t xButtonInterruptSemaphore;
+extern SemaphoreHandle_t xGygerSemaphore0, xGygerSemaphore1, xGygerSemaphore2, xGyger0Semaphore3
+							xGyger0Semaphore4, xGyger0Semaphore5, xGyger0Semaphore6;
 
 
+static int bob= 0;
 /*********************
 pins for gyger counter interupts
 *********************/
-static int gyger0_pin = 36;
+static int gyger0_pin = 23;
 static int gyger1_pin = 39;
 static int gyger2_pin = 34;
 static int gyger3_pin = 35;
@@ -36,7 +38,7 @@ static int inoculation_servo3_pin = 13;
 static int inoculation_servo4_pin = 9;
 static int inoculation_servo5_pin = 10;
 static int inoculation_servo6_pin = 0;
-static int inoculation_servo7_pin = 23;
+static int inoculation_servo7_pin;
 
 /***********************************
 pins for servos that seal PODS units
@@ -52,7 +54,7 @@ static int lid_servo_pin6 = 5;
 /************************************
 variables that count the interupts from the gyger counters
 **************************************/
-static volatile int eCount0;
+static volatile  int eCount0 = 0;
 static volatile int eCount1;
 static volatile int eCount2;
 static volatile int eCount3;
