@@ -20,13 +20,13 @@ constexpr double CORNER_2_MID = 23.238;
 constexpr double MAX_DIST = 1058.35; // Distance where out wheel turns 1 degree
 
 // HAL Sensor Pins //
-constexpr uint32_t HAL_A_PIN = 27;
-constexpr uint32_t HAL_B_PIN = 0;
-constexpr uint32_t HAL_C_PIN = 4;
+//constexpr uint32_t HAL_A_PIN = 35;
+//constexpr uint32_t HAL_B_PIN = 0;
+//constexpr uint32_t HAL_C_PIN = 4;
 
 // Constants for the steering servos //
-constexpr uint32_t SERVO_A_PIN = 25;
-constexpr uint32_t SERVO_B_PIN = 10;
+constexpr uint32_t SERVO_A_PIN = 26;
+constexpr uint32_t SERVO_B_PIN = 17;
 constexpr uint32_t SERVO_C_PIN = 19;
 
 constexpr uint32_t SERVO_A_CHANNEL = 0;
@@ -45,12 +45,12 @@ constexpr uint32_t MOTOR_B_PIN = 2;
 constexpr uint32_t MOTOR_C_PIN = 23;
 
 constexpr uint32_t MOTOR_A_DIR = 32;
-constexpr uint32_t MOTOR_B_DIR = 18;
-constexpr uint32_t MOTOR_C_DIR = 22;
+constexpr uint32_t MOTOR_B_DIR = 5;
+constexpr uint32_t MOTOR_C_DIR = 0;
 
-constexpr uint32_t MOTOR_A_BRAKE = 26;
+constexpr uint32_t MOTOR_A_BRAKE = 27;
 constexpr uint32_t MOTOR_B_BRAKE = 16;
-constexpr uint32_t MOTOR_C_BRAKE = 21;
+constexpr uint32_t MOTOR_C_BRAKE = 3;
 
 constexpr uint32_t MOTOR_A_CHANNEL = 3;
 constexpr uint32_t MOTOR_B_CHANNEL = 4;
@@ -59,6 +59,8 @@ constexpr uint32_t MOTOR_C_CHANNEL = 5;
 constexpr uint32_t BRAKE_CHANNEL = 6;
 
 constexpr uint32_t MOTOR_TIMER = 1;
+
+constexpr uint32_t BRAKE_TIMER = 2;
 
 /* Test servos 
 constexpr uint32_t MOTOR_FREQUENCY = 50;
@@ -128,6 +130,9 @@ extern Motor motor_A;
 extern Motor motor_B;
 extern Motor motor_C;
 
+extern Brake brake_A;
+extern Brake brake_B;
+extern Brake brake_C;
 
 // RTOS handlers //
 extern TaskHandle_t xCarHandle;

@@ -108,10 +108,9 @@ extern "C" void vDebugTask(void *pvParameters)
         // adjust speed of wheel A if told to
         if (Params->speed_A != PrevParams.speed_A) 
         {
-            setDirection(0, ((Params->speed_A > 0) ? 1:0));
-            setSpeed(0, abs(Params->speed_A));
+            motor_A.SetDirection(((Params->speed_A > 0) ? 1:0));
+            motor_A.SetSpeed(abs(Params->speed_A));
             PrevParams.speed_A = Params->speed_A;
-            printf("    speed_A: %f \n", Params->speed_A);
         }
         // adjust heading of wheel A if told to
         if (Params->heading_A != PrevParams.heading_A)
@@ -123,8 +122,8 @@ extern "C" void vDebugTask(void *pvParameters)
         // adjust speed of wheel B if told to
         if (Params->speed_B != PrevParams.speed_B)
         {
-            setDirection(1, ((Params->speed_B > 0) ? 1:0));
-            setSpeed(1, abs(Params->speed_B));
+            motor_B.SetDirection(((Params->speed_B > 0) ? 1:0));
+            motor_B.SetSpeed(abs(Params->speed_B));
             PrevParams.speed_B = Params->speed_B;
             printf("    speed_B: %f \n", Params->speed_B);
 
@@ -140,8 +139,8 @@ extern "C" void vDebugTask(void *pvParameters)
         // adjust speed of wheel C if told to
         if (Params->speed_C != PrevParams.speed_C)
         {
-            setDirection(2, ((Params->speed_C > 0) ? 1:0));
-            setSpeed(2, abs(Params->speed_C));
+            motor_C.SetDirection(((Params->speed_C > 0) ? 1:0));
+            motor_C.SetSpeed(abs(Params->speed_C));
             PrevParams.speed_C = Params->speed_C;
             printf("    speed_C: %f \n", Params->speed_C);
         }
@@ -160,7 +159,7 @@ extern "C" void vDebugTask(void *pvParameters)
             PrevParams.brake = Params->brake;
         }
     // Delay for half a second
-    vTaskDelay(500); 
+    vTaskDelay(100); 
     }
 }
 

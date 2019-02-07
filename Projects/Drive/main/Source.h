@@ -15,10 +15,10 @@ extern "C" {
 
 /*
  * mode: indicates the functionality of the rover, should only hold values 0-3
- *     0: Car Mode
+ *     0: Debug Mode
  *	   1: Crab Mode
  *	   2: Rotate Mode
- *	   3: Debug Mode
+ *	   3: Car Mode
  *
  * Speeds are to be recieved in values ranging from -100 to 100 with double 
  * floating point precision.
@@ -26,9 +26,10 @@ extern "C" {
  * Headings are to be recieved in values ranging from -255 to 255 except in Crab
  * mode where A and B will be as follows:
  *     heading_A: 0 - 360 degrees with double floating point precision.
- *	   heading_B: -180 - 180 degrees with double floating point precision.
+ *     heading_B: -180 - 180 degrees with double floating point precision.
+ * and Debug mode where headings range from 0% - 100% of the rotational range.
  * 
- * Brake is a boolean value.
+ * Brake is a double for 0% - 100%.
  */
 struct ParamsStruct {
     int mode;

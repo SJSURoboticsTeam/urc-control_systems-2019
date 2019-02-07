@@ -148,18 +148,21 @@ void initComponents()
                            DEAD_MAX);
     */
     /* Real motors DH-03X */
-    motor_A.InitMotor(MOTOR_A_PIN, MOTOR_A_BRAKE, MOTOR_A_DIR, MOTOR_A_CHANNEL,
-                      BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN,
-                      MOTOR_MAX);
+    motor_A.InitMotor(MOTOR_A_PIN, MOTOR_A_DIR, MOTOR_A_CHANNEL, MOTOR_TIMER, 
+                      MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
 
-    fflush(stdout);
-    motor_B.InitMotor(MOTOR_B_PIN, MOTOR_B_BRAKE, MOTOR_B_DIR, MOTOR_B_CHANNEL,
-                      BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN,
-                      MOTOR_MAX);
+    motor_B.InitMotor(MOTOR_B_PIN, MOTOR_B_DIR, MOTOR_B_CHANNEL, MOTOR_TIMER, 
+                      MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
     
-    motor_C.InitMotor(MOTOR_C_PIN, MOTOR_C_BRAKE, MOTOR_C_DIR, MOTOR_C_CHANNEL,
-                      BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN,
-                      MOTOR_MAX);
+    motor_C.InitMotor(MOTOR_C_PIN, MOTOR_C_DIR, MOTOR_C_CHANNEL, MOTOR_TIMER,
+                      MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
+
+    brake_A.InitBrake(MOTOR_A_BRAKE, BRAKE_CHANNEL, BRAKE_TIMER);
+
+    brake_B.InitBrake(MOTOR_B_BRAKE, BRAKE_CHANNEL, BRAKE_TIMER);
+
+    brake_C.InitBrake(MOTOR_C_BRAKE, BRAKE_CHANNEL, BRAKE_TIMER);
+
 
 }
 
@@ -278,9 +281,10 @@ void setHeading(uint32_t wheel, double percentage)
 
 void applyBrakes(double percentage)
 {
-    motor_A.Brake(percentage);
-    motor_B.Brake(percentage);
-    motor_C.Brake(percentage);
+    brake_A.Pump(percentage);
+    brake_B.Pump(percentage);
+    brake_C.Pump(percentage);
+    printf("brakes applied\n");
 }
 
 /*

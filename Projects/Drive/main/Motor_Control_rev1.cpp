@@ -3,17 +3,14 @@
 #include "driver/gpio.h"
 #include "Motor_Control_rev1.hpp"
 
-void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake, 
-				      uint32_t pin_direction, uint32_t s_channel,
-				      uint32_t b_channel, uint32_t timer, uint32_t frequency,
+void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_direction, 
+					  uint32_t s_channel, uint32_t timer, uint32_t frequency,
 				      float min, float max)
 {
 	// Initialize Private variables
 	signal_pin = pin_signal;
-	brake_pin = pin_brake;
 	direction_pin = pin_direction;
 	signal_duty_cycle = 0;
-	brake_duty_cycle = 0;
     pwm_frequency = frequency;
 
 	top_duty = max_duty * max / 100;
@@ -21,7 +18,7 @@ void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake,
     range = top_duty - base_duty;
     pwm_timer = (ledc_timer_t) timer;
     pwm_s_channel = (ledc_channel_t) s_channel;
-    pwm_b_channel = (ledc_channel_t) b_channel;
+    
 
     // Initialize PWM Timer //
     motor_timer.duty_resolution = LEDC_TIMER_10_BIT;
@@ -37,18 +34,8 @@ void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake,
     motor.intr_type = LEDC_INTR_DISABLE;
     motor.speed_mode = LEDC_HIGH_SPEED_MODE;
     motor.timer_sel = pwm_timer;
-    motor.hoint = 0xfffff;
+    motor.hpoint = 0xfffff;
     ledc_channel_config(&motor);
-
-    // Initialize PWM Brake Channel //
-    brake.channel = pwm_b_channel;
-    brake.duty = 0;
-    brake.gpio_num = brake_pin;
-    brake.intr_type = LEDC_INTR_DISABLE;
-    brake.speed_mode = LEDC_HIGH_SPEED_MODE;
-    brake.timer_sel = pwm_timer;
-    brake.hpoint = 0xfffff;
-    ledc_channel_config(&brake);
 
     // Initialiaze Direction Pin //
     direction.pin_bit_mask = (1ULL << direction_pin);
@@ -82,6 +69,9 @@ void Motor::SetSpeed(double percentage)
         signal_duty_cycle = base_duty;
     }
 
+	printf("On pin: %d\n", motor.gpio_num);
+    printf("    Duty Cycle Percentage: %f\n", percentage);
+    printf("    Duty Cycle Count: %d\n", signal_duty_cycle);
     // Set the Duty Cycle //
     ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle, 0xfffff);
     //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
@@ -124,22 +114,51 @@ void Motor::SetDirection(bool dir)
 	gpio_set_level((gpio_num_t) direction_pin, dir);
 }
 
-void Motor::Brake(double percentage)
+void Brake::InitBrake(uint32_t pin, uint32_t channel, uint32_t timer)
+{
+	brake_pin = pin;
+	brake_duty_cycle = 0;
+	pwm_timer = (ledc_timer_t) timer; 
+	pwm_b_channel = (ledc_channel_t) channel;
+
+	// Initialize PWM Timer //
+    brake_timer.duty_resolution = LEDC_TIMER_10_BIT;
+    brake_timer.freq_hz = brake_frequency;
+    brake_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
+    brake_timer.timer_num = pwm_timer;
+    ledc_timer_config(&brake_timer);
+
+	// Initialize PWM Brake Channel //
+    brake.channel = pwm_b_channel;
+    brake.duty = 0;
+    brake.gpio_num = brake_pin;
+    brake.intr_type = LEDC_INTR_DISABLE;
+    brake.speed_mode = LEDC_HIGH_SPEED_MODE;
+    brake.timer_sel = pwm_timer;
+    brake.hpoint = 0xfffff;
+    ledc_channel_config(&brake);
+}
+
+void Brake::Pump(double percentage)
 {
 	// Safety net in case the percentage exceeds the boundaries //
 	if (percentage > 100)
 	{
-		brake_duty_cycle = 100;
+		percentage = 100;
 	}
 	else if (percentage < 0)
 	{
-		brake_duty_cycle = 0;
+		percentage = 0;
 	}
 	else
 	{
-		brake_duty_cycle = percentage;
+		percentage = percentage;
 	}
 
+	brake_duty_cycle = 0 + (((1 << LEDC_TIMER_10_BIT) - 1) * percentage / 100);
+	printf("On Pin: %d\n", brake.gpio_num);
+	printf("    Duty Cycle Percentage = %f\n", percentage);
+	printf("    Duty Cycle Count = %d\n", brake_duty_cycle);
 	// Set the Duty Cycle //
     ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_b_channel, brake_duty_cycle, 0xfffff);
     //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_b_channel);

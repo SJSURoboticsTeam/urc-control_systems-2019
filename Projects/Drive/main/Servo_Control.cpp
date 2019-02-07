@@ -56,8 +56,6 @@ void Servo::SetPositionPercent(double percentage)
 {
     // Calculates the duty cycle based upon the input percentage //
     duty_cycle = base_duty + (range * percentage / 100);
-    printf("percentage: %f\n", percentage);
-    printf("duty_cycle: %d\n", duty_cycle);
     
     // Safety net in case the percentage exceeds the boundaries //
     if (duty_cycle > top_duty)

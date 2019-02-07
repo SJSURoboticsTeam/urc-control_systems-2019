@@ -8,21 +8,17 @@ class Motor
 {
     private:
     ledc_channel_t pwm_s_channel;
-    ledc_channel_t pwm_b_channel;
     ledc_timer_t pwm_timer;
     uint32_t signal_pin;
-    uint32_t brake_pin;
     uint64_t direction_pin;
     uint32_t pwm_frequency;
     uint32_t signal_duty_cycle;
-    uint32_t brake_duty_cycle;
     uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) - 1);
     uint32_t top_duty;
     uint32_t base_duty;
     uint32_t range;	
     ledc_timer_config_t motor_timer;
     ledc_channel_config_t motor;
-    ledc_channel_config_t brake;
     gpio_config_t direction;
 
 	public:
@@ -45,9 +41,8 @@ class Motor
 		 *     min		 - The minimum PWM duty cycle used for control.
 		 *	   max       - The maximum PWM duty cycle used for control.
 		 */
-		void InitMotor(uint32_t pin_signal, uint32_t pin_brake, 
-				       uint32_t pin_direction, uint32_t s_channel,
-				       uint32_t b_channel, uint32_t timer, uint32_t frequency,
+		void InitMotor(uint32_t pin_signal, uint32_t pin_direction, 
+					   uint32_t s_channel, uint32_t timer, uint32_t frequency,
 				       float min, float max);
 		
 		/**
@@ -82,11 +77,6 @@ class Motor
 		 */
 		void SetDirection(bool dir);
 
-		/**
-		 * This function applies the brakes at the specified percentage.
-		 */
-		void Brake(double percentage);
-
 	/**
 	 * Deconstructor
 	 */
@@ -94,6 +84,38 @@ class Motor
 	{
 		// Does Nothing
 	}
+};
+
+class Brake
+{
+	private:
+	ledc_channel_t pwm_b_channel;
+	ledc_timer_t pwm_timer;
+    uint32_t brake_pin;
+    uint32_t brake_frequency = 10;
+    uint32_t brake_duty_cycle;
+    uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) - 1);
+    uint32_t top_duty = max_duty;
+    uint32_t base_duty = 0;
+    uint32_t range = top_duty - base_duty;
+    ledc_timer_config_t brake_timer;
+    ledc_channel_config_t brake;
+
+	public:
+	Brake()
+	{
+		// Does nothing
+	}
+
+	/** 
+	 * This function initializes the brakes
+	 */
+	void InitBrake(uint32_t pin, uint32_t channel, uint32_t timer);
+	/**
+	 * This function applies the brakes at the specified percentage.
+	 */
+	void Pump(double percentage);
+
 };
 
 #endif
