@@ -74,7 +74,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     server->on("/data", HTTP_POST, [=](AsyncWebServerRequest *request){
         String type = request->arg("type").c_str();
         int x = atoi(request->arg("id").c_str());
-        int z = callData(x);
+        int z = writeData(false, x, 0);
         char c[15];
 
         String data;
@@ -188,31 +188,38 @@ int up = 90;
 int down = -90;
 
 
-	if(x = 7)
+/*
+	if(x == 7)
 	{
 		//servo object for sterilization fluid
 	
 	Servo servo2(inoculation_servo7_pin,servo1_channel,servo1_timer, 
 					servo1_frequency, servo1_max, servo1_min);
 	}
+
+
+	*/
 		//servo object for inoculation fluid
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
 
 	servo1.SetPositionPercent(getPercent(down));
 
+/*
 	if(x == 7)
 	{
 		servo2.SetPositionPercent(getPercent(down));
 	}
 
+*/
 	vTaskDelay(10000 / portTICK_PERIOD_MS);
 
+/*
 	if(x == 7)
 	{
 		servo2.SetPositionPercent(getPercent(up));
 	}
-
+*/
 	servo1.SetPositionPercent(getPercent(up));
 
 }
@@ -303,10 +310,43 @@ void initInteruptPins()
 }
 
 
-int callData(int id)
+
+
+
+//type: true = write data  false = request data
+int writeData(bool type, int id, int val)
 {
-	switch (id)
+
+	if(type == true)
 	{
+			switch (id)
+		{
+		case 0:  cpm0 = val;
+			break;
+		case 1:  cpm1 = val;
+			break;
+		case 2:  cpm2 = val;
+			break;
+		case 3:  cpm3 = val;
+			break;
+		case 4:  cpm4 = val;
+			break;
+		case 5:  cpm5 = val;
+			break;
+		case 6: cpm6 = val;
+			break;
+		default:  
+			break;
+		}
+
+
+	}
+
+	
+	if(type == false)
+	{
+			switch (id)
+		{
 		case 0: return cpm0;
 			break;
 		case 1: return cpm1;
@@ -319,35 +359,56 @@ int callData(int id)
 			break;
 		case 5: return cpm5;
 			break;
-		default: return -1;
+		case 6: return cpm6;
 			break;
+		default: 
+			break;
+		}
 	}
+
+	return -1;
 }
 
 
-//type: 
-int data(bool type, int id, int val)
-{
-	int x = 0;
-
-
-	return x++;
-}
 
 /****************************
 	interupt function
 *****************************/
-void emissionCount(void* id)
+void emissionCount(void* pin_num)
 {
-
-	if(eCount0 == 0 or eCount0 > 0)
+	int id;
+	switch((int)pin_num)
 	{
-		eCount0++;
+		case gyger0_pin: 
+				id = 0; 
+			break;
+		case gyger1_pin: 
+				id = 1; 
+			break;
+		case gyger2_pin: 
+				id = 2; 
+			break;
+		case gyger3_pin: 
+				id = 3; 
+			break;
+		case gyger4_pin: 
+				id = 4; 
+			break;
+		case gyger5_pin: 
+				id = 5;
+		 	break;
+		case gyger6_pin: 
+				id = 6;
+			 break;
+		default: id = -1; break;
 	}
+	
+		//eCount0++;
+	xQueueSendFromISR(xQueue, (void*) &id, pdFALSE);
 	
 	    int yield = 0;
     //portENTER_CRITICAL_ISR(&mux);
-    xSemaphoreGiveFromISR(xButtonInterruptSemaphore, &yield);
+    xSemaphoreGiveFromISR(xGygerSemaphore0, &yield);
     portYIELD_FROM_ISR();
 }
 /////////////////////////////////////////////////////////////////////////////////                               CODE ENDS HERE                               //

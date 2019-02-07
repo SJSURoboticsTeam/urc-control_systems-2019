@@ -31,10 +31,6 @@ void dispenseFluid(int x);// dispenses fluid for pod x
 
 void sealPODS(int x); //seals POD x
 
-int servoInoculationPin(int x); //returns servo pin for PODS #x that controls the incoculationi fluid
-
-int servoLidPin(int x);// returns servo pin on PODS #x that seals the PODS
-
 void startPOD(bool start, int x);//takes boolean to start/stop gygercounter x
 
 void killAll(bool x);//  unwritten
@@ -43,10 +39,13 @@ double getPercent(int angle);//returns a % duty cycle for a given angle
 
 void initInteruptPins(); // initialize interupt pins that the gyger counters are cconected to
 
-int callData(int id);
+int writeData(bool type, int id, int val); //TRUE to write data. will return -1 
+											//FALSE to return data
+											// id -> PODS identifier (0-6) val -> cpm
 
-int data(bool type, int id, int val);
+int servoInoculationPin(int x); //returns servo pin for PODS #x that controls the incoculationi fluid
 
+int servoLidPin(int x);// returns servo pin on PODS #x that seals the PODS
 //interupt finctions that count the number of emmisions detected
 void emissionCount(void* id);
 

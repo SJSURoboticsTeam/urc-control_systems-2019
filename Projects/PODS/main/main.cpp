@@ -13,6 +13,8 @@
 #include "constants.h"
 #include "freertos/semphr.h"
 
+SemaphoreHandle_t xGygerSemaphore0; 
+QueueHandle_t xQueue;
 ParamsStruct params;
 AsyncWebServer server(80);
 
@@ -22,14 +24,16 @@ extern "C" void app_main()
     initArduino();
     initServer(&server, &params);
 
+    xQueue = xQueueCreate(10, sizeof(int));
     xGygerSemaphore0 = xSemaphoreCreateBinary();
-    xGygerSemaphore1 = xSemaphoreCreateBinary();
+  
+  /*  xGygerSemaphore1 = xSemaphoreCreateBinary();
     xGygerSemaphore2 = xSemaphoreCreateBinary();
     xGygerSemaphore3 = xSemaphoreCreateBinary();
     xGygerSemaphore4 = xSemaphoreCreateBinary();
     xGygerSemaphore5 = xSemaphoreCreateBinary();
     xGygerSemaphore6 = xSemaphoreCreateBinary();
-
+	*/
     
     printf("semaphore created\n");
     

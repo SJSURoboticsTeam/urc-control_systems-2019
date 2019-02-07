@@ -14,22 +14,68 @@
 
 extern "C" void vGygerTask(void *pvParameters)
 {
-
-	uint timer = 0;
+	int id = (int)pvParameters;
+	u_long timer = 0;
 	int count = 0; 
+	int past_cpm = 0; 
+	int current_cpm = 0 ;
+	int *queueID;
+	int rst = 100;
+	int data;
+	int sample_time = 10000; // sample time in (ms)
+
+
+	printf("gyger task %d initialized \n", id );
+	printf("Suspending gyger task %d \n", id );
+	vTaskSuspend(NULL);
+
+	printf("Starting gyger task %d \n", id );
 
 	while(1)
 	{
 
-        if(xSemaphoreTake(xButtonInterruptSemaphore, portMAX_DELAY))
-        {
-        	count++;
-        }
+      	if(xSemaphoreTake(xGygerSemaphore0, portMAX_DELAY))
+      	{
+      		xQueuePeek(xQueue, &queueID, (TickType_t) 0 );
+      		printf("Peeked into queue. ID %d found \n", (int)queueID);
+      		
+      		if((int)queueID == id)
+      		{
+      			//queueID = &rst;
+      			xQueueReceive(xQueue, &queueID, (TickType_t) 0);
+      			printf("Item recieved from queue. ID %d retreived. \n", (int)queueID );
 
-		if(millis() - timer > 2000)
+      			count++;
+
+      			//queueID = &rst;
+
+      			if(xQueuePeek(xQueue, &queueID, (TickType_t) 0 ))
+      			{
+      				printf("Peeked into queue. ID %d found \n \n", (int)queueID);	
+      			}
+      			else
+      			{
+      				printf("Peeked into queue. Queue empty \n \n" );
+      			}
+
+      		}
+           	 
+      	}
+
+
+		if(millis() - timer > sample_time and (int)queueID == id)
 		{
-
+			current_cpm = (float)count * 1000.0 / (float)(millis() - timer) * 60;
 			printf("interupt trigered %d times \n",count);
+			
+			data = writeData(true, id, current_cpm);
+			printf("recorded cpm of %d  \n \n", current_cpm);
+			
+			data = writeData(false, id, -1);
+			printf("cpm: %d  \n \n", data);
+
+			queueID = &rst;
+			count = 0;
 			timer = millis();
 		}
 
