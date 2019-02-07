@@ -50,12 +50,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     });
     
     /*******************************
-		start PODS comand
+		start/stop PODS comand
     ********************************/
-    server->on("/start_pod", HTTP_POST, [=](AsyncWebServerRequest *request){
+    server->on("/toggle_pod", HTTP_POST, [=](AsyncWebServerRequest *request){
          int x = atoi(request->arg("id").c_str());
-         bool y = atoi(request->arg("start").c_str());
-         startPOD(y,x);
+         startPOD(true,x);
          
          if(y)
          {
@@ -66,6 +65,18 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 			startPOD(false, x);
 			request->send(200, "text/pain", "POD suspended/failed to start");
 		}
+    });
+       
+
+        server->on("/stop_all", HTTP_POST, [=](AsyncWebServerRequest *request){
+         
+         for(int i = 0; i <=6; i++)
+         {
+         	startPOD(false,i);
+         }
+         
+         request->send(200, "text/pain", " All POD suspended");
+
     });
 
     /*************************
