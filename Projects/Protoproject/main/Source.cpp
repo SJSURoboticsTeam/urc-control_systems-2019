@@ -8,7 +8,8 @@
 #include "constants.h"
 #include "Servo_Control.hpp"
 
-
+// Current duty cycle position of the gimbal
+float duty_pos = 0;
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
@@ -31,10 +32,35 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         the paramsStruct struct located in Source.h first. 
     */
 
-   server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
-        strcpy(params->name, request->arg("name").c_str());
+//    server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
+//         strcpy(params->name, request->arg("name").c_str());
+//         request->send(200, "text/plain", "Success");
+//     });
+
+    server->on("/pitch_update", HTTP_POST, [=](AsyncWebServerRequest *request){
+        const char *paramvariables[3] = {
+            "name", "mode", "pitch_position"
+        };
+        for (int i = 0; i < 3; i++) {
+            if (request->hasArg(paramvariables[i])) {
+                if (strcmp(paramvariables[i], "name")) {
+                    strcpy(params->name, request->arg("name").c_str());  
+                }
+                if (strcmp(paramvariables[i], "mode")) {
+                    params->mode = request->arg("mode").toInt();    
+                }
+                if (strcmp(paramvariables[i], "pitch_position")) {
+                    params->pitch_position = request->arg("pitch_position").toFloat();    
+                }
+            }
+            else {
+                printf("ERROR. %s are not available.", paramvariables[i]);
+            }
+        }
+
         request->send(200, "text/plain", "Success");
     });
+        
     
     /* SSE Example.
         - SSEs will be used to continuously send data that was
@@ -108,29 +134,55 @@ int EEPROMCount(int addr)
 void initGimbal() {
     printf("Gimbal has been initialized for movement.\n");
     Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
-                      SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
-
-    // void InitServoMotor(uint32_t pin, uint32_t channel, uint32_t timer, 
-    //                         uint32_t frequency, float max, float min, 
-    //                         float dead_min, float dead_max);
-
-    // Pitch_Servo.InitServoMotor(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER,
-    //                     SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN, )
-
+                      SERVO_FREQUENCY, SERVO_MAX_LIMIT, SERVO_MIN_LIMIT);
 
 }
 
-void manualMovePitch(double percent) {
-    printf("The pitch position is now %f %%.\n", percent);
-    Pitch_Servo.SetPositionPercent(percent);
+void centerMovePitch() {
+    Pitch_Servo.SetPositionDuty(SERVO_MEDIAN);
+}
+
+void upMovePitch() {
+    Pitch_Servo.SetPositionDuty(SERVO_UP);
+}
+
+void downMovePitch() {
+    Pitch_Servo.SetPositionDuty(SERVO_DOWN);
+}
+
+void manualMovePitch(double duty_cycle) {
+    
+
+    // Conditions make sure that the camera gimbal doesn't rotate past its duty cycle limits or positional limit
+    if (duty_pos + duty_cycle >= SERVO_MAX_LIMIT) {
+        Pitch_Servo.SetPositionDuty(SERVO_MAX);
+        duty_pos = SERVO_MAX;
+    }
+    else if (duty_pos + duty_cycle <= SERVO_MIN_LIMIT) {
+        Pitch_Servo.SetPositionDuty(SERVO_MIN);
+        duty_pos = SERVO_MIN;
+    }
+    else {
+        Pitch_Servo.SetPositionDuty(duty_cycle);
+        duty_pos = duty_cycle; // keeps track of the current position of the gimbal
+    }
+
+    printf("The pitch position is now %f %%.\n", duty_pos);
 }
 
 void sweepMovePitch() {
-    double pos = 0;
-    for (pos = 0; pos <= 180; pos++) {
-         manualMovePitch(pos);
-    } 
-    for (pos = 180; pos >= 0; pos--) {
-         manualMovePitch(pos);
-    }      
+    upMovePitch();
+    vTaskDelay(300);
+
+    centerMovePitch();
+    vTaskDelay(300);
+
+    downMovePitch(); 
+    vTaskDelay(300);
+
+    centerMovePitch();
+    vTaskDelay(300);
+
+    upMovePitch();
+    vTaskDelay(300);
 }

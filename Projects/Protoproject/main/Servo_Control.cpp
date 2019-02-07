@@ -71,7 +71,7 @@ void Servo::SetPositionPercent(double percentage)
     // printf("Position set to %f percent of total range.\n", percentage);
 }
 
-void Servo::SetPositionDuty(uint32_t duty)
+void Servo::SetPositionDuty(double duty)
 {
     //  Sets the Duty Cycle to the input value //
     duty_cycle = duty;

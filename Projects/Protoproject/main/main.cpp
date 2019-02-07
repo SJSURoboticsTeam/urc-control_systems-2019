@@ -16,6 +16,7 @@ ParamsStruct params;
 //Server used to listen for XHRs, and send SSEs.
 AsyncWebServer server(80);
 
+// Initialization of the Pitch_Servo object
 Servo Pitch_Servo;
 
 extern "C" void app_main() {
@@ -34,12 +35,12 @@ extern "C" void app_main() {
         fflush(stdout);
         esp_restart();
     }
+    
 
     //Create freeRTOS tasks.
     xTaskCreate(vSayHelloTask, "Hello", 4096, &params, 1, NULL);
-    xTaskCreate(vPitchTask, "Pitch", 4096, NULL, 1, NULL);
+    xTaskCreate(vPitchTask, "Pitch", 4096, &params, 1, NULL);
     xTaskCreate(vCountTask, "Count", 4096, NULL, 1, NULL);
 
-    //initPitchMove();
 }
 

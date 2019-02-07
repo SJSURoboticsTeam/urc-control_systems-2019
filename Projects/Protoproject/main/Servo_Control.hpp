@@ -25,7 +25,7 @@ class Servo
     ledc_timer_t pwm_timer;
     uint32_t gpio_pin;
     uint32_t pwm_frequency;
-    uint32_t duty_cycle;
+    double duty_cycle;
     uint32_t max_duty = ((1 << LEDC_TIMER_10_BIT) - 1);
     uint32_t top_duty;
     uint32_t base_duty;
@@ -77,7 +77,7 @@ class Servo
          * in the pwm output. duty should reference the value at which the timer
 	     * sets the signal low.
          */
-        void SetPositionDuty(uint32_t duty);
+        void SetPositionDuty(double duty);
         /**
          * This function calculates the percentage of the range of the servo a 
          * desired angle represents compared to the maximum rated rotation of 

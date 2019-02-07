@@ -13,6 +13,12 @@ extern "C" {
 
 extern "C" void vSayHelloTask(void *pvParameters);
 
+/*
+    Enables camera gimbal pitch movement to interpret manual inputs 
+    from mission control in order to change the gimbal's direction.
+
+*/
+
 extern "C" void vPitchTask(void *pvParameters);
 
 extern "C" void vCountTask(void *pvPArameters);

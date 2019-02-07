@@ -22,9 +22,22 @@ extern "C" void vSayHelloTask(void *pvParameters) {
 }
 
 extern "C" void vPitchTask(void *pvParameters) {
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
+    
+    
+    // Initalize pitch object after the delay to allow the gimbal to turn on becoming completely functional
+    vTaskDelay(500);
+    initGimbal();
+
     while(1) {
-        initGimbal();
-        sweepMovePitch(); 
+        //sweepMovePitch(); 
+        
+        if (params->pitch_position != 0) {
+            manualMovePitch(params->pitch_position);
+        } 
+        else {
+            printf("Awaiting pitch position value input from mission control.\n");
+        }
         vTaskDelay(500);
     }   
 }
