@@ -14,41 +14,42 @@
 #include "../../../Utilities/Servo_Control.cpp"
 
 
-extern "C" void vSayHelloTask(void *pvParameters) {
-    ParamsStruct* params = (ParamsStruct*) pvParameters;
-
-    while(1) {
-        // printf("Hello, %s! \n", params->name);
-        printf("Heading: %i\n", params->heading);
-	    vTaskDelay(700);
-    }
-}
-
-/*
-    This task demonstrates how to read and write from EEPROM,
-    which is non-voltaile memory that we can use to store data on the 
-    ESP.
-*/
-
-extern "C" void vServoTask(void *pvParameters)
+extern "C" void vElbowTask(void *pvParameters)
 {
-    ParamsStruct* params = (ParamsStruct*) pvParameters;
-    double duty;
+    printf("Entered Elbow Task\n");
+    ParamsStruct* myParams = (ParamsStruct*) pvParameters;
+
+    double currentTarget = myParams->ElbowTarget;
+    double currentAngle = kElbowStartPos;   //Feedback?
 
     //(pin, Chanel, Timer, Freq, Min Max)
-    Servo myServo(15, 0, 0, 50, 2, 5);
+    Servo Elbow(kElbowPin, 1, 0, 50, 12.5, 2.5);
+    Elbow.SetPositionPercent((kElbowStartPos / kElbowRange) * 100);
+    printf("Starting Position: %f\n", kElbowStartPos);
 
 
     while(1)
     {
+        if(currentTarget != myParams->ElbowTarget)
+        {
+            //update currentTarget
+            currentTarget = myParams->ElbowTarget;
+            printf("currentTarget: %f\n", currentTarget);
 
-        duty = 50 + ((params->heading / 90.0) * 50);
-        printf("Heading: %i      XHR duty:%f\n",params->heading, duty);
-        myServo.SetPositionPercent(duty);
+            //check to make sure Target is within bounds
+            if((currentTarget > kElbowLimitMin) && (currentTarget < kElbowLimitMax)) //Need to set this to our mechanical constraints
+            { 
+                //update duty
+                currentAngle = currentTarget;
+                Elbow.SetPositionPercent((currentAngle / kElbowRange) * 100);
+                printf("Setting Duty to %f\n", (currentAngle / kElbowRange)*100);
+            }   
+
+            printf("current Angle: %f\n\n\n", currentAngle);
+        }
         vTaskDelay(500);
     }
 }
-
 
 
 extern "C" void vRotundaTask(void *pvParameters)
@@ -56,17 +57,18 @@ extern "C" void vRotundaTask(void *pvParameters)
     // Notes:
     // MS sends a command of 0 to 360 OR -180 to 180
     //     if the latter, just add 180 to target
+    printf("Entered Rotunda Task\n");
 
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
-    double current_position_translate;
-    double rotunda_target_translate;
     double current_position = kRotundaStartPos;
     double prev_target = params->RotundaTarget;
-    double rotunda_current_duty = kRotundaStartDuty;
+    double current_position_translate, rotunda_target_translate;
+    double leftDistance, rightDistance;
+    double dutyPercent;
 
     //(pin, Chanel, Timer, Freq, Min Max)
-    Servo myServo(15, 0, 0, 50, 2, 5);  //all this needs to change, check the library
+    Servo myServo(kRotundaPin, 0, 0, 50, 10, 5);  //all this needs to change, check the library
     myServo.SetPositionPercent(kRotundaStartDuty);
 
     while(1)
@@ -79,40 +81,117 @@ extern "C" void vRotundaTask(void *pvParameters)
             current_position_translate = std::fmod(current_position, 360); //translate from 0-3600 into 0-360
             rotunda_target_translate = params->RotundaTarget + 180;
 
-            printf("current_position_translated: %f\n", current_position_translate);
-            printf("rotunda_target_translated: %f\n", rotunda_target_translate);
+            printf("current position translated: %f\n", current_position_translate);
+            printf("rotunda target translated: %f\n", rotunda_target_translate);
 
-            if(current_position_translate >= params->RotundaTarget)
+            //Compare current_position_translate and params->RotundaTarget
+            //  & figure out if distance to target is smaller going down or Up
+            //  Ex: if current = 200, and new_target = 10, its more efficient
+            //  to increase 170 degrees, resulting in a 
+            //  modulo of 10, rather than decreasing 190 degrees
+            if(current_position_translate > rotunda_target_translate)
             {
-                //if distance to target via rotating left is larger than rotating right
-                if( (current_position_translate - params->RotundaTarget) 
-                    >= ((params->RotundaTarget + 360) - current_position_translate) )
+                leftDistance = abs(current_position_translate - rotunda_target_translate);
+                rightDistance = abs(rotunda_target_translate + 360 - current_position_translate);
+
+                if(leftDistance <= rightDistance)  
                 {
-                    current_position += (params->RotundaTarget + 360) - current_position_translate;
-                    printf("Increasing duty cycle is most efficient, new position: %f\n\n",current_position);
+                    if((current_position - leftDistance) <= kRotundaPosMin) 
+                    {   //then we need to go the other way, cannot reduce our duty cycle
+                        current_position += rightDistance;
+                        printf("Bottom limit reached, adding by %f instead\n", rightDistance);
+                    }
+                    else    //we can go the proper way
+                    {
+                        current_position -= leftDistance;
+                        printf("Decreasing by %f\n",leftDistance);
+                    }
                 }
-                else
+
+                else if(leftDistance > rightDistance)  
                 {
-                    current_position += current_position_translate - params->RotundaTarget;
-                    printf("Decreasing duty cycle is most efficient, new position: %f\n\n",current_position);
+                    if((current_position + rightDistance) >= kRotundaPosmax)
+                    {   //Need to reduce since adding is out of bounds
+                        printf("Top limit reached, need to reduce by %f instead\n", leftDistance );
+                        current_position -= leftDistance;
+                    }
+                    else
+                    {
+                        //its okay if we increase
+                        printf("Increasing by %f\n", rightDistance);
+                        current_position += rightDistance;
+                    }
                 }
             }
-            else
+            else if(rotunda_target_translate > current_position_translate)
             {
-                printf("Fell through, current_position_translate < params->RotundaTarget");
+                leftDistance = abs(current_position_translate + 360 - rotunda_target_translate);
+                rightDistance = abs(rotunda_target_translate - current_position_translate);
+
+                if(rightDistance <= leftDistance)  
+                {
+                    if((current_position + rightDistance) >= kRotundaPosmax)
+                    {
+                        printf("Top limit reached, need to decrease by %f instead\n", leftDistance);
+                        current_position -= leftDistance;
+                    }else
+                    {
+                        printf("Increasing by %f\n",rightDistance);
+                        current_position += rightDistance;
+                    }
+                }
+                else if(rightDistance > leftDistance)
+                {
+                    if((current_position - leftDistance) <= kRotundaPosMin)
+                    {
+                        printf("Bottom limit reached, adding by %f instead\n", rightDistance);
+                        current_position += rightDistance;
+
+                    }
+                    else
+                    {
+                        printf("Decreasing by %f\n", leftDistance);
+                        current_position -= leftDistance;
+                    }
+                }  
             }
-            //compare current_position_translate and params->RotundaTarget
 
-            // figure out if distance to target is smaller going down or Up
-            //     Ex: if current = 200, and new_target = 10, its more efficient to increase 170 degrees, resulting in a 
-            //     modulo of 10, rather than decreasing 190 degrees
-            
-            // Make sure that direction is possible within the 0-3600 limit
+            //Update the duty cycle accordingly
+            dutyPercent = (current_position/kRotundaPosmax) * 100;
+            printf("Rotunda Duty: %f\n\n\n", dutyPercent);
+            myServo.SetPositionPercent(dutyPercent);
 
-            // Update the duty cycle accordingly
-            //     Should probably move toward that new duty cycle over a period of time, so the robot isn't super jerky
+            //STILL NEED TO SET THE SERVO DUTY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             prev_target = params->RotundaTarget;
         }
-        vTaskDelay(700);   
+        vTaskDelay(500);   
+    }
+}
+
+extern "C" void vShoulderTask(void *pvParameters)
+{
+    printf("Entered Shoulder Task\n");
+    ParamsStruct* myParams = (ParamsStruct*) pvParameters;
+
+    // Motor shoulder;
+                //Sig, Dir, Channel, Timer, Freq, min, max
+    // shoulder.InitMotor(kShoulderSigPin, kShoudlerDirPin, 2, 2, kShoulderFreq, 0, 50);
+
+    double duration;
+
+    while(1)
+    {
+        if(myParams->ShoudlerDuration_ms != 0 )
+        {
+            duration = myParams->ShoudlerDuration_ms;
+            myParams->ShoudlerDuration_ms = 0;
+
+            //assert motor @ 50%?
+            // shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
+            //delay that duration
+            vTaskDelay(abs(duration));
+            //deassrt the motor
+            // shoulder.setSpeed(0);
+        }
     }
 }

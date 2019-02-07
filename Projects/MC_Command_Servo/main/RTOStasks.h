@@ -10,13 +10,13 @@
 extern "C" {
 #endif
 
-extern "C" void vSayHelloTask(void *pvParameters);
-
-extern "C" void vCountTask(void *pvPArameters);
-
-extern "C" void vServoTask(void *pvParameters);
+extern "C" void vCountTask(void *pvParameters);
 
 extern "C" void vRotundaTask(void *pvParameters);
+
+extern "C" void vElbowTask(void *pvParameters);
+
+extern "C" void vShoulderTask(void *pvParameters);
 
 #ifdef _cplusplus
 }

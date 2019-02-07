@@ -10,36 +10,43 @@
 extern "C" {
 #endif
 
-
+constexpr int kRotundaPin = 18;		//NEEDS TO CHANGE
 constexpr int kRotundaPosMin = 0;
-constexpr int kRotundaPosmaxk = 3600;
+constexpr int kRotundaPosmax = 3600;
 constexpr double kRotundaStartPos = 1800;
 constexpr double kRotundaStartDuty = 50.0;
 
-constexpr int kElbowPosMin = 0;
-constexpr int kElbowPosmax = 90;
+constexpr int kElbowPin = 25;		//NEEDS TO CHANGE
+constexpr int kElbowLimitMin = 0;
+constexpr int kElbowLimitMax = 300;
+constexpr double kElbowRange = 300;
+constexpr double kElbowStartPos = 150;
 
-constexpr int kShoulderPosMin = 0;
-constexpr int kShoulderPosmax = 90;
-constexpr int kShoulderEnablePWMMin = 0;	//percentage
-constexpr int kShoulderEnablePWMMax = 50;	//percentage
+// constexpr int kShoulderPosMin = 0;
+// constexpr int kShoulderPosmax = 90;
+// constexpr int kShoulderEnablePWMMin = 0;	//percentage
+// constexpr int kShoulderEnablePWMMax = 50;	//percentage
+
+constexpr uint32_t kShoulderSigPin = 25;
+constexpr uint32_t kShoudlerDirPin = 18;
+constexpr uint32_t kShoulderFreq = 1000;
 
 /* PINOUTS:
 	Servo 1: GPIO 6
-	Servo 2: CPIO 7
+	Servo 2: GPIO 7
 
 	i2c:
 		SDA: GPIO 23
 		SCL: GPIO 21
 
 	Motors:
-		Motor Driver 1:
+		Motor Driver 1:	DIFF GEARBOX
 			VPROPI: GPIO 39
 			Mode 2: GPIO 27
 			Phase:	GPIO 16
 			Enable:	GPIO 4
 
-		Motor Driver 2:
+		Motor Driver 2:	DIFF GEARBOX
 			VPROPI: GPIO 36
 			Mode 2: GPIO 1
 			Phase:	GPIO 5
@@ -50,8 +57,21 @@ constexpr int kShoulderEnablePWMMax = 50;	//percentage
 			Mode 2: GPIO 3
 			Phase:	GPIO 0
 			Enable:	GPIO 2
-/*
+*/
 
+
+struct ParamsStruct {
+    // char name[40];
+	double RotundaTarget = -180.0; //range of -180 to 180
+	double ElbowTarget = kElbowStartPos;
+	double ShoudlerDuration_ms = 0;
+};
+
+void initServer(AsyncWebServer* server, ParamsStruct* params);
+
+bool initEEPROM();
+
+int EEPROMCount(int addr);
 
 /*
 	Rotunda:
@@ -86,18 +106,6 @@ constexpr int kShoulderEnablePWMMax = 50;	//percentage
 		*Haven't looked into this yet
 
 */
-
-struct ParamsStruct {
-    // char name[40];
-	int heading = 5;
-	double RotundaTarget = -180.0; //range of -180 to 180
-};
-
-void initServer(AsyncWebServer* server, ParamsStruct* params);
-
-bool initEEPROM();
-
-int EEPROMCount(int addr);
 
 #ifdef _cplusplus
 }
