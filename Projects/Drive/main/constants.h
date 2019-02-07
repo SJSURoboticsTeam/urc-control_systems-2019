@@ -46,7 +46,7 @@ constexpr uint32_t MOTOR_C_PIN = 23;
 
 constexpr uint32_t MOTOR_A_DIR = 32;
 constexpr uint32_t MOTOR_B_DIR = 5;
-constexpr uint32_t MOTOR_C_DIR = 0;
+constexpr uint32_t MOTOR_C_DIR = 4;
 
 constexpr uint32_t MOTOR_A_BRAKE = 27;
 constexpr uint32_t MOTOR_B_BRAKE = 16;
@@ -70,7 +70,7 @@ constexpr uint32_t MOTOR_FREQUENCY = 78000;
 
 
 constexpr float MOTOR_MIN = 0;
-constexpr float MOTOR_MAX = 100;
+constexpr float MOTOR_MAX = 50;
 constexpr float DEAD_MIN = 7.67;
 constexpr float DEAD_MAX = 7.71;
 
@@ -129,11 +129,11 @@ extern ServoMotor motor_C;
 extern Motor motor_A;
 extern Motor motor_B;
 extern Motor motor_C;
-
+/*
 extern Brake brake_A;
 extern Brake brake_B;
 extern Brake brake_C;
-
+*/
 // RTOS handlers //
 extern TaskHandle_t xCarHandle;
 extern TaskHandle_t xCrabHandle;

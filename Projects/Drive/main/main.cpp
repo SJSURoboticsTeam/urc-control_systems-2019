@@ -33,10 +33,11 @@ Motor motor_B;
 Motor motor_C;
 
 // Create Brakes
+/*
 Brake brake_A;
 Brake brake_B;
 Brake brake_C;
-
+*/
 // Create task handlers
 TaskHandle_t xCarHandle;
 TaskHandle_t xCrabHandle;
@@ -50,6 +51,7 @@ extern "C" void app_main() {
     initServer(&server, &params);
     //printf("Server Initialized\n");
     initComponents();
+    delay(1000);
     
     //Create freeRTOS tasks.
     xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, &xDebugHandle);

@@ -17,7 +17,7 @@ extern "C" {
  * mode: indicates the functionality of the rover, should only hold values 0-3
  *     0: Debug Mode
  *	   1: Crab Mode
- *	   2: Rotate Mode
+ *	   2: Spin Mode
  *	   3: Car Mode
  *
  * Speeds are to be recieved in values ranging from -100 to 100 with double 
@@ -43,10 +43,10 @@ struct ParamsStruct {
 };
 
 enum DriveMode {
+    DEBUG,
     CRAB,
-    CAR,
     SPIN,
-    DEBUG
+    DRIVE
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
