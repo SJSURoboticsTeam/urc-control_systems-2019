@@ -10,15 +10,15 @@
 extern "C" {
 #endif
 
-constexpr int kRotundaPin = 18;		//NEEDS TO CHANGE
+constexpr int kRotundaPin = 18;		
 constexpr int kRotundaPosMin = 0;
 constexpr int kRotundaPosmax = 3600;
 constexpr double kRotundaStartPos = 1800;
 constexpr double kRotundaStartDuty = 50.0;
 
-constexpr int kElbowPin = 25;		//NEEDS TO CHANGE
+constexpr int kElbowPin = 25;
 constexpr int kElbowLimitMin = 0;
-constexpr int kElbowLimitMax = 300;
+constexpr int kElbowLimitMax = 220;
 constexpr double kElbowRange = 300;
 constexpr double kElbowStartPos = 150;
 
@@ -27,8 +27,8 @@ constexpr double kElbowStartPos = 150;
 // constexpr int kShoulderEnablePWMMin = 0;	//percentage
 // constexpr int kShoulderEnablePWMMax = 50;	//percentage
 
-constexpr uint32_t kShoulderSigPin = 25;
-constexpr uint32_t kShoudlerDirPin = 18;
+constexpr uint32_t kShoulderSigPin = 35;
+constexpr uint32_t kShoudlerDirPin = 32;
 constexpr uint32_t kShoulderFreq = 1000;
 
 /* PINOUTS:

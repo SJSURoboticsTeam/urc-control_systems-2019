@@ -22,10 +22,11 @@ extern "C" void vElbowTask(void *pvParameters)
     double currentTarget = myParams->ElbowTarget;
     double currentAngle = kElbowStartPos;   //Feedback?
 
-    //(pin, Chanel, Timer, Freq, Min Max)
+    //(pin, Chanel, Timer, Freq, Max, Min)
     Servo Elbow(kElbowPin, 1, 0, 50, 12.5, 2.5);
     Elbow.SetPositionPercent((kElbowStartPos / kElbowRange) * 100);
-    printf("Starting Position: %f\n", kElbowStartPos);
+    printf("Elbow's Starting Position: %f\n", kElbowStartPos);
+    printf("Elbow's Starting Duty: %f\n", (kElbowStartPos / kElbowRange) * 100);
 
 
     while(1)
@@ -67,9 +68,11 @@ extern "C" void vRotundaTask(void *pvParameters)
     double leftDistance, rightDistance;
     double dutyPercent;
 
-    //(pin, Chanel, Timer, Freq, Min Max)
+    //(pin, Chanel, Timer, Freq, Max, Min)
     Servo myServo(kRotundaPin, 0, 0, 50, 10, 5);  //all this needs to change, check the library
     myServo.SetPositionPercent(kRotundaStartDuty);
+    printf("Rotunda Starting Duty: %f\n", kRotundaStartDuty);
+    printf("Rotunda Start Position: %f\n %f\n",kRotundaStartPos, (kRotundaStartPos / kRotundaPosmax)*100);
 
     while(1)
     {
@@ -185,11 +188,13 @@ extern "C" void vShoulderTask(void *pvParameters)
         {
             duration = myParams->ShoudlerDuration_ms;
             myParams->ShoudlerDuration_ms = 0;
+            printf("Starting to move the thing!\n");
 
             //assert motor @ 50%?
             // shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
             //delay that duration
             vTaskDelay(abs(duration));
+            printf("Finished moving the thing!\n\n\n");
             //deassrt the motor
             // shoulder.setSpeed(0);
         }
