@@ -12,10 +12,7 @@ extern "C" {
 #endif
 
 
-extern "C" void vGygerTask(void *pvParameters);
-
-
-
+extern "C" void vGygerTask(void *pvParameters);// reads from interupt queue and calculataed cpm
 
 #ifdef _cplusplus
 }

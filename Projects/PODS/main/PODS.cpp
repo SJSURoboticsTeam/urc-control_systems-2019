@@ -50,6 +50,10 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     
     /*******************************
 		start/stop PODS comand
+			-takes pod id (int) 0-6
+			-takes stape param "true" or "false"
+				-true starts pod
+				-false stops pod
     ********************************/
     server->on("/toggle_pod", HTTP_POST, [=](AsyncWebServerRequest *request){
          printf("XHR recieved \n");
@@ -73,7 +77,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          request->send(200, "text/plain", "pod toggled");
 
     });
-       
+       /*****************************
+		kills all pod functionalliy
+			-currently only stops pod tasks
+				####need to kill power in startPOD false switch- unwritten ######
+       *****************************/
 
         server->on("/stop_all", HTTP_POST, [=](AsyncWebServerRequest *request){
          
@@ -88,6 +96,9 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
     /*************************
 		return data comand
+			-returns cpm using XHR post request
+			-requires (int) id and typre (string) cpm
+			########### unused#########
     ***************************/
     server->on("/data", HTTP_POST, [=](AsyncWebServerRequest *request){
         String type = request->arg("type").c_str();
@@ -146,22 +157,20 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 }
 
 
+/**********************
+	start/stop PODS
+		-bool start -> "false" = stop POD "true" = start POD
+		-int id -> POD ID
+***********************/
 void startPOD(bool start, int x)
 {
-	int state;
-		if(start == true)
-		{
-			state = -1;
-		}
-		if(start == false)
-		{
-			state = -2;
-		}
+
 	
 		printf("startPOD function\n x = %d \n", x);
 		printf("state = %d \n", state );
 		
-
+	if(start == true)
+	{
 		switch(x)
 		{
 		case 0: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 1, NULL); 
@@ -187,13 +196,21 @@ void startPOD(bool start, int x)
 			break;
 		default:
 			break;
+		}
 	}
-	
+
+	else if(start == false)
+	{
+
+	}	
 
 	
 }
 
-
+/***********************
+	closes lid of POD 
+		- (int)x -> POD ID
+*************************/
 void sealPODS(int x)
 {
 
@@ -214,7 +231,8 @@ float servo1_max = 10;
 }
 
 /**************************
-	rotates a servo to despens an amount of fluid
+	rotates a servo to despens inoculation fluid
+
 ****************************/
 void dispenseFluid(int x)
 {
@@ -265,7 +283,10 @@ int down = -90;
 
 }
 
-
+/*****************
+	returns percent (double)0-100
+		-takes angle (int) -+90 degrees
+******************/
 double getPercent(int angle)
 {
 	//servo 5-10% 
@@ -275,7 +296,10 @@ double getPercent(int angle)
 }
 
 
-
+/***********************
+	returns pin number forr inoculation servo pin 
+		- x -> POD ID
+**************************/
 
 int servoInoculationPin(int x)
 {
@@ -300,9 +324,14 @@ int servoInoculationPin(int x)
 	}
 }
 
+/***************************
+	returns pin number of POD lid servo
+		- x -> POD ID
+****************************/
+
 int servoLidPin(int x)
 {
-			switch(x)
+		switch(x)
 	{
 		case 0: return lid_servo_pin0;
 			break;
@@ -323,12 +352,10 @@ int servoLidPin(int x)
 		}
 }
 
-/*********************************
-	interupt functions
-********************************/
-
-
-
+/**********************
+	returns pin number of gyger 
+		-id -> POD ID
+**********************/
 
 int gygerPin(int id)
 {
@@ -355,7 +382,16 @@ int gygerPin(int id)
 	return -1;
 }
 
-//type: true = write data  false = request data
+/****************************************
+	writes gyger data to global variables. data stored as counts per minute(cpm)
+		-(bool)type -> read or write ddata
+			-"true" -> write data. Will return -1
+			-"false" -> read data. Will return cpm
+		-(int)id -> POD ID
+		-(int)val -> vallue to be writen to global variable. will b ignore if reading data
+						but the parameter is still required
+
+*****************************************/
 int writeData(bool type, int id, int val)
 {
 
@@ -384,7 +420,6 @@ int writeData(bool type, int id, int val)
 
 	}
 
-	
 	if(type == false)
 	{
 			switch (id)
@@ -411,10 +446,13 @@ int writeData(bool type, int id, int val)
 	return -1;
 }
 
-
-
 /****************************
 	interupt function
+	writes converts pin_num to POD ID number (0-6) then writes ID to queue for 
+	gyget task to read 
+		-pin_num -> recieves pin number that called the ISR
+
+
 *****************************/
 void emissionCount(void* pin_num)
 {
@@ -445,12 +483,7 @@ void emissionCount(void* pin_num)
 		default: id = -1; break;
 	}
 	
-		//eCount0++;
 	xQueueSendFromISR(xQueueISR, (void*) &id, pdFALSE);
-	
-	    int yield = 0;
-    //portENTER_CRITICAL_ISR(&mux);
-   // xSemaphoreGiveFromISR(xGygerSemaphore0, &yield);
     portYIELD_FROM_ISR();
 }
 /////////////////////////////////////////////////////////////////////////////////                               CODE ENDS HERE                               //

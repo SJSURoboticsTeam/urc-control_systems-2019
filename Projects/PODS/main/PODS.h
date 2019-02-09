@@ -17,21 +17,13 @@ struct ParamsStruct{
 };
 
 
-struct GygerCounter
-	{
-		float cps = 0;
-		int cpm = 0;
-		int count = 0;
-		bool start = false;
-
-	};
 void initServer(AsyncWebServer* server, ParamsStruct* params);
 
 void dispenseFluid(int x);// dispenses fluid for pod x
 
 void sealPODS(int x); //seals POD x
 
-void startPOD(bool start, int x);//takes boolean to start/stop gygercounter x
+void startPOD(bool start, int x);//takes boolean to start/stop gygercounter  and pod id ->x
 
 void killAll(bool x);//  unwritten
 
