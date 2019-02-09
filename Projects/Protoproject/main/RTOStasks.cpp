@@ -25,19 +25,28 @@ extern "C" void vPitchTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
     
     
-    // Initalize pitch object after the delay to allow the gimbal to turn on becoming completely functional
+    // Initalize pitch object after the delay to allow the gimbal to turn on first
     vTaskDelay(500);
     initGimbal();
 
     while(1) {
         //sweepMovePitch(); 
         
-        if (params->pitch_position != 0) {
-            manualMovePitch(params->pitch_position);
-        } 
-        else {
-            printf("Awaiting pitch position value input from mission control.\n");
-        }
+        // if (params->pitch_position != 0) {
+        //     manualMovePitch(params->pitch_position);
+        // } 
+        // else {
+        //     printf("Awaiting pitch position value input from mission control.\n");
+        // }
+
+        // Pitch_Servo.SetPositionPercent(30);
+        // vTaskDelay(500);
+        // Pitch_Servo.SetPositionPercent(90);
+
+        manualMovePitch(30);
+        vTaskDelay(500);
+        manualMovePitch(90);
+
         vTaskDelay(500);
     }   
 }

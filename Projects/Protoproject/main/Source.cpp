@@ -8,8 +8,8 @@
 #include "constants.h"
 #include "Servo_Control.hpp"
 
-// Current duty cycle position of the gimbal
-float duty_pos = 0;
+// Current position of the gimbal pitch
+float move_pitch_position = 0;
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
@@ -54,7 +54,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 }
             }
             else {
-                printf("ERROR. %s are not available.", paramvariables[i]);
+                printf("ERROR. %s parameters are not available.", paramvariables[i]);
             }
         }
 
@@ -132,57 +132,62 @@ int EEPROMCount(int addr)
 }
 
 void initGimbal() {
-    printf("Gimbal has been initialized for movement.\n");
     Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
-                      SERVO_FREQUENCY, SERVO_MAX_LIMIT, SERVO_MIN_LIMIT);
+                      SERVO_FREQUENCY, SERVO_MIN, SERVO_MAX);
+    printf("Gimbal has been initialized for movement.\n");
 
 }
 
 void centerMovePitch() {
-    Pitch_Servo.SetPositionDuty(SERVO_MEDIAN);
+    Pitch_Servo.SetPositionPercent(SERVO_CENTER);
+    printf("The camera is now centered.\n");
 }
 
 void upMovePitch() {
-    Pitch_Servo.SetPositionDuty(SERVO_UP);
+    Pitch_Servo.SetPositionPercent(SERVO_UP);
+    printf("The camera is now facing up.\n");
 }
 
 void downMovePitch() {
-    Pitch_Servo.SetPositionDuty(SERVO_DOWN);
+    Pitch_Servo.SetPositionPercent(SERVO_DOWN);
+    printf("The camera is now facing down.\n");
 }
 
-void manualMovePitch(double duty_cycle) {
+void manualMovePitch(double percentage) {
     
+    move_pitch_position = percentage;
 
-    // Conditions make sure that the camera gimbal doesn't rotate past its duty cycle limits or positional limit
-    if (duty_pos + duty_cycle >= SERVO_MAX_LIMIT) {
-        Pitch_Servo.SetPositionDuty(SERVO_MAX);
-        duty_pos = SERVO_MAX;
+    // Conditions make sure that the camera gimbal doesn't rotate past its movement range set from initialization
+    if (move_pitch_position >= SERVO_MAX) {
+        Pitch_Servo.SetPositionPercent(SERVO_MAX);
+        move_pitch_position = SERVO_MAX;
     }
-    else if (duty_pos + duty_cycle <= SERVO_MIN_LIMIT) {
-        Pitch_Servo.SetPositionDuty(SERVO_MIN);
-        duty_pos = SERVO_MIN;
+    else if (move_pitch_position <= SERVO_MIN) {
+        Pitch_Servo.SetPositionPercent(SERVO_MIN);
+        move_pitch_position = SERVO_MIN;
     }
     else {
-        Pitch_Servo.SetPositionDuty(duty_cycle);
-        duty_pos = duty_cycle; // keeps track of the current position of the gimbal
+        Pitch_Servo.SetPositionPercent(percentage);
+        move_pitch_position = percentage; // keeps track of the current position of the gimbal
     }
 
-    printf("The pitch position is now %f %%.\n", duty_pos);
+    printf("The pitch position is now %f %%.\n", move_pitch_position);
 }
 
 void sweepMovePitch() {
     upMovePitch();
-    vTaskDelay(300);
+    vTaskDelay(500);
 
     centerMovePitch();
-    vTaskDelay(300);
+    vTaskDelay(500);
 
     downMovePitch(); 
-    vTaskDelay(300);
+    vTaskDelay(500);
 
     centerMovePitch();
-    vTaskDelay(300);
+    vTaskDelay(500);
 
     upMovePitch();
-    vTaskDelay(300);
+    vTaskDelay(500);
+
 }

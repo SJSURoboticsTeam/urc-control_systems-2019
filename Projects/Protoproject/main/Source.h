@@ -36,7 +36,7 @@ void upMovePitch(); // Rotates gimbal to face the camera upwards
 
 void downMovePitch(); // Rotates gimbal to face the camera downwards
 
-void manualMovePitch(double duty_cycle); // Interprets duty cycle percentages in order manually rotate the camera pitch
+void manualMovePitch(double percentage); // Interprets duty cycle percentages in order manually rotate the camera pitch
 
 void sweepMovePitch(); // Test function to make sure the gimbal works
 

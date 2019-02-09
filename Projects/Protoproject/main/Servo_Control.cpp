@@ -68,10 +68,11 @@ void Servo::SetPositionPercent(double percentage)
     // Set the Duty Cycle //
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
-    // printf("Position set to %f percent of total range.\n", percentage);
+    printf("SetPositionPercent duty cycle %i.\n", duty_cycle);
+    printf("Position set to %f percent of total range.\n", percentage);
 }
 
-void Servo::SetPositionDuty(double duty)
+void Servo::SetPositionDuty(uint32_t duty)
 {
     //  Sets the Duty Cycle to the input value //
     duty_cycle = duty;
