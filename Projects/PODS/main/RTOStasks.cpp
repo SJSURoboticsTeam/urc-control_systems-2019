@@ -18,17 +18,29 @@ extern "C" void vGygerTask(void *pvParameters)
 	int id = (int)pvParameters;
 	u_long timer = 0;
 	int count = 0; 
-	int past_cpm = 0; 
 	int current_cpm = 0 ;
-	int *queueID;
+	int *ISR_queue_ID, *task_queue_id;
+	bool start = false;
+	int *task_data;
 	int rst = 100;
 	int data;
-	int sample_time = 10000; // sample time in (ms)
+	int sample_time = 5000; // sample time in (ms)
+							//reduce to 1sec for final version
 
+	gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
+   	gpio_pad_select_gpio((gpio_num_t)gygerPin(id));
+   	gpio_set_direction((gpio_num_t)gygerPin(id), static_cast<gpio_mode_t>(GPIO_MODE_INPUT));
+   	gpio_set_pull_mode((gpio_num_t)gygerPin(id), GPIO_PULLDOWN_ONLY);
+   	gpio_set_intr_type((gpio_num_t)gygerPin(id), GPIO_INTR_POSEDGE);
+   	gpio_intr_enable((gpio_num_t)gygerPin(id));
+   	gpio_isr_handler_add((gpio_num_t)gygerPin(id), emissionCount, (void *)gygerPin(id));
+   	printf("gpio pin %d set up \n", gygerPin(id));
+
+   	printf("gyger %d interrupt pin initialized\n", id );
 
 	printf("gyger task %d initialized \n", id );
-	printf("Suspending gyger task %d \n", id );
-	vTaskSuspend(NULL);
+	//printf("Suspending gyger task %d \n", id );
+	//vTaskSuspend(NULL);
 
 	printf("Starting gyger task %d \n", id );
 
@@ -43,18 +55,19 @@ extern "C" void vGygerTask(void *pvParameters)
 	while(1)
 	{
       	
-      	//xQueuePeek(xQueue, &queueID, (TickType_t) 0 );
-      	//printf("Peeked into queue. ID %d found \n", (int)queueID);
-      		
-      	if(xQueuePeek(xQueue, &queueID, (TickType_t) 0 ) and (int)queueID == id)
+  
+
+      	if(xQueuePeek(xQueueISR, &ISR_queue_ID, (TickType_t) 0 ) 
+      			and (int)ISR_queue_ID == id)
       	{
       		//queueID = &rst;
-      		xQueueReceive(xQueue, &queueID, (TickType_t) 0);
+      		xQueueReceive(xQueueISR, &ISR_queue_ID, (TickType_t) 0);
       		printf("Task %d \n", id );
-      		printf("Item recieved from queue. ID %d retreived. \n", (int)queueID );
+      		printf("Item recieved from queue. ID %d retreived. \n", (int)ISR_queue_ID );
 
       		count++;
 
+      		printf("count %d \n",  count);
       		//queueID = &rst;
 			if(millis() - timer > sample_time)
 			{
@@ -72,14 +85,14 @@ extern "C" void vGygerTask(void *pvParameters)
 				timer = millis();
 			}
 
-    		if(xQueuePeek(xQueue, &queueID, (TickType_t) 0 ))
+    		if(xQueuePeek(xQueueISR, &ISR_queue_ID, (TickType_t) 0 ))
   			{
-  				printf("Peeked into queue. ID %d found \n \n", (int)queueID);	
+  				printf("Peeked into queue. ID %d found \n \n", (int)ISR_queue_ID);	
       		}
       		else
       		{
       			printf("Peeked into queue. Queue empty \n \n" );
-      			queueID = &rst;
+      			ISR_queue_ID = &rst;
       		}
 
       	}           	      		
@@ -88,55 +101,3 @@ extern "C" void vGygerTask(void *pvParameters)
 
 
 }
-
-
-extern "C" void vToggleTask(void *pvParameters)
-{
-	
-
-	int id, state;
-	printf("started togggle task\n");
-	
-
-
-
-	while(1)
-	{
-		//printf("toggle check\n");
-		
-		if(xQueuePeek(xTaskQueue, &id, (TickType_t) 0))
-		{
-			printf("peeked into task Queue \n");
-			xQueueReceive(xTaskQueue, &id, (TickType_t) 0);
-			printf("id %d \n", id );
-			vTaskDelay(10);
-			xQueueReceive(xTaskQueue, &state, (TickType_t) 0);
-			printf("state %d \n", state );
-			if(state == -1)
-			{
-				switch (id)
-				{
-					case 0:	vTaskResume(xGyger0);
-						break;
-				}
-			}
-
-			if(state == -2)
-			{
-				switch(id)
-				{
-					case 0:  vTaskSuspend(xGyger0);
-						break;
-				}
-			}
-		}
-
-		
-		//printf("end to toggle task \n" );
-		vTaskDelay(1000/portTICK_PERIOD_MS);
-
-	}
-}
-
-
-

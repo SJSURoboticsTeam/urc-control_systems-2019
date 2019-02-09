@@ -10,20 +10,13 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
-static TaskHandle_t xGyger0, xGyger1, xGyger2, xGyger3, xGyger4, xGyger5, xGyger6;
+extern QueueHandle_t xQueueISR;//, xTaskQueue; 
 
-extern QueueHandle_t xQueue, xTaskQueue; 
-
-static bool task0 = false;
-static bool task1 = false;
-static bool task2 = false;
-static bool task3 = false;
-static bool task4 = false;
-static bool task5 = false;
-static bool task6 = false;
 
 /******************
 variables for gyger data
+
+	stores emission data in counts per minute
 *******************/
 static	int cpm0, cpm1, cpm2, cpm3, cpm4, cpm5, cpm6;
 

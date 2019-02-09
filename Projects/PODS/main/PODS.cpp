@@ -24,7 +24,7 @@ using namespace std;
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
-    WiFi.softAP("MyESP32AP", "testpassword");
+    WiFi.softAP("ROAR", "testpassword");
     Serial.println();
     Serial.print("IP address: ");
     Serial.println(WiFi.softAPIP());
@@ -160,36 +160,29 @@ void startPOD(bool start, int x)
 	
 		printf("startPOD function\n x = %d \n", x);
 		printf("state = %d \n", state );
-		if(uxQueueSpacesAvailable(xTaskQueue) != 0)
-		{
-			xQueueReset(xTaskQueue);
-		}
+		
+
 		switch(x)
 		{
-		case 0: xQueueSendToBack(xTaskQueue, (void*)&x, (TickType_t) 0);
-				vTaskDelay(10);
-				xQueueSendToBack(xTaskQueue, (void*)&state, (TickType_t) 0);
-				//task0 = start;
-				//printf("task %d toggled \n", x);
-			break;
-		case 1: xQueueSend(xTaskQueue, (void*)&x, (TickType_t) 0);
-				xQueueSend(xTaskQueue, (void*)&state, (TickType_t) 0);
-				//task1 = start;
-				//printf("task %d toggled \n", x);
-			break;
-		case 2: task2 = start;
+		case 0: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 1, NULL); 
 				printf("task %d toggled \n", x);
 			break;
-		case 3: task3 = start;
+		case 1: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)1, 1, NULL); 
+				printf("task %d toggled \n", x);				
+			break;
+		case 2: xTaskCreate(vGygerTask, "gyger2 data", 4060, (void*)2, 1, NULL); 
 				printf("task %d toggled \n", x);
 			break;
-		case 4: task4 = start;
+		case 3: xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 1, NULL); 
 				printf("task %d toggled \n", x);
 			break;
-		case 5: task5 = start;
+		case 4: xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 1, NULL);
 				printf("task %d toggled \n", x);
 			break;
-		case 6: task6 = start;
+		case 5: xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 1, NULL);
+				printf("task %d toggled \n", x);
+			break;
+		case 6: xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 1, NULL);
 				printf("task %d toggled \n", x);
 			break;
 		default:
@@ -278,16 +271,7 @@ double getPercent(int angle)
 	//servo 5-10% 
 	int percent = map(angle, -90, 90, 0, 100);
 
-	
-
-	//if(percent < 5 or percent > 10)
-	//{
-	//	percent = 6;
-	//}
-
-
 	return percent;
-
 }
 
 
@@ -343,23 +327,6 @@ int servoLidPin(int x)
 	interupt functions
 ********************************/
 
-void initInteruptPins()
-{
-    //Init GPIO pin and interrupts
-
-	gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
-    for(int i = 0; i <= 6 ; i++)
-    {
-    	
-    	gpio_pad_select_gpio((gpio_num_t)gygerPin(i));
-    	gpio_set_direction((gpio_num_t)gygerPin(i), static_cast<gpio_mode_t>(GPIO_MODE_INPUT));
-    	gpio_set_pull_mode((gpio_num_t)gygerPin(i), GPIO_PULLDOWN_ONLY);
-    	gpio_set_intr_type((gpio_num_t)gygerPin(i), GPIO_INTR_POSEDGE);
-    	gpio_intr_enable((gpio_num_t)gygerPin(i));
-    	gpio_isr_handler_add((gpio_num_t)gygerPin(i), emissionCount, (void *)gygerPin(i));
-    	printf("gpio pin %d set up \n", gygerPin(i));
-	}
-}
 
 
 
@@ -479,7 +446,7 @@ void emissionCount(void* pin_num)
 	}
 	
 		//eCount0++;
-	xQueueSendFromISR(xQueue, (void*) &id, pdFALSE);
+	xQueueSendFromISR(xQueueISR, (void*) &id, pdFALSE);
 	
 	    int yield = 0;
     //portENTER_CRITICAL_ISR(&mux);
