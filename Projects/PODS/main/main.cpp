@@ -11,10 +11,8 @@
 #include "RTOStasks.h"
 #include "PODS.h"
 #include "constants.h"
-#include "freertos/semphr.h"
 
-SemaphoreHandle_t xGygerSemaphore0; 
-QueueHandle_t xQueue;
+QueueHandle_t xQueue, xTaskQueue;
 ParamsStruct params;
 AsyncWebServer server(80);
 
@@ -24,41 +22,40 @@ extern "C" void app_main()
     initArduino();
     initServer(&server, &params);
 
-    xQueue = xQueueCreate(10, sizeof(int));
-    xGygerSemaphore0 = xSemaphoreCreateBinary();
+    xQueue = xQueueCreate(10, sizeof(int));// queue to pass interupt id
+    xTaskQueue = xQueueCreate(2, sizeof(int));
+    //xGygerSemaphore0 = xSemaphoreCreateBinary();
   
-  /*  xGygerSemaphore1 = xSemaphoreCreateBinary();
-    xGygerSemaphore2 = xSemaphoreCreateBinary();
-    xGygerSemaphore3 = xSemaphoreCreateBinary();
-    xGygerSemaphore4 = xSemaphoreCreateBinary();
-    xGygerSemaphore5 = xSemaphoreCreateBinary();
-    xGygerSemaphore6 = xSemaphoreCreateBinary();
-	*/
-    
-    printf("semaphore created\n");
+
+   /// printf("semaphore created\n");
     
     initInteruptPins();	
 
-	xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 2, &xGyger1); 
+	xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 1, &xGyger0); 
 	vTaskDelay(50/portTICK_PERIOD_MS);
 	
-	/*
-	xTaskCreate(vGygerTask, "gyger2 data", 4060, (void*)2, 3, &xGyger2); 
+	xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)1, 1, &xGyger1); 
+	vTaskDelay(50/portTICK_PERIOD_MS);	
+	
+	xTaskCreate(vGygerTask, "gyger2 data", 4060, (void*)2, 1, &xGyger2); 
 	vTaskDelay(50/portTICK_PERIOD_MS);
 
-	xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 4, &xGyger3); 
+	xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 1, &xGyger3); 
 	vTaskDelay(50/portTICK_PERIOD_MS);
 
-	xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 5, &xGyger4); 
+	xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 1, &xGyger4); 
 	vTaskDelay(50/portTICK_PERIOD_MS);
 	
-	xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 6, &xGyger5); 
+	xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 1, &xGyger5); 
 	vTaskDelay(50/portTICK_PERIOD_MS);
 	
-	xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 7, &xGyger6); 
+	xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 1, &xGyger6); 
 	vTaskDelay(50/portTICK_PERIOD_MS);
 
-	*/
+	xTaskCreate(vToggleTask, "toggle tasks", 4060, NULL, 2, NULL); 
+	vTaskDelay(50/portTICK_PERIOD_MS);
+
+	
 
 
 		

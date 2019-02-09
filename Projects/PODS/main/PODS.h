@@ -39,6 +39,8 @@ double getPercent(int angle);//returns a % duty cycle for a given angle
 
 void initInteruptPins(); // initialize interupt pins that the gyger counters are cconected to
 
+int gygerPin(int id); // returns pin number for gyger counter take POD ID parameter(0-6)
+
 int writeData(bool type, int id, int val); //TRUE to write data. will return -1 
 											//FALSE to return data
 											// id -> PODS identifier (0-6) val -> cpm

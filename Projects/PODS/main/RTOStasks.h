@@ -14,8 +14,8 @@ extern "C" {
 
 extern "C" void vGygerTask(void *pvParameters);
 
+extern "C" void vToggleTask(void *pvParameters);
 
-extern "C" void vTest(void *pvParameters);
 
 
 #ifdef _cplusplus

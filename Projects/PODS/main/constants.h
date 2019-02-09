@@ -12,9 +12,15 @@
 
 static TaskHandle_t xGyger0, xGyger1, xGyger2, xGyger3, xGyger4, xGyger5, xGyger6;
 
-extern SemaphoreHandle_t xGygerSemaphore0;
-extern QueueHandle_t xQueue; 
+extern QueueHandle_t xQueue, xTaskQueue; 
 
+static bool task0 = false;
+static bool task1 = false;
+static bool task2 = false;
+static bool task3 = false;
+static bool task4 = false;
+static bool task5 = false;
+static bool task6 = false;
 
 /******************
 variables for gyger data
@@ -26,7 +32,7 @@ static	int cpm0, cpm1, cpm2, cpm3, cpm4, cpm5, cpm6;
 pins for gyger counter interupts
 *********************/
 static const int gyger0_pin = 23;
-static const int gyger1_pin = 39;
+static const int gyger1_pin = 22;
 static const int gyger2_pin = 34;
 static const int gyger3_pin = 35;
 static const int gyger4_pin = 32;
@@ -48,7 +54,7 @@ static const int inoculation_servo6_pin = 0;
 /***********************************
 pins for servos that seal PODS units
 **********************************/
-static const int lid_servo_pin0 = 22;
+static const int lid_servo_pin0 = 39;
 static const int lid_servo_pin1 = 1;
 static const int lid_servo_pin2 = 3;
 static const int lid_servo_pin3 = 21;

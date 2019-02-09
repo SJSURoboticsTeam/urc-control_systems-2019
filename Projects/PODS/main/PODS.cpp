@@ -14,7 +14,6 @@
 #include "freertos/task.h"
 #include "RTOStasks.h"
 #include "esp_intr_alloc.h"
-#include "freertos/semphr.h"
 
 using namespace std;
 //portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
@@ -53,18 +52,26 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 		start/stop PODS comand
     ********************************/
     server->on("/toggle_pod", HTTP_POST, [=](AsyncWebServerRequest *request){
-         int x = atoi(request->arg("id").c_str());
-         startPOD(true,x);
-         
-         if(y)
+         printf("XHR recieved \n");
+         int x = atoi(request->arg("pod").c_str()); 
+         string y = request->arg("state").c_str();
+
+         std::cout << y << "\n";
+         std::cout << x << "\n";
+         bool z;
+
+         if(y =="True" or y == "true" or "TRUE")
          {
-        	request->send(200, "text/plain", "POD strarted");
-		}
-		else
-		{
-			startPOD(false, x);
-			request->send(200, "text/pain", "POD suspended/failed to start");
-		}
+         	 z = true;
+         }
+         else if(y == "false" or y == "False" or y == "FALSE")
+         {
+         	z = false;
+         }
+        startPOD(z,x);
+         
+         request->send(200, "text/plain", "pod toggled");
+
     });
        
 
@@ -75,7 +82,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          	startPOD(false,i);
          }
          
-         request->send(200, "text/pain", " All POD suspended");
+         request->send(200, "text/pain", "All POD suspended");
 
     });
 
@@ -141,26 +148,56 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
 void startPOD(bool start, int x)
 {
+	int state;
+		if(start == true)
+		{
+			state = -1;
+		}
+		if(start == false)
+		{
+			state = -2;
+		}
 	
-	switch(x)
-	{
-		case 0: vTaskResume(xGyger0);
+		printf("startPOD function\n x = %d \n", x);
+		printf("state = %d \n", state );
+		if(uxQueueSpacesAvailable(xTaskQueue) != 0)
+		{
+			xQueueReset(xTaskQueue);
+		}
+		switch(x)
+		{
+		case 0: xQueueSendToBack(xTaskQueue, (void*)&x, (TickType_t) 0);
+				vTaskDelay(10);
+				xQueueSendToBack(xTaskQueue, (void*)&state, (TickType_t) 0);
+				//task0 = start;
+				//printf("task %d toggled \n", x);
 			break;
-		case 1: vTaskResume(xGyger1);
+		case 1: xQueueSend(xTaskQueue, (void*)&x, (TickType_t) 0);
+				xQueueSend(xTaskQueue, (void*)&state, (TickType_t) 0);
+				//task1 = start;
+				//printf("task %d toggled \n", x);
 			break;
-		case 2: vTaskResume(xGyger2);
+		case 2: task2 = start;
+				printf("task %d toggled \n", x);
 			break;
-		case 3: vTaskResume(xGyger3);
+		case 3: task3 = start;
+				printf("task %d toggled \n", x);
 			break;
-		case 4: vTaskResume(xGyger4);
+		case 4: task4 = start;
+				printf("task %d toggled \n", x);
 			break;
-		case 5: vTaskResume(xGyger5);
+		case 5: task5 = start;
+				printf("task %d toggled \n", x);
 			break;
-		case 6: vTaskResume(xGyger6);
+		case 6: task6 = start;
+				printf("task %d toggled \n", x);
 			break;
 		default:
 			break;
 	}
+	
+
+	
 }
 
 
@@ -309,20 +346,47 @@ int servoLidPin(int x)
 void initInteruptPins()
 {
     //Init GPIO pin and interrupts
-    gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
-    gpio_pad_select_gpio((gpio_num_t)gyger0_pin);
-    gpio_set_direction((gpio_num_t)gyger0_pin, static_cast<gpio_mode_t>(GPIO_MODE_INPUT));
-    gpio_set_pull_mode((gpio_num_t)gyger0_pin, GPIO_PULLDOWN_ONLY);
-    gpio_set_intr_type((gpio_num_t)gyger0_pin, GPIO_INTR_POSEDGE);
-    gpio_intr_enable((gpio_num_t)gyger0_pin);
-    gpio_isr_handler_add((gpio_num_t)gyger0_pin, emissionCount, (void *)gyger0_pin);
-    printf("gpio pin set up\n");
 
+	gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
+    for(int i = 0; i <= 6 ; i++)
+    {
+    	
+    	gpio_pad_select_gpio((gpio_num_t)gygerPin(i));
+    	gpio_set_direction((gpio_num_t)gygerPin(i), static_cast<gpio_mode_t>(GPIO_MODE_INPUT));
+    	gpio_set_pull_mode((gpio_num_t)gygerPin(i), GPIO_PULLDOWN_ONLY);
+    	gpio_set_intr_type((gpio_num_t)gygerPin(i), GPIO_INTR_POSEDGE);
+    	gpio_intr_enable((gpio_num_t)gygerPin(i));
+    	gpio_isr_handler_add((gpio_num_t)gygerPin(i), emissionCount, (void *)gygerPin(i));
+    	printf("gpio pin %d set up \n", gygerPin(i));
+	}
 }
 
 
 
+int gygerPin(int id)
+{
+	switch(id)
+	{
+		case 0: return gyger0_pin;
+			break;
+		case 1: return gyger1_pin;
+			break;
+		case 2: return gyger2_pin;
+			break;
+		case 3: return gyger3_pin;
+			break;
+		case 4: return gyger4_pin;
+			break;
+		case 5: return gyger5_pin;
+			break;
+		case 6: return gyger6_pin;
+			break;
+		default: 
+			break;
+	}
 
+	return -1;
+}
 
 //type: true = write data  false = request data
 int writeData(bool type, int id, int val)
@@ -419,7 +483,7 @@ void emissionCount(void* pin_num)
 	
 	    int yield = 0;
     //portENTER_CRITICAL_ISR(&mux);
-    xSemaphoreGiveFromISR(xGygerSemaphore0, &yield);
+   // xSemaphoreGiveFromISR(xGygerSemaphore0, &yield);
     portYIELD_FROM_ISR();
 }
 /////////////////////////////////////////////////////////////////////////////////                               CODE ENDS HERE                               //
