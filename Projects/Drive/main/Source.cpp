@@ -12,7 +12,7 @@
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
-    WiFi.softAP("Drive", "drive1234");
+    WiFi.softAP("😻", "drive1234");
     Serial.println();
     Serial.print("IP address: ");
     Serial.println(WiFi.softAPIP());
@@ -59,7 +59,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->heading_C = request->arg("heading_C").toFloat();    
                 }
                 if (strcmp(vars[i], "brake")) {
-                    params->brake = request->arg("brake").toFloat();    
+                    params->brake = request->arg("brake").toInt();    
                 }
             }
             else {
@@ -75,7 +75,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("    heading_B: %f \n", params->heading_B);
         printf("    speed_C: %f \n", params->speed_C);
         printf("    heading_C: %f \n", params->heading_C);
-        printf("    brake: %f \n", params->brake);
+        printf("    brake: %d \n", params->brake);
         printf("\n");
 
         request->send(200, "text/plain", "Success");
@@ -165,16 +165,13 @@ void initComponents()
     brake_C.InitBrake(MOTOR_C_BRAKE, BRAKE_CHANNEL, BRAKE_TIMER);
 */
     motor_A.InitMotor(MOTOR_A_PIN, MOTOR_A_BRAKE, MOTOR_A_DIR, MOTOR_A_CHANNEL,
-                      BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN,
-                      MOTOR_MAX);
+                      MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
 
     motor_B.InitMotor(MOTOR_B_PIN, MOTOR_B_BRAKE, MOTOR_B_DIR, MOTOR_B_CHANNEL,
-                      BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN, 
-                      MOTOR_MAX);
+                      MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
     
     motor_C.InitMotor(MOTOR_C_PIN, MOTOR_B_BRAKE, MOTOR_C_DIR, MOTOR_C_CHANNEL,
-                      BRAKE_CHANNEL, MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN, 
-                      MOTOR_MAX);
+                      MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
 
 }
 
@@ -291,15 +288,15 @@ void setHeading(uint32_t wheel, double percentage)
     }
 }
 
-void applyBrakes(double percentage)
+void applyBrakes(bool signal)
 {
     /*
     brake_A.Pump(percentage);
     brake_B.Pump(percentage);
     brake_C.Pump(percentage);
     */
-    motor_A.Brake(percentage);
-    motor_B.Brake(percentage);
+    //motor_A.Brake(percentage);
+    motor_B.Brake(signal);
     //motor_C.Brake(percentage);
     printf("brakes applied\n");
 }

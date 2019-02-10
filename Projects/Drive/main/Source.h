@@ -18,18 +18,21 @@ extern "C" {
  *     0: Debug Mode
  *	   1: Crab Mode
  *	   2: Spin Mode
- *	   3: Car Mode
+ *	   3: Drive Mode
  *
  * Speeds are to be recieved in values ranging from -100 to 100 with double 
  * floating point precision.
  * 
- * Headings are to be recieved in values ranging from -255 to 255 except in Crab
- * mode where A and B will be as follows:
- *     heading_A: 0 - 360 degrees with double floating point precision.
- *     heading_B: -180 - 180 degrees with double floating point precision.
- * and Debug mode where headings range from 0% - 100% of the rotational range.
+ * Headings are to be recieved as follows:
+ *     Debug: 0% - 100% to represent min to max rotation
+ *     Crab:  heading_A: raw input from the joystick's AXIS 1
+ *            heading_B: raw input from the joystick's AXIS 0
+ *            heading_C: the current rotunda position from 0 - 360 degrees
+ *     Spin:  heading_A: boolean
+ *     Drive: heading_A: inverse raw input from the joystick's AXIS 0
+ *            heading_B: 0, 1, 2, the side that the mast is facing
  * 
- * Brake is a double for 0% - 100%.
+ * Brake is a boolean.
  */
 struct ParamsStruct {
     int mode;
@@ -39,7 +42,7 @@ struct ParamsStruct {
     double heading_B;
     double speed_C;
     double heading_C;
-    double brake;
+    bool brake;
 };
 
 enum DriveMode {
@@ -109,7 +112,7 @@ void setHeading(uint32_t wheel, double percentage);
 /**
  * This function Applies PWM to all the brake pins.
  */
-void applyBrakes(double percentage);
+void applyBrakes(bool signal);
 
 /**
  * This function determines the current heading of the rover based on raw GPS

@@ -17,7 +17,8 @@
 constexpr double SIDE = 40.25;
 constexpr double SIDE_2_MID = 11.619;
 constexpr double CORNER_2_MID = 23.238;
-constexpr double MAX_DIST = 1058.35; // Distance where out wheel turns 1 degree
+//constexpr double MAX_DIST = 1058.35; // Distance where out wheel turns 1 degree
+constexpr double MAX_DIST = 105.835;
 
 // HAL Sensor Pins //
 //constexpr uint32_t HAL_A_PIN = 35;
@@ -46,9 +47,9 @@ constexpr uint32_t MOTOR_C_PIN = 23;
 
 constexpr uint32_t MOTOR_A_DIR = 32;
 constexpr uint32_t MOTOR_B_DIR = 5;
-constexpr uint32_t MOTOR_C_DIR = 4;
+constexpr uint32_t MOTOR_C_DIR = 27;
 
-constexpr uint32_t MOTOR_A_BRAKE = 27;
+constexpr uint32_t MOTOR_A_BRAKE = 4;
 constexpr uint32_t MOTOR_B_BRAKE = 16;
 constexpr uint32_t MOTOR_C_BRAKE = 3;
 
@@ -70,7 +71,7 @@ constexpr uint32_t MOTOR_FREQUENCY = 78000;
 
 
 constexpr float MOTOR_MIN = 0;
-constexpr float MOTOR_MAX = 50;
+constexpr float MOTOR_MAX = 100	;
 constexpr float DEAD_MIN = 7.67;
 constexpr float DEAD_MAX = 7.71;
 

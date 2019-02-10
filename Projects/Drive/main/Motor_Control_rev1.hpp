@@ -8,7 +8,6 @@ class Motor
 {
     private:
     ledc_channel_t pwm_s_channel;
-    ledc_channel_t pwm_b_channel;
     ledc_timer_t pwm_timer;
     uint32_t signal_pin;
     uint32_t brake_pin;
@@ -22,7 +21,6 @@ class Motor
     uint32_t range;	
     ledc_timer_config_t motor_timer;
     ledc_channel_config_t motor;
-    ledc_channel_config_t brake;
     gpio_config_t direction;
 
 	public:
@@ -47,8 +45,7 @@ class Motor
 		 */
 		void InitMotor(uint32_t pin_signal, uint32_t pin_brake, 
 				       uint32_t pin_direction, uint32_t s_channel,
-				       uint32_t b_channel, uint32_t timer, uint32_t frequency,
-				       float min, float max);
+				       uint32_t timer, uint32_t frequency, float min, float max);
 		
 		/**
          * This function sets the frequency of the PWM in hertz by updating the 
@@ -85,7 +82,7 @@ class Motor
 		/**
 		 * This function applies the brakes at the specified percentage.
 		 */
-		void Brake(double percentage);
+		void Brake(bool brake);
 
 	/**
 	 * Deconstructor
