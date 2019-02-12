@@ -65,7 +65,7 @@ extern "C" void vModeTaskHandler (void *pvParameters)
                     printf("Crab\n");
                     break;
                 case 2:
-                    initSpinMode(Params->heading_A);
+                    initSpinMode(0);
                     vTaskResume(xSpinHandle);
                     printf("Spin\n");
                     break;
@@ -84,82 +84,57 @@ extern "C" void vModeTaskHandler (void *pvParameters)
 extern "C" void vDebugTask(void *pvParameters)
 {
     ParamsStruct* Params = (ParamsStruct*) pvParameters;
-    setDirection(0, ((Params->speed_A > 0) ? 1:0));
-    setSpeed(0, Params->speed_A);
-    setHeading(0, Params->heading_A);
-    setDirection(1, ((Params->speed_B > 0) ? 1:0));
-    setSpeed(1, Params->speed_B);
-    setHeading(1, Params->heading_B);
-    setDirection(2, ((Params->speed_C > 0) ? 1:0));
-    setSpeed(2, Params->speed_C);
-    setHeading(2, Params->heading_C);
-    ParamsStruct PrevParams; 
-    PrevParams.mode = Params->mode;
-    PrevParams.speed_A = Params->speed_A;
-    PrevParams.heading_A = Params->heading_A;
-    PrevParams.speed_B = Params->speed_B;
-    PrevParams.heading_B = Params->heading_B;
-    PrevParams.speed_C = Params->speed_C;
-    PrevParams.brake = Params->brake;
+    double heading = 0;
+    double previous_heading = 0;
+    double speed = 0;
+    double previous_speed = 0;
 
     while(1)
     {
         printf("Debug Mode\n");
-        // adjust speed of wheel A if told to
-        if (Params->speed_A != PrevParams.speed_A) 
+        // Convert AXIS 0 to 0% - 100% scale
+        heading = (1 + Params->AXIS_0) * 50;
+        speed = 100 * (0 - Params->AXIS_1) * (1 + Params->AXIS_3) / 2;
+        if (heading != previous_heading)
         {
-            motor_A.SetDirection(((Params->speed_A > 0) ? 1:0));
-            motor_A.SetSpeed(abs(Params->speed_A));
-            PrevParams.speed_A = Params->speed_A;
+            if (Params->wheel_A)
+            {
+                servo_A.SetPositionPercent(heading);
+                printf("Wheel A set to: %f deg.\n", heading/100 * MAX_ROTATION);
+            }
+            if (Params->wheel_B)
+            {
+                servo_B.SetPositionPercent(heading);
+                printf("Wheel B set to: %f deg.\n", heading/100 * MAX_ROTATION);                
+            }
+            if (Params->wheel_C)
+            {
+                servo_C.SetPositionPercent(heading);
+                printf("Wheel C set to: %f deg.\n", heading/100 * MAX_ROTATION);
+            }
+            previous_heading = heading;
         }
-        // adjust heading of wheel A if told to
-        if (Params->heading_A != PrevParams.heading_A)
+        if (speed != previous_speed)
         {
-            servo_A.SetPositionPercent(Params->heading_A);
-            PrevParams.heading_A = Params->heading_A;
-            printf("    heading_A: %f \n", Params->heading_A);            
-        }
-        // adjust speed of wheel B if told to
-        if (Params->speed_B != PrevParams.speed_B)
-        {
-            motor_B.SetDirection(((Params->speed_B > 0) ? 1:0));
-            motor_B.SetSpeed(abs(Params->speed_B));
-            PrevParams.speed_B = Params->speed_B;
-            printf("    speed_B: %f \n", Params->speed_B);
-
-        }
-        // adjust heading of wheel B if told to
-        if (Params->heading_B != PrevParams.heading_B)
-        {
-            servo_B.SetPositionPercent(Params->heading_B);
-            printf("    heading_B: %f \n", Params->heading_B);
-            PrevParams.heading_B = Params->heading_B;
-
-        }
-        // adjust speed of wheel C if told to
-        if (Params->speed_C != PrevParams.speed_C)
-        {
-            motor_C.SetDirection(((Params->speed_C > 0) ? 1:0));
-            motor_C.SetSpeed(abs(Params->speed_C));
-            PrevParams.speed_C = Params->speed_C;
-            printf("    speed_C: %f \n", Params->speed_C);
-        }
-        // adjust heading of wheel C if told to
-        if (Params->heading_C != PrevParams.heading_C)
-        {
-            servo_C.SetPositionPercent(Params->heading_C);
-            printf("    heading_C: %f \n", Params->heading_C);
-            PrevParams.heading_C = Params->heading_C;
-        }
-        // adjust brakes pwm if told to
-        if (Params->brake != PrevParams.brake)
-        {
-            applyBrakes(Params->brake);
-            printf("    brake: %d \n", Params->brake);
-            PrevParams.brake = Params->brake;
+            if (Params->wheel_A)
+            {
+                motor_A.SetSpeed(speed);
+                printf("Wheel A speed set to %f percent\n", speed);
+            }
+            if (Params->wheel_B)
+            {
+                motor_B.SetSpeed(speed);
+                printf("Wheel B speed set to %f percent\n", speed);
+            }
+            if (Params->wheel_C)
+            {
+                motor_C.SetSpeed(speed);
+                printf("Wheel C speed set to %f percent\n", speed);
+            }
+            previous_speed = speed;
         }
     // Delay for half a second
-    vTaskDelay(100); 
+    vTaskDelay(50); 
     }
 }
 
@@ -198,29 +173,40 @@ extern "C" void vCarTask(void *pvParameters)
     Motor back_motor = motor_C;
 
     ParamsStruct* Params = (ParamsStruct *) pvParameters;
-    double current_heading = Params->heading_A;
-    double current_speed = Params->speed_A;
-    double current_brakes = Params->brake;
-    
-    uint32_t front = (uint32_t) Params->heading_B;
+    double current_heading = Params->AXIS_0;
+    double current_speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
+    double current_brakes = 1;
+    uint32_t front = 0;
+    uint32_t previous_front = 3;
     
     while (1)
     {
-        if ((current_brakes != Params->brake) && (Params->brake != 0))
+        // Set the brakes
+        if (current_brakes != Params->button_0)
         {
-            applyBrakes(1);
+            applyBrakes(Params->button_0);
+            current_brakes = Params->button_0;
         }
-        else if ((current_brakes != Params->brake) && (Params->brake == 0))
+
+        // Update the front of the rover
+        if (Params->wheel_A)
         {
-            applyBrakes(0);
+            front = 1;
         }
-        current_brakes = Params->brake;
-        if (front != Params->heading_B)
+        else if (Params->wheel_B)
+        {
+            front = 2;
+        }
+        else if (Params->wheel_C)
+        {
+            front = 0;
+        }
+        if (previous_front != front)
         {
             setSpeedAllWheels(0);
             vTaskDelay(100);
-            initDriveMode((uint32_t) Params->heading_B);
-            switch ((uint32_t) Params->heading_B)
+            initDriveMode(front);
+            switch (front)
             {
                 case 0: //Left = A, Right = B, Back = C
                     left_servo = servo_A;
@@ -267,52 +253,53 @@ extern "C" void vCarTask(void *pvParameters)
             angle_back = 150;
             
 
-            front = Params->heading_B;
+            previous_front = front;
         }
         // Calculate parameters for turning left
-        if (Params->heading_A < 0)
+        if (Params->AXIS_0 < 0)
         {
             // A 1058.355 in radius turns the inner wheel 1 degree
-            radius_rover =  (1 - (0 - Params->heading_A) * MAX_DIST);
+            radius_rover =  (1 - (0 - Params->AXIS_0) * MAX_DIST);
             radius_left = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_right = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
             
-            angle_left = 0 - atan2(radius_rover - SIDE/2, SIDE_2_MID) * 180/3.14159;
-            angle_right = 0 - atan2(radius_rover + SIDE/2, SIDE_2_MID) * 180/3.14159;
+            angle_left = 0 - atan2(radius_rover-SIDE/2, SIDE_2_MID)*180/3.1416;
+            angle_right = 0 - atan2(radius_rover+SIDE/2, SIDE_2_MID)*180/3.1416;
             angle_back = atan2(radius_rover, CORNER_2_MID) * 180/3.14159;
 
             // Max rot/s for hub motors = 3.6
-            speed_right = abs(Params->speed_A)/100 * 3.6 * 3.1416 * 0.45; // The *0.45 to limit speed to 45% max
+            speed_right = abs((0 - Params->AXIS_1) * Params->AXIS_3) * 260 * 13.5;
             speed_left = speed_right * (radius_left/radius_rover);
             speed_back = speed_right * (radius_back/radius_rover);
         }
         // Calculate parameters for turning right
-        if (Params->heading_A > 0)
+        if (Params->AXIS_0 > 0)
         {
             // A 1058.355 in radius turns the inner wheel 1 degree
-            radius_rover = (1 - Params->heading_A) * MAX_DIST;
+            radius_rover = (1 - Params->AXIS_0) * MAX_DIST;
             radius_right = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_left = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
             
-            angle_right = atan2(radius_rover - SIDE/2, SIDE_2_MID) * 180/3.14159;
-            angle_left = atan2(radius_rover + (SIDE/2), SIDE_2_MID) * 180/3.14159;
-            angle_back = 0 - atan2(radius_rover, CORNER_2_MID) * 180/3.14159;
+            angle_right = atan2(radius_rover-SIDE/2, SIDE_2_MID) * 180/3.1416;
+            angle_left = atan2(radius_rover+(SIDE/2), SIDE_2_MID) * 180/3.1416;
+            angle_back = 0 - atan2(radius_rover, CORNER_2_MID) * 180/3.1416;
 
             // Max rot/s for hub motors = 3.6
-            speed_left = abs(Params->speed_A)/100 * 3.6 * 3.1416 * 0.45; // The * 0.45 to limit speed to 45% max
+            speed_left = abs((0 - Params->AXIS_1) * Params->AXIS_3) * 260 * 13.5;
             speed_right = speed_left * (radius_right/radius_rover);
             speed_back = speed_left * (radius_back/radius_rover);
         }
         // If heading is straight forward, straighten out the rover
-        if (Params->heading_A == 0)
+        if (Params->AXIS_0 == 0)
         {
-            initDriveMode(Params->heading_B);
-            if (current_speed != Params->speed_A)
+            initDriveMode(front);
+            if (current_speed != 100 * (0 - Params->AXIS_1) * Params->AXIS_3)
             {
-                setSpeedAllWheels(abs(Params->speed_A));
-                current_speed = Params->speed_A;
+                current_speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
+                setSpeedAllWheels(abs(current_speed));
+                
             }
             /* following angle values for testing rig (hobby servos)
             angle_left = 150;
@@ -325,8 +312,10 @@ extern "C" void vCarTask(void *pvParameters)
             angle_back = 150;
             
         }
-        else if ((current_heading != Params->heading_A) | (current_speed != Params->speed_A))
+        else if ((current_heading != Params->AXIS_0) | 
+                (current_speed != 100 * (0 - Params->AXIS_1) * Params->AXIS_3))
         {
+            /*
             printf("current_speed: %f\n Params->speed_A: %f\n", current_speed, Params->speed_A);
             printf("current_heading: %f\n Params->heading_A: %f\n", current_heading, Params->heading_A);
 
@@ -366,8 +355,9 @@ extern "C" void vCarTask(void *pvParameters)
             fflush(stdout);
             printf("Back Wheel Speed:\n    %f percent\n", speed_back);
             fflush(stdout);
+            */
 
-            if (Params->heading_A > 0)
+            if (Params->AXIS_0 > 0)
             {
 
                 left_servo.SetPositionPercent(left_servo.GetPercentage(300,
@@ -387,16 +377,16 @@ extern "C" void vCarTask(void *pvParameters)
                                              (150 + angle_back)));
             }
 
-            left_motor.SetDirection((Params->speed_A > 0) ? 0:1);
-            right_motor.SetDirection((Params->speed_A > 0) ? 0:1);
-            back_motor.SetDirection((Params->speed_A < 0) ? 0:1);
+            left_motor.SetDirection((Params->AXIS_1 > 0) ? 0:1);
+            right_motor.SetDirection((Params->AXIS_1 > 0) ? 0:1);
+            back_motor.SetDirection((Params->AXIS_1 < 0) ? 0:1);
             
-            left_motor.SetSpeed((((speed_left)/3.1416)/0.833)*100);
-            right_motor.SetSpeed((((speed_right)/3.1416)/0.833)*100);
-            back_motor.SetSpeed((((speed_back)/3.1416)/0.833)*100);
+            left_motor.SetSpeed(((speed_left)/26)/13.5);
+            right_motor.SetSpeed(((speed_right)/26)/13.5);
+            back_motor.SetSpeed(((speed_back)/26)/13.5);
 
-            current_speed = Params->speed_A;
-            current_heading = Params-> heading_A;
+            current_speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
+            current_heading = Params->AXIS_0;
 
             current_angle_left = angle_left;
             current_angle_right = angle_right;
@@ -410,10 +400,10 @@ extern "C" void vCrabTask(void *pvParameters)
 {
     ParamsStruct *Params = (ParamsStruct *) pvParameters;
 
-    double cam_offset = Params->heading_C;
-    double heading_x = 0 - Params->heading_A;
-    double heading_y = 0 - Params->heading_B;
-    double heading = atan2(heading_y, heading_x);
+    double cam_offset = Params->mast_position;
+    double heading_x = 0 - Params->AXIS_0;
+    double heading_y = 0 - Params->AXIS_1;
+    double heading = atan2(heading_y, heading_x) * 180/3.1416;
     double current_heading = heading;
     double wheel_A_heading = heading;
     bool wheel_A_dir = 0;
@@ -423,33 +413,31 @@ extern "C" void vCrabTask(void *pvParameters)
     bool wheel_C_dir = 1;
     double current_speed = 0;
     double speed = 0;
+    bool current_brakes= 1;
 
     while (1)
     {
-        // If limit speed to 30 % of top speed
-        if (abs(Params->speed_A) > 30)
+        speed = sqrt(pow(Params->AXIS_0, 2) + pow(Params->AXIS_1, 2)) * Params->AXIS_3;
+        if (Params->button_0 != current_brakes)
         {
-            speed = 30;
+            applyBrakes(Params->button_0);
+            current_brakes = Params->button_0;
         }
-        else
-        {
-            speed = abs(Params->speed_A);
-        }
-
         // Adjust parameters for new instance of crab mode
-        if (cam_offset != Params->heading_C)
+        if (cam_offset != Params->mast_position)
         {
-            cam_offset = Params->heading_C;
+            cam_offset = Params->mast_position;
             wheel_A_heading = heading + cam_offset + 30;
             wheel_B_heading = heading + cam_offset - 30;
             wheel_C_heading = heading + cam_offset + 180;
         }
 
         // Update parameters for new heading from mission control 
-        if ((heading_x != 0 - Params->heading_A) | (heading_y != 0 - Params->heading_B))
+        if ((heading_x != 0 - Params->AXIS_0) | 
+            (heading_y != 0 - Params->AXIS_1))
         {
-            heading_x = 0 - Params->heading_A;
-            heading_y = 0 - Params->heading_B;
+            heading_x = 0 - Params->AXIS_0;
+            heading_y = 0 - Params->AXIS_1;
             heading = atan2(heading_y, heading_x);
             wheel_A_heading = wheel_A_heading + (heading - current_heading);
             wheel_B_heading = wheel_B_heading + (heading - current_heading);
@@ -503,8 +491,8 @@ extern "C" void vCrabTask(void *pvParameters)
         }
         if (speed != current_speed)
         {
-            setSpeedAllWheels(Params->speed_A);
-            current_speed = Params->speed_A;
+            setSpeedAllWheels(speed);
+            current_speed = speed;
         }
 
 
@@ -516,35 +504,20 @@ extern "C" void vSpinTask(void *pvParameters)
 {
     ParamsStruct *Params = (ParamsStruct *) pvParameters;
     double current_speed = 0;
-    double current_brakes = 100;
-    bool current_heading = 0;
+    bool current_brakes = 1;
     while(1)
     {
-        if (Params->heading_A != current_heading)
+        initSpinMode(0);
+        if (Params->AXIS_0 != current_speed)
         {
-            motor_A.SetSpeed(0);
-            motor_B.SetSpeed(0);
-            motor_C.SetSpeed(0);
-            initSpinMode(Params->heading_A);
-            current_heading = Params->heading_A ? 1:0;
-            motor_A.SetSpeed(current_speed);
-            motor_B.SetSpeed(current_speed);
-            motor_C.SetSpeed(current_speed);
+            current_speed = 100 * Params->AXIS_0;
+            setDirectionAllWheels(current_speed ? 0:1);
+            setSpeedAllWheels(100 * abs(current_speed));
         }
-        if (Params->speed_A != current_speed)
+        if (Params->button_0 != current_brakes)
         {
-            setDirectionAllWheels((Params->speed_A < 0) ? 0:1);
-            //setSpeedAllWheels(abs(Params->speed_A));
-            motor_A.SetSpeed(Params->speed_A);
-            motor_B.SetSpeed(Params->speed_A);
-            motor_C.SetSpeed(Params->speed_A);
-            current_speed = Params->speed_A;
-            printf("setting speed");
-        }
-        if (Params->brake != current_brakes)
-        {
-            applyBrakes(Params->brake);
-            current_brakes = Params->brake;
+            applyBrakes(Params->button_0);
+            current_brakes = Params->button_0;
         }
         vTaskDelay(5);
     }

@@ -20,8 +20,11 @@ extern "C" {
  *	   2: Spin Mode
  *	   3: Drive Mode
  *
- * Speeds are to be recieved in values ranging from -100 to 100 with double 
- * floating point precision.
+ * Speeds are to be recieved as follows:
+ *     Debug: -100 to 100
+ *     Crab: the magnitude of the corrdinates ploted by AXIS 0 and AXIS 1
+ *     Spin: the inverse of AXIS 1 * AXIS 3
+ *     Drive: the inverse of AXIS 0 * AXIS 3
  * 
  * Headings are to be recieved as follows:
  *     Debug: 0% - 100% to represent min to max rotation
@@ -36,13 +39,14 @@ extern "C" {
  */
 struct ParamsStruct {
     int mode;
-    double speed_A;
-    double heading_A;
-    double speed_B;
-    double heading_B;
-    double speed_C;
-    double heading_C;
-    bool brake;
+    double AXIS_0;
+    double AXIS_1;
+    double AXIS_3;
+    bool button_0;
+    bool wheel_A;
+    bool wheel_B;
+    bool wheel_C;
+    double mast_position;
 };
 
 enum DriveMode {

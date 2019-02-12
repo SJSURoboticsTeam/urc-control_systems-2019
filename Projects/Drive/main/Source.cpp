@@ -32,50 +32,55 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
     server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
         const char *vars[8] = {
-            "mode", "speed_A", "heading_A", "speed_B", 
-            "heading_B", "speed_C", "heading_C", "brake"
+            "mode", "AXIS_0", "AXIS_1", "AXIS_3", 
+            "button_0, mast_position"
         };
-        for (int i=0; i<8; i++) {
+        for (int i=0; i<4; i++) {
             if (request->hasArg(vars[i])) {
                 if (strcmp(vars[i], "mode")) {
                     params->mode = request->arg("mode").toInt();  
                 }
-                if (strcmp(vars[i], "speed_A")) {
-                    params->speed_A = request->arg("speed_A").toFloat();    
+                if (strcmp(vars[i], "AXIS_0")) {
+                    params->AXIS_0 = request->arg("AXIS_0").toFloat();    
                 }
-                if (strcmp(vars[i], "heading_A")) {
-                    params->heading_A = request->arg("heading_A").toFloat();    
+                if (strcmp(vars[i], "AXIS_1")) {
+                    params->AXIS_1 = request->arg("AXIS_1").toFloat();    
                 }
-                if (strcmp(vars[i], "speed_B")) {
-                    params->speed_B = request->arg("speed_B").toFloat();    
+                if (strcmp(vars[i], "AXIS_3")) {
+                    params->AXIS_3 = 0 - request->arg("AXIS_3").toFloat();    
                 }
-                if (strcmp(vars[i], "heading_B")) {
-                    params->heading_B = request->arg("heading_B").toFloat();    
+                if (strcmp(vars[i], "button_0")) {
+                    params->button_0 = request->arg("button_0").toFloat();    
                 }
-                if (strcmp(vars[i], "speed_C")) {
-                    params->speed_C = request->arg("speed_C").toFloat();    
+                if (strcmp(vars[i], "wheel_A")) {
+                    params->wheel_A = request->arg("wheel_A").toInt();  
                 }
-                if (strcmp(vars[i], "heading_C")) {
-                    params->heading_C = request->arg("heading_C").toFloat();    
+                if (strcmp(vars[i], "wheel_B")) {
+                    params->wheel_B = request->arg("wheel_B").toInt();  
                 }
-                if (strcmp(vars[i], "brake")) {
-                    params->brake = request->arg("brake").toInt();    
+                if (strcmp(vars[i], "wheel_C")) {
+                    params->wheel_C = request->arg("wheel_C").toInt();  
+                }
+                if (strcmp(vars[i], "mast_position")) {
+                    params->mast_position = request->arg("mast_position").toFloat();    
                 }
             }
-            else {
+            else 
+            {
                 printf("ERROR. %s doesn't exist", vars[i]);
             }
         }
         
         printf("handle_update endpoint running\n");
         printf("    mode: %i \n", params->mode);
-        printf("    speed_A: %f \n", params->speed_A);
-        printf("    heading_A: %f \n", params->heading_A);
-        printf("    speed_B: %f \n", params->speed_B);
-        printf("    heading_B: %f \n", params->heading_B);
-        printf("    speed_C: %f \n", params->speed_C);
-        printf("    heading_C: %f \n", params->heading_C);
-        printf("    brake: %d \n", params->brake);
+        printf("    AXIS_0: %f \n", params->AXIS_0);
+        printf("    AXIS_1: %f \n", params->AXIS_1);
+        printf("    AXIS_3: %f \n", params->AXIS_3);
+        printf("    button_0: %d \n", params->button_0);
+        printf("    wheel_A: %d \n", params->wheel_A);
+        printf("    wheel_B: %d \n", params->wheel_B);
+        printf("    wheel_C: %d \n", params->wheel_C);
+        printf("    mast_position: %f \n", params->mast_position);
         printf("\n");
 
         request->send(200, "text/plain", "Success");
@@ -290,11 +295,6 @@ void setHeading(uint32_t wheel, double percentage)
 
 void applyBrakes(bool signal)
 {
-    /*
-    brake_A.Pump(percentage);
-    brake_B.Pump(percentage);
-    brake_C.Pump(percentage);
-    */
     //motor_A.Brake(percentage);
     motor_B.Brake(signal);
     //motor_C.Brake(percentage);
