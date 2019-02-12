@@ -82,11 +82,14 @@ void initSpinMode(bool direction);
 void initCrabMode();
 
 /**
- * This function determines which direction all the wheels should spin. 
+ * This function determines which direction all the wheels should spin. And sets
+ * the corresponding pins to the appropriate level. 
  */
 void setDirectionAllWheels(bool direction);
 
-/**This function determines which direction the stated wheel should spin. 
+/*
+ * This function determines which direction the stated wheel should spin and 
+ * sets the corresponding pin to that level;
  */
 void setDirection(uint32_t wheel, bool direction);
 
@@ -106,35 +109,9 @@ void setSpeed(uint32_t wheel, uint32_t speed);
 void setHeading(uint32_t wheel, double percentage);
 
 /**
- * This function Applies PWM to all the brake pins.
+ * This function enables/disabes the brakes pin.
  */
 void applyBrakes(bool signal);
-
-/**
- * This function determines the current heading of the rover based on raw GPS
- * data. As of 10/5/18, this is a conceptual function and has not yet been 
- * implemented.
- */
-//char *getHeading(double gps_data);
-
-/**
- * This function determines the actual rotation of the stated wheel based upon
- * potentiometer data. As of 10/5/18, this is a conceptual function and has not
- * yet been implemented.
- */
-//bool getCurrentDirection(uint32_t wheel);
-
-/**
- * Calculates the differential speeds for the front wheels during drive mode. As
- * of 10/30/18, this has yet to be defined.
- */
-
-//void getDriveDifferentials(double turn_angle, double speed);
-
-
-bool initEEPROM();
-
-int EEPROMCount(int addr);
 
 #ifdef _cplusplus
 }
