@@ -282,7 +282,7 @@ extern "C" void vCarTask(void *pvParameters)
             angle_back = atan2(radius_rover, CORNER_2_MID) * 180/3.14159;
 
             // Max rot/s for hub motors = 3.6
-            speed_right = abs((0 - Params->AXIS_1) * Params->AXIS_3) * 260 * 13.5;
+            speed_right = abs((0 - Params->AXIS_1)*Params->AXIS_3) * 260 * 13.5;
             speed_left = speed_right * (radius_left/radius_rover);
             speed_back = speed_right * (radius_back/radius_rover);
         }
@@ -300,7 +300,7 @@ extern "C" void vCarTask(void *pvParameters)
             angle_back = 0 - atan2(radius_rover, CORNER_2_MID) * 180/3.1416;
 
             // Max rot/s for hub motors = 3.6
-            speed_left = abs((0 - Params->AXIS_1) * Params->AXIS_3) * 260 * 13.5;
+            speed_left = abs((0 - Params->AXIS_1)*Params->AXIS_3) * 260 * 13.5;
             speed_right = speed_left * (radius_right/radius_rover);
             speed_back = speed_left * (radius_back/radius_rover);
         }
@@ -312,7 +312,6 @@ extern "C" void vCarTask(void *pvParameters)
             {
                 current_speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
                 setSpeedAllWheels(abs(current_speed));
-                
             }
             /* following angle values for testing rig (hobby servos)
             angle_left = 150;
@@ -328,9 +327,9 @@ extern "C" void vCarTask(void *pvParameters)
         else if ((current_heading != Params->AXIS_0) | 
                 (current_speed != 100 * (0 - Params->AXIS_1) * Params->AXIS_3))
         {
-            /*
-            printf("current_speed: %f\n Params->speed_A: %f\n", current_speed, Params->speed_A);
-            printf("current_heading: %f\n Params->heading_A: %f\n", current_heading, Params->heading_A);
+            /*// DEBUGGING MESSAGES
+            printf("current_speed: %f\n calculated speed: %f\n", current_speed, 100*(0-Params->AXIS_1*Params->AXIS_3));
+            printf("current_heading: %f\n Params->AXIS_0: %f\n", current_heading, Params->AXIS_0);
 
             printf("\nRover Radius:\n    %f in\n", radius_rover);
             fflush(stdout);
@@ -372,7 +371,6 @@ extern "C" void vCarTask(void *pvParameters)
 
             if (Params->AXIS_0 > 0)
             {
-
                 left_servo.SetPositionPercent(left_servo.GetPercentage(300,
                                              (210 + (90 - angle_left))));
                 right_servo.SetPositionPercent(right_servo.GetPercentage(300,
@@ -507,8 +505,6 @@ extern "C" void vCrabTask(void *pvParameters)
             setSpeedAllWheels(speed);
             current_speed = speed;
         }
-
-
         vTaskDelay(5);
     }
 }

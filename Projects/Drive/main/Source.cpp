@@ -102,21 +102,22 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             https://developer.mozilla.org/en-US/docs/Web/API/EventSource
     */
     
-    events.onConnect([](AsyncEventSourceClient *client) {
-      if(client->lastId())
-      {
-        Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
-      }
-      // send event with message "hello!", id current millis
-      // and set reconnect delay to 1 second
-      client->send("hello!", NULL, millis(), 1000);
-      delay(1000);
-      client->send("hello!", NULL, millis(), 1000);
-      delay(1000);
-      client->send("hello!", NULL, millis(), 1000);
-      delay(1000);
-      client->send("hello!", NULL, millis(), 1000);
-      delay(1000);
+    events.onConnect([](AsyncEventSourceClient *client) 
+    {
+        if(client->lastId())
+        {
+         Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
+        }
+        // send event with message "hello!", id current millis
+        // and set reconnect delay to 1 second
+        client->send("hello!", NULL, millis(), 1000);
+        delay(1000);
+        client->send("hello!", NULL, millis(), 1000);
+        delay(1000);
+        client->send("hello!", NULL, millis(), 1000);
+        delay(1000);
+        client->send("hello!", NULL, millis(), 1000);
+        delay(1000);
     });
 
     //Attach event source to the server.
@@ -230,9 +231,9 @@ void initCrabMode()
 
 void setDirectionAllWheels(bool direction)
 {
-     motor_A.SetDirection(direction);
-     motor_B.SetDirection(direction);
-     motor_C.SetDirection(direction);
+    motor_A.SetDirection(direction);
+    motor_B.SetDirection(direction);
+    motor_C.SetDirection(direction);
 }
 
 void setDirection(uint32_t wheel, bool direction)

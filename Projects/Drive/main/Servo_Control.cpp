@@ -184,7 +184,7 @@ void ServoMotor::SetSpeed(double percentage)
 
 void ServoMotor::SetSpeedAndDirection(double percentage, bool dir)
 {
-    // sets direction then calls SetSpeed() function //	
+    // sets direction then calls SetSpeed() function // 
     direction = dir;
     SetSpeed(percentage);
 }
@@ -222,6 +222,6 @@ void ServoMotor::SetDirection(bool dir)
         ledc_set_duty_and_update(LEDC_HIGH_SPEED_MODE, pwm_channel, duty_cycle, 
                                  0xfffff);
         //ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_channel);
-	direction = !direction;
+    direction = !direction;
     }
 }

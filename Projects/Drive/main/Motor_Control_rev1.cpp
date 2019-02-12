@@ -5,18 +5,18 @@
 #include "Motor_Control_rev1.hpp"
 
 void Motor::InitMotor(uint32_t pin_signal, uint32_t pin_brake, 
-				      uint32_t pin_direction, uint32_t s_channel,
-				      uint32_t timer, uint32_t frequency, float min, float max)
+                      uint32_t pin_direction, uint32_t s_channel,
+                      uint32_t timer, uint32_t frequency, float min, float max)
 {
-	// Initialize Private variables
-	signal_pin = pin_signal;
-	brake_pin = pin_brake;
-	direction_pin = pin_direction;
-	signal_duty_cycle = 0;
-	brake_duty_cycle = 0;
+    // Initialize Private variables
+    signal_pin = pin_signal;
+    brake_pin = pin_brake;
+    direction_pin = pin_direction;
+    signal_duty_cycle = 0;
+    brake_duty_cycle = 0;
     pwm_frequency = frequency;
 
-	top_duty = max_duty * max / 100;
+    top_duty = max_duty * max / 100;
     base_duty = max_duty * min / 100;
     range = top_duty - base_duty;
     pwm_timer = (ledc_timer_t) timer;
@@ -63,7 +63,7 @@ void Motor::SetFrequency(uint32_t frequency)
 
 void Motor::SetSpeed(double percentage)
 {
-	// Calculates the duty cycle based upon the input percentage //
+    // Calculates the duty cycle based upon the input percentage //
     signal_duty_cycle = base_duty + (range * percentage / 100);
     
     // Safety net in case the percentage exceeds the boundaries //
@@ -84,7 +84,7 @@ void Motor::SetSpeed(double percentage)
 
 void Motor::SetSpeedAndDirection(double percentage, bool direction)
 {
-	// Calculates the duty cycle based upon the input percentage //
+    // Calculates the duty cycle based upon the input percentage //
     signal_duty_cycle = base_duty + (range * percentage / 100);
     
     // Safety net in case the percentage exceeds the boundaries //
@@ -108,36 +108,36 @@ void Motor::SetSpeedAndDirection(double percentage, bool direction)
 
 void Motor::SetSpeedDuty(uint32_t duty)
 {
-	signal_duty_cycle = duty;
+    signal_duty_cycle = duty;
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
 }
 
 void Motor::SetDirection(bool dir)
 {
-	//gpio_set_level((gpio_num_t) direction_pin, dir);
-	digitalWrite(direction_pin, dir);
-	//printf("Signal on pin %d set to %d.\n", direction_pin, gpio_get_level((gpio_num_t) direction_pin));
-	}
-	
-	void Motor::Brake(bool brake)
+    //gpio_set_level((gpio_num_t) direction_pin, dir);
+    digitalWrite(direction_pin, dir);
+    //printf("Signal on pin %d set to %d.\n", direction_pin, gpio_get_level((gpio_num_t) direction_pin));
+    }
+    
+    void Motor::Brake(bool brake)
 {
-	/*
+    /*
     // Safety net in case the percentage exceeds the boundaries //
-	if (percentage > 100)
-	{
-		brake_duty_cycle = 100;
-	}
-	else if (percentage < 0)
-	{
-		brake_duty_cycle = 0;
-	}
-	else
-	{
-		brake_duty_cycle = percentage;
-	}
+    if (percentage > 100)
+    {
+        brake_duty_cycle = 100;
+    }
+    else if (percentage < 0)
+    {
+        brake_duty_cycle = 0;
+    }
+    else
+    {
+        brake_duty_cycle = percentage;
+    }
 
-	// Set the Duty Cycle //
+    // Set the Duty Cycle //
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_b_channel, brake_duty_cycle);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_b_channel);
     */

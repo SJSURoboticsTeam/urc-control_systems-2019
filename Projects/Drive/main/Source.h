@@ -16,18 +16,18 @@ extern "C" {
 /*
  * mode: indicates the functionality of the rover, should only hold values 0-3
  *     0: Debug Mode
- *	   1: Crab Mode
- *	   2: Spin Mode
- *	   3: Drive Mode
+ *     1: Crab Mode
+ *     2: Spin Mode
+ *     3: Drive Mode
  *
  * AXIS_0, AXIS_1, AXIS_3, and button_0 correspond to the raw inputs from the
  * joystick by the same names.
  * 
  * The wheel booleans are used to test individual or multiple wheels in Debug
- * mode, or refer to the rer wheel in Drive mode.
+ * mode, or refer to the rear wheel in Drive mode.
  *
- * mast_position refers to the angle the mast is pointing relative to the A-B
- * plane.  
+ * mast_position refers to the angle the mast is pointing relative to the
+ * whel_A - wheel_B plane in degrees from -180 to 180.
  */
 struct ParamsStruct {
     int mode;

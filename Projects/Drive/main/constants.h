@@ -71,7 +71,7 @@ constexpr uint32_t MOTOR_FREQUENCY = 78000;
 
 
 constexpr float MOTOR_MIN = 0;
-constexpr float MOTOR_MAX = 100	;
+constexpr float MOTOR_MAX = 100 ;
 constexpr float DEAD_MIN = 7.67;
 constexpr float DEAD_MAX = 7.71;
 
