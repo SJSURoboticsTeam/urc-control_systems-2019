@@ -31,11 +31,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
 
     server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
-        const char *vars[8] = {
+        const char *vars[9] = {
             "mode", "AXIS_0", "AXIS_1", "AXIS_3", 
-            "button_0, mast_position"
+            "button_0", "wheel_A", "wheel_B", "wheel_C", "mast_position"
         };
-        for (int i=0; i<4; i++) {
+        for (int i=0; i<9; i++) {
             if (request->hasArg(vars[i])) {
                 if (strcmp(vars[i], "mode")) {
                     params->mode = request->arg("mode").toInt();  
@@ -47,7 +47,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->AXIS_1 = request->arg("AXIS_1").toFloat();    
                 }
                 if (strcmp(vars[i], "AXIS_3")) {
-                    params->AXIS_3 = 0 - request->arg("AXIS_3").toFloat();    
+                    params->AXIS_3 = (0 - (request->arg("AXIS_3").toFloat()) + 1)/2;    
                 }
                 if (strcmp(vars[i], "button_0")) {
                     params->button_0 = request->arg("button_0").toFloat();    

@@ -88,13 +88,14 @@ extern "C" void vDebugTask(void *pvParameters)
     double previous_heading = 0;
     double speed = 0;
     double previous_speed = 0;
+    bool previous_brakes = 0;
 
     while(1)
     {
         printf("Debug Mode\n");
         // Convert AXIS 0 to 0% - 100% scale
         heading = (1 + Params->AXIS_0) * 50;
-        speed = 100 * (0 - Params->AXIS_1) * (1 + Params->AXIS_3) / 2;
+        speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
         if (heading != previous_heading)
         {
             if (Params->wheel_A)
@@ -118,20 +119,32 @@ extern "C" void vDebugTask(void *pvParameters)
         {
             if (Params->wheel_A)
             {
-                motor_A.SetSpeed(speed);
+                motor_A.SetSpeed(abs(speed));
                 printf("Wheel A speed set to %f percent\n", speed);
+                motor_A.SetDirection((speed > 0) ? 0:1);
+                printf("Wheel A direction: %d\n", speed ? 0:1);
             }
             if (Params->wheel_B)
             {
-                motor_B.SetSpeed(speed);
+                motor_B.SetSpeed(abs(speed));
                 printf("Wheel B speed set to %f percent\n", speed);
+                motor_B.SetDirection((speed > 0) ? 0:1);
+                printf("Wheel B direction: %d\n", speed ? 0:1);
             }
             if (Params->wheel_C)
             {
-                motor_C.SetSpeed(speed);
+                motor_C.SetSpeed(abs(speed));
                 printf("Wheel C speed set to %f percent\n", speed);
+                motor_C.SetDirection((speed > 0) ? 0:1);
+                printf("Wheel C direction: %d\n", speed ? 0:1);
             }
             previous_speed = speed;
+        }
+        if (previous_brakes != Params->button_0)
+        {
+            applyBrakes(Params->button_0);
+            previous_brakes = Params->button_0;
+            printf("Brakes set to %d\n", Params->button_0);
         }
     // Delay for half a second
     vTaskDelay(50); 

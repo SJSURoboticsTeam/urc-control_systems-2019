@@ -20,22 +20,14 @@ extern "C" {
  *	   2: Spin Mode
  *	   3: Drive Mode
  *
- * Speeds are to be recieved as follows:
- *     Debug: -100 to 100
- *     Crab: the magnitude of the corrdinates ploted by AXIS 0 and AXIS 1
- *     Spin: the inverse of AXIS 1 * AXIS 3
- *     Drive: the inverse of AXIS 0 * AXIS 3
+ * AXIS_0, AXIS_1, AXIS_3, and button_0 correspond to the raw inputs from the
+ * joystick by the same names.
  * 
- * Headings are to be recieved as follows:
- *     Debug: 0% - 100% to represent min to max rotation
- *     Crab:  heading_A: raw input from the joystick's AXIS 1
- *            heading_B: raw input from the joystick's AXIS 0
- *            heading_C: the current rotunda position from 0 - 360 degrees
- *     Spin:  heading_A: boolean
- *     Drive: heading_A: inverse raw input from the joystick's AXIS 0
- *            heading_B: 0, 1, 2, the side that the mast is facing
- * 
- * Brake is a boolean.
+ * The wheel booleans are used to test individual or multiple wheels in Debug
+ * mode, or refer to the rer wheel in Drive mode.
+ *
+ * mast_position refers to the angle the mast is pointing relative to the A-B
+ * plane.  
  */
 struct ParamsStruct {
     int mode;
