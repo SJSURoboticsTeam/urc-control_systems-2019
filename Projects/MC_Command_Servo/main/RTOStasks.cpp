@@ -12,6 +12,7 @@
 #include <cmath>
 #include "../../../Utilities/Servo_Control.hpp"
 #include "../../../Utilities/Servo_Control.cpp"
+#include "Motor_Control_rev1.hpp"
 
 
 extern "C" void vElbowTask(void *pvParameters)
@@ -23,7 +24,7 @@ extern "C" void vElbowTask(void *pvParameters)
     double currentAngle = kElbowStartPos;   //Feedback?
 
     //(pin, Chanel, Timer, Freq, Max, Min)
-    Servo Elbow(kElbowPin, 1, 0, 50, 12.5, 2.5);
+    Servo Elbow(kElbowPin, 1, 0, kElbowFreq, kElbowPWMMax, kElbowPWMMin);
     Elbow.SetPositionPercent((kElbowStartPos / kElbowRange) * 100);
     printf("Elbow's Starting Position: %f\n", kElbowStartPos);
     printf("Elbow's Starting Duty: %f\n", (kElbowStartPos / kElbowRange) * 100);
@@ -69,7 +70,7 @@ extern "C" void vRotundaTask(void *pvParameters)
     double dutyPercent;
 
     //(pin, Chanel, Timer, Freq, Max, Min)
-    Servo myServo(kRotundaPin, 0, 0, 50, 10, 5);  //all this needs to change, check the library
+    Servo myServo(kRotundaPin, 0, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin);  
     myServo.SetPositionPercent(kRotundaStartDuty);
     printf("Rotunda Starting Duty: %f\n", kRotundaStartDuty);
     printf("Rotunda Start Position: %f\n %f\n",kRotundaStartPos, (kRotundaStartPos / kRotundaPosmax)*100);
@@ -176,27 +177,34 @@ extern "C" void vShoulderTask(void *pvParameters)
     printf("Entered Shoulder Task\n");
     ParamsStruct* myParams = (ParamsStruct*) pvParameters;
 
-    // Motor shoulder;
-                //Sig, Dir, Channel, Timer, Freq, min, max
-    // shoulder.InitMotor(kShoulderSigPin, kShoudlerDirPin, 2, 2, kShoulderFreq, 0, 50);
+    Motor shoulder;
+                        //Sig, Break, Dir, s_channel, b_channel, timer, freq, min, max
+                        //Break Pin is a dummy number, not present to our subsystem
+    shoulder.InitMotor(kShoulderSigPin, 25, kShoulderDirPin, 1, 6, 3, 
+                        kShoulderFreq, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
 
     double duration;
 
+    printf("Init finished?\n");
     while(1)
     {
         if(myParams->ShoudlerDuration_ms != 0 )
         {
             duration = myParams->ShoudlerDuration_ms;
-            myParams->ShoudlerDuration_ms = 0;
             printf("Starting to move the thing!\n");
+            printf("Time: %f\n", duration);
 
             //assert motor @ 50%?
-            // shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
+            shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
             //delay that duration
-            vTaskDelay(abs(duration));
+            vTaskDelay(abs(duration ) / 10);
             printf("Finished moving the thing!\n\n\n");
             //deassrt the motor
-            // shoulder.setSpeed(0);
+            shoulder.SetSpeed(0);
+
+            myParams->ShoudlerDuration_ms = 0;
         }
+        // printf("Looped\n");
+        vTaskDelay(500);
     }
 }

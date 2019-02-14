@@ -32,9 +32,9 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         the paramsStruct struct located in Source.h first. 
     */
     server->on("/Arm", HTTP_POST, [=](AsyncWebServerRequest *request){
-        // params->heading = atoi(request->arg("heading").c_str());
         params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
         params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
+        params->ShoudlerDuration_ms = atoi(request->arg("ShoudlerDuration_ms").c_str());
         // strcpy(params->name, request->arg("heading").c_str());
         // request->send(200, "text/plain", "Success");
     });

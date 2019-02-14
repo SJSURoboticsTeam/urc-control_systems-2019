@@ -15,21 +15,25 @@ constexpr int kRotundaPosMin = 0;
 constexpr int kRotundaPosmax = 3600;
 constexpr double kRotundaStartPos = 1800;
 constexpr double kRotundaStartDuty = 50.0;
+constexpr double kRotundaPWMMin = 5;
+constexpr double kRotundaPWMMax = 10;
+constexpr double kRotundaFreq = 50;
 
 constexpr int kElbowPin = 25;
 constexpr int kElbowLimitMin = 0;
 constexpr int kElbowLimitMax = 220;
 constexpr double kElbowRange = 300;
 constexpr double kElbowStartPos = 150;
+constexpr double kElbowFreq = 50;
+constexpr double kElbowPWMMin = 2.5;
+constexpr double kElbowPWMMax = 12.5;
 
-// constexpr int kShoulderPosMin = 0;
-// constexpr int kShoulderPosmax = 90;
-// constexpr int kShoulderEnablePWMMin = 0;	//percentage
-// constexpr int kShoulderEnablePWMMax = 50;	//percentage
 
-constexpr uint32_t kShoulderSigPin = 35;
-constexpr uint32_t kShoudlerDirPin = 32;
-constexpr uint32_t kShoulderFreq = 1000;
+constexpr uint32_t kShoulderSigPin = 33;
+constexpr uint32_t kShoulderDirPin = 32;
+constexpr uint32_t kShoulderFreq = 5000;
+constexpr int kShoulderEnablePWMMin = 0;	//percentage
+constexpr int kShoulderEnablePWMMax = 50;	//percentage
 
 /* PINOUTS:
 	Servo 1: GPIO 6
