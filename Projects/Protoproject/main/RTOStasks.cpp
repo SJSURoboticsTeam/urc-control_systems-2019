@@ -30,7 +30,7 @@ extern "C" void vPitchTask(void *pvParameters) {
     initGimbal();
 
     while(1) {
-        //sweepMovePitch(); 
+        printf("THE PERCENTAGE IS %f\n", params->manual_position);
         
         // if (params->pitch_position != 0) {
         //     manualMovePitch(params->pitch_position);
@@ -39,15 +39,14 @@ extern "C" void vPitchTask(void *pvParameters) {
         //     printf("Awaiting pitch position value input from mission control.\n");
         // }
 
-        // Pitch_Servo.SetPositionPercent(30);
+        // manualMovePitch(35);
         // vTaskDelay(500);
-        // Pitch_Servo.SetPositionPercent(90);
+        // manualMovePitch(65);
+        // vTaskDelay(500);
 
-        manualMovePitch(30);
-        vTaskDelay(500);
-        manualMovePitch(90);
-
-        vTaskDelay(500);
+        upMovePitch();
+        downMovePitch();
+        centerMovePitch();
     }   
 }
 

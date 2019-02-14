@@ -15,6 +15,7 @@ extern "C" {
 struct ParamsStruct {
     char name[20]; // test parameter
     int mode; // arm or manual control mode
+    double manual_position = 0; // custom value to manually change the position of the gimbal
     double pitch_position = 0; // y axis value of the gimbal
 };
 

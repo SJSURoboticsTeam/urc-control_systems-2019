@@ -32,35 +32,13 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         the paramsStruct struct located in Source.h first. 
     */
 
-//    server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
-//         strcpy(params->name, request->arg("name").c_str());
-//         request->send(200, "text/plain", "Success");
-//     });
-
-    server->on("/pitch_update", HTTP_POST, [=](AsyncWebServerRequest *request){
-        const char *paramvariables[3] = {
-            "name", "mode", "pitch_position"
-        };
-        for (int i = 0; i < 3; i++) {
-            if (request->hasArg(paramvariables[i])) {
-                if (strcmp(paramvariables[i], "name")) {
-                    strcpy(params->name, request->arg("name").c_str());  
-                }
-                if (strcmp(paramvariables[i], "mode")) {
-                    params->mode = request->arg("mode").toInt();    
-                }
-                if (strcmp(paramvariables[i], "pitch_position")) {
-                    params->pitch_position = request->arg("pitch_position").toFloat();    
-                }
-            }
-            else {
-                printf("ERROR. %s parameters are not available.", paramvariables[i]);
-            }
-        }
-
+   server->on("/pitch_update", HTTP_POST, [=](AsyncWebServerRequest *request){
+        strcpy(params->name, request->arg("name").c_str());
+        params->mode = request->arg("mode").toInt();
+        params->manual_position = request->arg("manual_position").toFloat();
+        params->pitch_position = request->arg("pitch_position").toFloat();
         request->send(200, "text/plain", "Success");
-    });
-        
+    }); 
     
     /* SSE Example.
         - SSEs will be used to continuously send data that was
@@ -133,7 +111,7 @@ int EEPROMCount(int addr)
 
 void initGimbal() {
     Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
-                      SERVO_FREQUENCY, SERVO_MIN, SERVO_MAX);
+                      SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
     printf("Gimbal has been initialized for movement.\n");
 
 }
@@ -141,53 +119,34 @@ void initGimbal() {
 void centerMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_CENTER);
     printf("The camera is now centered.\n");
+    vTaskDelay(500);
 }
 
 void upMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_UP);
     printf("The camera is now facing up.\n");
+    vTaskDelay(500);
 }
 
 void downMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_DOWN);
     printf("The camera is now facing down.\n");
+    vTaskDelay(500);
 }
 
 void manualMovePitch(double percentage) {
-    
-    move_pitch_position = percentage;
 
-    // Conditions make sure that the camera gimbal doesn't rotate past its movement range set from initialization
-    if (move_pitch_position >= SERVO_MAX) {
-        Pitch_Servo.SetPositionPercent(SERVO_MAX);
-        move_pitch_position = SERVO_MAX;
-    }
-    else if (move_pitch_position <= SERVO_MIN) {
-        Pitch_Servo.SetPositionPercent(SERVO_MIN);
-        move_pitch_position = SERVO_MIN;
-    }
-    else {
-        Pitch_Servo.SetPositionPercent(percentage);
-        move_pitch_position = percentage; // keeps track of the current position of the gimbal
-    }
+    Pitch_Servo.SetPositionPercent(percentage);
+    move_pitch_position = percentage; // keeps track of the current position of the gimbal
 
     printf("The pitch position is now %f %%.\n", move_pitch_position);
+    vTaskDelay(500);
 }
 
 void sweepMovePitch() {
+
     upMovePitch();
-    vTaskDelay(500);
-
     centerMovePitch();
-    vTaskDelay(500);
-
     downMovePitch(); 
-    vTaskDelay(500);
-
-    centerMovePitch();
-    vTaskDelay(500);
-
-    upMovePitch();
-    vTaskDelay(500);
-
+    
 }

@@ -21,6 +21,8 @@ extern "C" void vSayHelloTask(void *pvParameters);
 
 extern "C" void vPitchTask(void *pvParameters);
 
+extern "C" void vDebugMode(void *pvParameters);
+
 extern "C" void vCountTask(void *pvPArameters);
 
 #ifdef _cplusplus
