@@ -39,7 +39,7 @@ Brake brake_B;
 Brake brake_C;
 */
 // Create task handlers
-TaskHandle_t xCarHandle;
+TaskHandle_t xDriveHandle;
 TaskHandle_t xCrabHandle;
 TaskHandle_t xSpinHandle;
 TaskHandle_t xDebugHandle;
@@ -55,7 +55,7 @@ extern "C" void app_main() {
     
     //Create freeRTOS tasks.
     xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, &xDebugHandle);
-    //xTaskCreate(vCarTask, "Car", 4096, (void *) &params, 1, &xCarHandle);
+    //xTaskCreate(vCarTask, "Drive", 4096, (void *) &params, 1, &xDriveHandle);
     //xTaskCreate(vCrabTask, "Crab", 4096, (void *) &params, 1, &xCrabHandle);
     //xTaskCreate(vSpinTask, "Spin", 4096, (void *) &params, 1, &xSpinHandle);
     //xTaskCreate(vModeTaskHandler, "TaskHandler", 4096, (void *) &params, 2, NULL);

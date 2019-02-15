@@ -13,15 +13,16 @@
 extern "C" {
 #endif
 
-/*
+/**
  * mode: indicates the functionality of the rover, should only hold values 0-3
  *     0: Debug Mode
  *     1: Crab Mode
  *     2: Spin Mode
  *     3: Drive Mode
  *
- * AXIS_0, AXIS_1, AXIS_3, and button_0 correspond to the raw inputs from the
- * joystick by the same names.
+ * AXIS_X, AXIS_Y, THROTTLE, and button_0 correspond to the raw inputs from the
+ * joystick (AXIS_0, AXIS_1, AXIS_3 and button_0 respectively on Windows/Linux
+ * machines).
  * 
  * The wheel booleans are used to test individual or multiple wheels in Debug
  * mode, or refer to the rear wheel in Drive mode.
@@ -31,9 +32,9 @@ extern "C" {
  */
 struct ParamsStruct {
     int mode;
-    double AXIS_0;
-    double AXIS_1;
-    double AXIS_3;
+    double AXIS_X;
+    double AXIS_Y;
+    double THROTTLE;
     bool button_0;
     bool wheel_A;
     bool wheel_B;
@@ -48,36 +49,30 @@ enum DriveMode {
     DRIVE
 };
 
+/**
+ * See Source.cpp comments for explaination of functionality.
+ */
 void initServer(AsyncWebServer* server, ParamsStruct* params);
 
+/**
+ * Ths function initializes the motor and servo class objects responsible for
+ * controlling the movement of the rover.
+ */ 
 void initComponents();
 
 /**
- * This function takes all of the necessary steps required to prep the drive
- * systems for use in driving the rover like a normal vehicle. This includes
- * choosing a direction to be the "front" of the rover, locking the wheels
- * necessary for such an activity, and other yet-to-be determined processes.
- * As of 10/5/18, this is a conceptual function, and has not yet been
- * implemented.
+ * This function sets the wheels facing the same direction the mas is pointed so
+ * that the rover can be driven like a car.
  */
 void initDriveMode(uint32_t heading);
 
 /**
- * This function takes all necessary steps required to prep the drive system
- * for use in rotating the rover in place. This process involves synchronizing
- * the wheels to rotate in unison, and to stop when they are each parallel to 
- * the rover's chassis. This will enable the rover to spin when mission control
- * gives the signal to move. As of 10/5/18, this is a conceptual function, and 
- * has not yet been implemented.
+ * This function sets all of the wheels parallel to the chasis.
  */
 void initSpinMode(bool direction);
 
 /**
- * This function takes all of the necessary steps required to prep the drive
- * system for use in freely moving the rover in any given direction. This
- * involves calculating the correct rotation of the servos necessary for the 
- * rover to safely and accurately spin and turn at any given velocity. As of 
- * 10/5/18, this is a conceptual function, and has not yet been implemented.
+ * This function sets all of the steering servos to 50% of their total range.
  */
 void initCrabMode();
 
@@ -94,22 +89,25 @@ void setDirectionAllWheels(bool direction);
 void setDirection(uint32_t wheel, bool direction);
 
 /**
- * This function sets the speed at which all wheels should rotate.
+ * This function sets the speed at which all wheels should rotate. It is a
+ * percentage of the maximum speed the hubmotor can rotate.
  */
 void setSpeedAllWheels(double speed);
 
 /**
- * This function sets the speed at which the stated wheel should rotate.
+ * This function sets the speed at which the stated wheel should rotate. Speed 
+ * the percentage of the maximum speed the hubmotor can spin at.
  */
 void setSpeed(uint32_t wheel, uint32_t speed);
 
 /**
- * This function sets the heading of the specified wheel.
+ * This function sets the heading of the specified wheel to the specified 
+ * percent of the range of the servo..
  */
 void setHeading(uint32_t wheel, double percentage);
 
 /**
- * This function enables/disabes the brakes pin.
+ * This function enables/disabes the brakes pin according to the boolean sent.
  */
 void applyBrakes(bool signal);
 

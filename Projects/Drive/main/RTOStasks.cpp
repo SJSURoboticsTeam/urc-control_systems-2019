@@ -47,8 +47,8 @@ extern "C" void vModeTaskHandler (void *pvParameters)
                     printf("Spin\n");
                     break;
                 case 3:
-                    vTaskSuspend(xCarHandle);
-                    printf("Car\n");
+                    vTaskSuspend(xDriveHandle);
+                    printf("Drive\n");
                     break;
                 default: printf("Invalid\n"); break;
             }
@@ -70,8 +70,8 @@ extern "C" void vModeTaskHandler (void *pvParameters)
                     printf("Spin\n");
                     break;
                 case 3:
-                    vTaskResume(xCarHandle);
-                    printf("Car\n");
+                    vTaskResume(xDriveHandle);
+                    printf("Drive\n");
                     break;
                 default: printf("Invalid\n"); break; 
             }
@@ -94,8 +94,8 @@ extern "C" void vDebugTask(void *pvParameters)
     {
         printf("Debug Mode\n");
         // Convert AXIS 0 to 0% - 100% scale
-        heading = (1 + Params->AXIS_0) * 50;
-        speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
+        heading = (1 + Params->AXIS_X) * 50;
+        speed = 100 * (0 - Params->AXIS_Y) * Params->THROTTLE;
         if (heading != previous_heading)
         {
             if (Params->wheel_A)
@@ -151,7 +151,7 @@ extern "C" void vDebugTask(void *pvParameters)
     }
 }
 
-extern "C" void vCarTask(void *pvParameters)
+extern "C" void vDriveTask(void *pvParameters)
 {
     double radius_rover = 0;
     double radius_left = 0;
@@ -186,8 +186,8 @@ extern "C" void vCarTask(void *pvParameters)
     Motor back_motor = motor_C;
 
     ParamsStruct* Params = (ParamsStruct *) pvParameters;
-    double current_heading = Params->AXIS_0;
-    double current_speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
+    double current_heading = Params->AXIS_X;
+    double current_speed = 100 * (0 - Params->AXIS_Y) * Params->THROTTLE;
     double current_brakes = 1;
     uint32_t front = 0;
     uint32_t previous_front = 3;
@@ -269,10 +269,10 @@ extern "C" void vCarTask(void *pvParameters)
             previous_front = front;
         }
         // Calculate parameters for turning left
-        if (Params->AXIS_0 < 0)
+        if (Params->AXIS_X < 0)
         {
             // A 1058.355 in radius turns the inner wheel 1 degree
-            radius_rover =  (1 - (0 - Params->AXIS_0) * MAX_DIST);
+            radius_rover =  (1 - (0 - Params->AXIS_X) * MAX_DIST);
             radius_left = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_right = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
@@ -282,15 +282,15 @@ extern "C" void vCarTask(void *pvParameters)
             angle_back = atan2(radius_rover, CORNER_2_MID) * 180/3.14159;
 
             // Max rot/s for hub motors = 3.6
-            speed_right = abs((0 - Params->AXIS_1)*Params->AXIS_3) * 260 * 13.5;
+            speed_right = abs((0 - Params->AXIS_Y)*Params->THROTTLE) * 260 * 13.5;
             speed_left = speed_right * (radius_left/radius_rover);
             speed_back = speed_right * (radius_back/radius_rover);
         }
         // Calculate parameters for turning right
-        if (Params->AXIS_0 > 0)
+        if (Params->AXIS_X > 0)
         {
             // A 1058.355 in radius turns the inner wheel 1 degree
-            radius_rover = (1 - Params->AXIS_0) * MAX_DIST;
+            radius_rover = (1 - Params->AXIS_X) * MAX_DIST;
             radius_right = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_left = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
@@ -300,17 +300,17 @@ extern "C" void vCarTask(void *pvParameters)
             angle_back = 0 - atan2(radius_rover, CORNER_2_MID) * 180/3.1416;
 
             // Max rot/s for hub motors = 3.6
-            speed_left = abs((0 - Params->AXIS_1)*Params->AXIS_3) * 260 * 13.5;
+            speed_left = abs((0 - Params->AXIS_Y)*Params->THROTTLE) * 260 * 13.5;
             speed_right = speed_left * (radius_right/radius_rover);
             speed_back = speed_left * (radius_back/radius_rover);
         }
         // If heading is straight forward, straighten out the rover
-        if (Params->AXIS_0 == 0)
+        if (Params->AXIS_X == 0)
         {
             initDriveMode(front);
-            if (current_speed != 100 * (0 - Params->AXIS_1) * Params->AXIS_3)
+            if (current_speed != 100 * (0 - Params->AXIS_Y) * Params->THROTTLE)
             {
-                current_speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
+                current_speed = 100 * (0 - Params->AXIS_Y) * Params->THROTTLE;
                 setSpeedAllWheels(abs(current_speed));
             }
             /* following angle values for testing rig (hobby servos)
@@ -324,12 +324,12 @@ extern "C" void vCarTask(void *pvParameters)
             angle_back = 150;
             
         }
-        else if ((current_heading != Params->AXIS_0) | 
-                (current_speed != 100 * (0 - Params->AXIS_1) * Params->AXIS_3))
+        else if ((current_heading != Params->AXIS_X) | 
+                (current_speed != 100 * (0 - Params->AXIS_Y) * Params->THROTTLE))
         {
             /*// DEBUGGING MESSAGES
-            printf("current_speed: %f\n calculated speed: %f\n", current_speed, 100*(0-Params->AXIS_1*Params->AXIS_3));
-            printf("current_heading: %f\n Params->AXIS_0: %f\n", current_heading, Params->AXIS_0);
+            printf("current_speed: %f\n calculated speed: %f\n", current_speed, 100*(0-Params->AXIS_Y*Params->THROTTLE));
+            printf("current_heading: %f\n Params->AXIS_X: %f\n", current_heading, Params->AXIS_X);
 
             printf("\nRover Radius:\n    %f in\n", radius_rover);
             fflush(stdout);
@@ -369,7 +369,7 @@ extern "C" void vCarTask(void *pvParameters)
             fflush(stdout);
             */
 
-            if (Params->AXIS_0 > 0)
+            if (Params->AXIS_X > 0)
             {
                 left_servo.SetPositionPercent(left_servo.GetPercentage(300,
                                              (210 + (90 - angle_left))));
@@ -388,22 +388,22 @@ extern "C" void vCarTask(void *pvParameters)
                                              (150 + angle_back)));
             }
 
-            left_motor.SetDirection((Params->AXIS_1 > 0) ? 0:1);
-            right_motor.SetDirection((Params->AXIS_1 > 0) ? 0:1);
-            back_motor.SetDirection((Params->AXIS_1 < 0) ? 0:1);
+            left_motor.SetDirection((Params->AXIS_Y > 0) ? 0:1);
+            right_motor.SetDirection((Params->AXIS_Y > 0) ? 0:1);
+            back_motor.SetDirection((Params->AXIS_Y < 0) ? 0:1);
             
             left_motor.SetSpeed(((speed_left)/26)/13.5);
             right_motor.SetSpeed(((speed_right)/26)/13.5);
             back_motor.SetSpeed(((speed_back)/26)/13.5);
 
-            current_speed = 100 * (0 - Params->AXIS_1) * Params->AXIS_3;
-            current_heading = Params->AXIS_0;
+            current_speed = 100 * (0 - Params->AXIS_Y) * Params->THROTTLE;
+            current_heading = Params->AXIS_X;
 
             current_angle_left = angle_left;
             current_angle_right = angle_right;
             current_angle_back = angle_back;
         }
-        vTaskDelay(5);
+        vTaskDelay(2);
     }
 }
 
@@ -412,8 +412,8 @@ extern "C" void vCrabTask(void *pvParameters)
     ParamsStruct *Params = (ParamsStruct *) pvParameters;
 
     double cam_offset = Params->mast_position;
-    double heading_x = 0 - Params->AXIS_0;
-    double heading_y = 0 - Params->AXIS_1;
+    double heading_x = 0 - Params->AXIS_X;
+    double heading_y = 0 - Params->AXIS_Y;
     double heading = atan2(heading_y, heading_x) * 180/3.1416;
     double current_heading = heading;
     double wheel_A_heading = heading;
@@ -428,7 +428,7 @@ extern "C" void vCrabTask(void *pvParameters)
 
     while (1)
     {
-        speed = sqrt(pow(Params->AXIS_0, 2) + pow(Params->AXIS_1, 2)) * Params->AXIS_3;
+        speed = sqrt(pow(Params->AXIS_X, 2) + pow(Params->AXIS_Y, 2)) * Params->THROTTLE;
         if (Params->button_0 != current_brakes)
         {
             applyBrakes(Params->button_0);
@@ -444,11 +444,11 @@ extern "C" void vCrabTask(void *pvParameters)
         }
 
         // Update parameters for new heading from mission control 
-        if ((heading_x != 0 - Params->AXIS_0) | 
-            (heading_y != 0 - Params->AXIS_1))
+        if ((heading_x != 0 - Params->AXIS_X) | 
+            (heading_y != 0 - Params->AXIS_Y))
         {
-            heading_x = 0 - Params->AXIS_0;
-            heading_y = 0 - Params->AXIS_1;
+            heading_x = 0 - Params->AXIS_X;
+            heading_y = 0 - Params->AXIS_Y;
             heading = atan2(heading_y, heading_x);
             wheel_A_heading = wheel_A_heading + (heading - current_heading);
             wheel_B_heading = wheel_B_heading + (heading - current_heading);
@@ -505,7 +505,7 @@ extern "C" void vCrabTask(void *pvParameters)
             setSpeedAllWheels(speed);
             current_speed = speed;
         }
-        vTaskDelay(5);
+        vTaskDelay(2);
     }
 }
 
@@ -517,9 +517,9 @@ extern "C" void vSpinTask(void *pvParameters)
     while(1)
     {
         initSpinMode(0);
-        if (Params->AXIS_0 != current_speed)
+        if (Params->AXIS_X != current_speed)
         {
-            current_speed = 100 * Params->AXIS_0;
+            current_speed = 100 * Params->AXIS_X;
             setDirectionAllWheels(current_speed ? 0:1);
             setSpeedAllWheels(100 * abs(current_speed));
         }
@@ -528,6 +528,6 @@ extern "C" void vSpinTask(void *pvParameters)
             applyBrakes(Params->button_0);
             current_brakes = Params->button_0;
         }
-        vTaskDelay(5);
+        vTaskDelay(2);
     }
 }
