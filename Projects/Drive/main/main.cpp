@@ -12,8 +12,10 @@
 #include "Source.h"
 #include "constants.h"
 
+// Parameters to be updated by mission control
 ParamsStruct params;
-//Server used to listen for XHRs, and send SSEs.
+
+// Server used to listen for XHRs, and send SSEs.
 AsyncWebServer server(80);
 
 // Create the Steering Servos
@@ -22,22 +24,10 @@ Servo servo_B;
 Servo servo_C; 
 
 // Create the Drive Motors
-/* Test Servos 
-ServoMotor motor_A;
-ServoMotor motor_B;
-ServoMotor motor_C;
-*/
-/* Real Motors DH-03X */
 Motor motor_A;
 Motor motor_B;
 Motor motor_C;
 
-// Create Brakes
-/*
-Brake brake_A;
-Brake brake_B;
-Brake brake_C;
-*/
 // Create task handlers
 TaskHandle_t xDriveHandle;
 TaskHandle_t xCrabHandle;
@@ -49,9 +39,8 @@ extern "C" void app_main() {
     Serial.begin(115200);
     initArduino();
     initServer(&server, &params);
-    //printf("Server Initialized\n");
     initComponents();
-    delay(1000);
+    //delay(100);
     
     //Create freeRTOS tasks.
     xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, &xDebugHandle);
