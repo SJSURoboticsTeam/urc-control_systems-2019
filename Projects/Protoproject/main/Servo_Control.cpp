@@ -14,7 +14,7 @@
 #include "Servo_Control.hpp"
 
 void Servo::InitServo(uint32_t pin, uint32_t channel, uint32_t timer, 
-                      uint32_t frequency, float max, float min)
+                      uint32_t frequency, float min, float max)
 {
     // Intitialize Private Variables //
     gpio_pin = pin;

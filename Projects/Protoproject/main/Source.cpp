@@ -111,7 +111,7 @@ int EEPROMCount(int addr)
 
 void initGimbal() {
     Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
-                      SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
+                      SERVO_FREQUENCY, SERVO_MIN, SERVO_MAX);
     printf("Gimbal has been initialized for movement.\n");
 
 }
