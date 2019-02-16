@@ -41,7 +41,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->mode = request->arg("mode").toInt();  
                 }
                 if (strcmp(vars[i], "AXIS_X")) {
-                    params->AXIS_X = request->arg("AXIS_X").toFloat();    
+                    params->AXIS_X = (0 - request->arg("AXIS_X").toFloat());    
                 }
                 if (strcmp(vars[i], "AXIS_Y")) {
                     params->AXIS_Y = request->arg("AXIS_Y").toFloat();    
@@ -270,7 +270,7 @@ void applyBrakes(bool signal)
     //motor_A.Brake(percentage);
     motor_B.Brake(!signal);
     //motor_C.Brake(percentage);
-    printf("brakes applied\n");
+    //printf("brakes applied\n");
 }
 
 /*

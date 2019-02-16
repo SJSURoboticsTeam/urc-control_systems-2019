@@ -17,8 +17,8 @@
 constexpr double SIDE = 40.25;
 constexpr double SIDE_2_MID = 11.619;
 constexpr double CORNER_2_MID = 23.238;
-//constexpr double MAX_DIST = 1058.35; // Distance where out wheel turns 1 degree
-constexpr double MAX_DIST = 105.835;
+constexpr double MAX_DIST = 685.777; // Distance where out wheel turns 1 degree
+//constexpr double MAX_DIST = 500;
 
 // HAL Sensor Pins //
 //constexpr uint32_t HAL_A_PIN = 35;
