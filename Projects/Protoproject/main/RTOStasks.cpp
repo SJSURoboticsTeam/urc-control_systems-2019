@@ -24,37 +24,73 @@ extern "C" void vSayHelloTask(void *pvParameters) {
 extern "C" void vPitchTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
     
-    
-    // Initalize pitch object after the delay to allow the gimbal to turn on first
+    // Delay to initalize pitch object to allow the gimbal to turn on first
     vTaskDelay(500);
     initGimbal();
 
     while(1) {
-        printf("THE PERCENTAGE IS %f\n", params->manual_position);
-        
-        // if (params->pitch_position != 0) {
-        //     manualMovePitch(params->pitch_position);
-        // } 
-        // else {
-        //     printf("Awaiting pitch position value input from mission control.\n");
-        // }
+        /*
+            Debug mode to troubleshoot the gimbal for any errors. IN PROGRESS.
+        */
+        if (strcmp(params->mode, "debug") == 0) {
+            printf("Debug mode\n");
+            printf("----------------------.\n");
+            sweepMovePitch();
+        }
+        /*
+            Manual mode to allow mission control user to change camera pitch position
+            by different command move modes. 
 
-        // manualMovePitch(35);
-        // vTaskDelay(500);
-        // manualMovePitch(65);
-        // vTaskDelay(500);
+            Case 0: MANUAL mode which interprets custom percentage to move pitch
+            Case 1: UP mode makes the camera face upwards
+            Case 2: CENTER mode makes the camera stay centered
+            Case 3: DOWN mode makes the camera stay downwards
 
-        upMovePitch();
-        downMovePitch();
-        centerMovePitch();
+        */
+        else if (strcmp(params->mode, "manual") == 0) {
+            printf("Manual mode\n");
+            printf("----------------------.\n");
+                switch(params->command_move) {
+                    case 0: // MANUAL
+                        if (params->manual_move != 0) {
+                            manualMovePitch(params->manual_move);
+                            params->pitch_position = params->manual_move;
+                        } 
+                        break;
+                    case 1: // UP
+                        upMovePitch();
+                        break;
+                    case 2: // CENTER
+                        centerMovePitch();
+                        break;
+                    case 3: // DOWN
+                        downMovePitch();
+                        break;
+                    default:
+                        printf("Awaiting pitch position input from mission control.\n");
+                        break;
+                }
+        }
+        /*
+            Arm mode forces the camera to stay downwards as the rotunda with the 
+            robot arm and mast rotates. 
+        */
+        else if (strcmp(params->mode, "arm") == 0) {
+            printf("Arm mode\n");
+            printf("----------------------.\n");
+            downMovePitch();
+        }
+        else {
+            printf("Mode not valid\n");
+            printf("----------------------.\n");
+        }
+
+        // upMovePitch();
+        // downMovePitch();
+        // centerMovePitch();
     }   
 }
 
-/*
-    This task demonstrates how to read and write from EEPROM,
-    which is non-voltaile memory that we can use to store data on the 
-    ESP.
-*/
 extern "C" void vCountTask(void *pvParameters)
 {
     int count = 0;

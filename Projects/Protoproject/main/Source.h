@@ -14,9 +14,14 @@ extern "C" {
 
 struct ParamsStruct {
     char name[20]; // test parameter
-    int mode; // arm or manual control mode
-    double manual_position = 0; // custom value to manually change the position of the gimbal
-    double pitch_position = 0; // y axis value of the gimbal
+    char mode[20]; // debug, manual, or arm control mode based on "debug", "manual", or "arm" keywords 
+    int command_move; // changes the position of the gimbal manual, up, center, or down based on "0", "1", "2", or "3" respectively
+    double manual_move = 0; // manually changes the position of the gimbal based on a custom value between 37 and 63 position percent
+    double pitch_position = 0; // current y axis value of the gimbal
+};
+
+enum CommandMoveMode {
+    MANUAL, UP, CENTER, DOWN
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);

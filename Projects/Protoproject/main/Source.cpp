@@ -34,8 +34,9 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
    server->on("/pitch_update", HTTP_POST, [=](AsyncWebServerRequest *request){
         strcpy(params->name, request->arg("name").c_str());
-        params->mode = request->arg("mode").toInt();
-        params->manual_position = request->arg("manual_position").toFloat();
+        strcpy(params->mode, request->arg("mode").c_str());
+        params->command_move = request->arg("command_move").toInt();
+        params->manual_move = request->arg("manual_move").toFloat();
         params->pitch_position = request->arg("pitch_position").toFloat();
         request->send(200, "text/plain", "Success");
     }); 
@@ -119,27 +120,29 @@ void initGimbal() {
 void centerMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_CENTER);
     printf("The camera is now centered.\n");
+
     vTaskDelay(500);
 }
 
 void upMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_UP);
     printf("The camera is now facing up.\n");
+
     vTaskDelay(500);
 }
 
 void downMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_DOWN);
     printf("The camera is now facing down.\n");
+
     vTaskDelay(500);
 }
 
 void manualMovePitch(double percentage) {
 
     Pitch_Servo.SetPositionPercent(percentage);
-    move_pitch_position = percentage; // keeps track of the current position of the gimbal
+    printf("The pitch position is now %f %%.\n", percentage);
 
-    printf("The pitch position is now %f %%.\n", move_pitch_position);
     vTaskDelay(500);
 }
 
@@ -148,5 +151,6 @@ void sweepMovePitch() {
     upMovePitch();
     centerMovePitch();
     downMovePitch(); 
+    printf("Sweeping has been enabled.\n");
     
 }

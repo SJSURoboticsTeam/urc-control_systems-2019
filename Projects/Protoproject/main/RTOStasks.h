@@ -21,7 +21,11 @@ extern "C" void vSayHelloTask(void *pvParameters);
 
 extern "C" void vPitchTask(void *pvParameters);
 
-extern "C" void vDebugMode(void *pvParameters);
+/*
+    This task demonstrates how to read and write from EEPROM,
+    which is non-voltaile memory that we can use to store data on the 
+    ESP.
+*/
 
 extern "C" void vCountTask(void *pvPArameters);
 
