@@ -51,19 +51,19 @@ extern "C" void vPitchTask(void *pvParameters) {
             printf("Manual mode\n");
             printf("----------------------.\n");
                 switch(params->command_move) {
-                    case 0: // MANUAL
+                    case MANUAL: // MANUAL
                         if (params->manual_move != 0) {
                             manualMovePitch(params->manual_move);
                             params->pitch_position = params->manual_move;
                         } 
                         break;
-                    case 1: // UP
+                    case UP: // UP
                         upMovePitch();
                         break;
-                    case 2: // CENTER
+                    case CENTER: // CENTER
                         centerMovePitch();
                         break;
-                    case 3: // DOWN
+                    case DOWN: // DOWN
                         downMovePitch();
                         break;
                     default:

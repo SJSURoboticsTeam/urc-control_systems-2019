@@ -20,8 +20,11 @@ struct ParamsStruct {
     double pitch_position = 0; // current y axis value of the gimbal
 };
 
-enum CommandMoveMode {
-    MANUAL, UP, CENTER, DOWN
+typedef enum CommandMoveMode {
+    MANUAL = 0,
+    UP = 1,
+    CENTER = 2, 
+    DOWN = 3,
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
