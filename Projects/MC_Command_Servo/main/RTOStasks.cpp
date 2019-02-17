@@ -24,7 +24,7 @@ extern "C" void vElbowTask(void *pvParameters)
     double currentAngle = kElbowStartPos;   //Feedback?
 
     //(pin, Chanel, Timer, Freq, Max, Min)
-    Servo Elbow(kElbowPin, 1, 0, kElbowFreq, kElbowPWMMax, kElbowPWMMin);
+    Servo Elbow(kElbowPin, 2, 0, kElbowFreq, kElbowPWMMax, kElbowPWMMin);
     Elbow.SetPositionPercent((kElbowStartPos / kElbowRange) * 100);
     printf("Elbow's Starting Position: %f\n", kElbowStartPos);
     printf("Elbow's Starting Duty: %f\n", (kElbowStartPos / kElbowRange) * 100);
@@ -72,6 +72,7 @@ extern "C" void vRotundaTask(void *pvParameters)
     //(pin, Chanel, Timer, Freq, Max, Min)
     Servo myServo(kRotundaPin, 0, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin);  
     myServo.SetPositionPercent(kRotundaStartDuty);
+    
     printf("Rotunda Starting Duty: %f\n", kRotundaStartDuty);
     printf("Rotunda Start Position: %f\n %f\n",kRotundaStartPos, (kRotundaStartPos / kRotundaPosmax)*100);
 
@@ -178,10 +179,10 @@ extern "C" void vShoulderTask(void *pvParameters)
     ParamsStruct* myParams = (ParamsStruct*) pvParameters;
 
     Motor shoulder;
-                        //Sig, Break, Dir, s_channel, b_channel, timer, freq, min, max
+                        //Sig, Break, Dir, s_channel, timer, freq, min, max
                         //Break Pin is a dummy number, not present to our subsystem
-    shoulder.InitMotor(kShoulderSigPin, 25, kShoulderDirPin, 1, 6, 3, 
-                        kShoulderFreq, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
+    shoulder.InitMotor(kShoulderSigPin, 19, kShoulderDirPin, 3, 3, 
+                        kMotorFreq, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
 
     double duration;
 
@@ -206,5 +207,159 @@ extern "C" void vShoulderTask(void *pvParameters)
         }
         // printf("Looped\n");
         vTaskDelay(500);
+    }
+}
+
+
+    /*
+        If motors moving in opposite directions -> Wrist rotates
+            However, motors are mounted in opposites already, so if
+            Dir is the same, the wrist will rotate. 
+
+        If motors are moving in same directions -> Pitch Adjustment
+            Our configuration is if motors in the opposite dirs
+            if Dir pin is diff, pitch will adjust
+            But which way??
+            Dir1 = 0 and Dir2 = 1, will gearbox rise or fall?
+
+    */
+extern "C" void vDiffGearboxTask(void *pvParameters)
+{
+    //XHR Parameters:
+        //Wrist_dimension;
+        //Wrist_delta;   
+
+        //Use a semaphore to see if anything has changed?
+            //xWristSemaphore
+    printf("Gearbox Task Entered\n");
+    vTaskDelay(200);
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
+    double Delta;
+
+    Motor Wrist_Left, Wrist_Right;
+
+    ledc_fade_func_install(ESP_INTR_FLAG_LEVEL1);
+
+    printf("Starting Init\n");
+                        // pin_sig,  pin_brake,dir, s_channel, timer, freq, min, max
+    Wrist_Left.InitMotor(kWristLeftSigPin, 19, kWristLeftDirPin, 1, 3, 
+                        5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
+
+    printf("Init Left Fin\n");
+    Wrist_Right.InitMotor(kWristRightSigPin, 19, kWristRightDirPin, 3, 3, 
+                        5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
+    printf("Init Right Fin\n");
+
+    while(1)
+    {
+
+        //if command from MS is diff;   the semaphore
+        if(xSemaphoreTake(params->xWristSemaphore, portMAX_DELAY))
+        {
+            printf("Wrist command Received: %i\n", params->Wrist_Dimension);
+            Delta = params->Wrist_Delta;
+            //Check which dimension needs to be changed
+            
+            // Pitch:
+            if(params->Wrist_Dimension == 0)
+            {
+
+                printf("Updating Pitch:\n");
+                printf("Delta: %f\n", Delta);
+                // Ignore delta for now, we need feedback first to relate it
+                // Need to determine if Dir1=0 && Dir2=1 does it move up or down
+                // For now, if delta > 0, Dir1=1 and Dir2 = 0;
+                if(Delta > 0)
+                {
+                    Wrist_Left.SetDirection(true);
+                    Wrist_Right.SetDirection(false);
+                }
+                // if delta < 0, Dir1=0 and Dir2 = 1;
+                else if(Delta < 0)
+                {
+                    Wrist_Left.SetDirection(false);
+                    Wrist_Right.SetDirection(true);
+                }
+                //Then move both sides an equal&constant speed
+                // Maybe use Delta as a time to move, like for shoulder now
+                //Later we can implement PID on this
+
+                Wrist_Left.SetSpeed(50);
+                Wrist_Right.SetSpeed(50);
+                vTaskDelay(abs(Delta) / 10);
+                Wrist_Left.SetSpeed(0);
+                Wrist_Right.SetSpeed(0);
+            }
+        
+            // Roll:
+            else if(params->Wrist_Dimension == 1)
+            {
+                printf("Updating Roll\n");
+                printf("Delta: %f\n", Delta);
+                // Ignore delta for now, we need feedback first to relate it
+                // Look at Delta to determine Dir pins
+                // if delta > 0 Dir1 = Dir2 = 1
+                if(Delta > 0)
+                {
+                    Wrist_Left.SetDirection(true);
+                    Wrist_Right.SetDirection(true);
+                }
+                // if delta < 0 Dir1 = Dir2 = 0
+                else if(Delta < 0)
+                {
+                    Wrist_Left.SetDirection(false);
+                    Wrist_Right.SetDirection(false);
+                }
+                // Set equal and constant speed for a const amount of time
+                // Maybe use Delta as a time to move, like for shoulder now 
+                //Later we can implement PID on this
+                Wrist_Left.SetSpeed(50);
+                Wrist_Right.SetSpeed(50);
+                vTaskDelay(abs(Delta) / 10);
+                Wrist_Left.SetSpeed(0);
+                Wrist_Right.SetSpeed(0);
+            }
+        }
+        printf("end While\n\n\n");
+    }
+}
+
+
+extern "C" void vClawTask(void *pvParameters)
+{
+    printf("Begin Claw Task...\n");
+    ParamsStruct* myParams = (ParamsStruct*) pvParameters;
+    bool task_complete = false;
+    //Pin, Channel, Timer, Freq, max, min
+    Servo Claw(act_ENABLE,1,1,5000,50,0);
+    Claw.SetPositionPercent(0); //Set Duty Cycle to 0 at init
+    initClaw();
+    while(1) {
+    if(myParams->current_direction == 0)
+    {
+        //Do Nothing
+    }
+    else if(myParams->current_direction == 2)
+    {
+        Claw.SetPositionPercent(0);
+    }
+    else if(myParams->current_direction == 1)
+    {
+        Claw.SetPositionPercent(myParams->actuator_speed);
+        task_complete = openClaw();
+        if(task_complete) printf("Opening\n");
+        task_complete = false;
+        myParams->current_direction = 0;
+    }
+    else if(myParams->current_direction == -1)
+    {
+        Claw.SetPositionPercent(myParams->actuator_speed);
+        task_complete = closeClaw();
+        if(task_complete) printf("Closing\n");
+        task_complete = false;
+        myParams->current_direction = 0;
+    }
+    printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
+    vTaskDelay(100);
     }
 }

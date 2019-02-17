@@ -35,6 +35,25 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
         params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
         params->ShoudlerDuration_ms = atoi(request->arg("ShoudlerDuration_ms").c_str());
+        params->Wrist_Delta = atoi(request->arg("Wrist_Delta").c_str());
+        params->Wrist_Dimension = atoi((request->arg("Wrist_Dimension").c_str()));
+        xSemaphoreGive(params->xWristSemaphore);
+
+        //Raul's stuff
+        params->update_speed = atoi(request->arg("speed").c_str());
+        if(params->update_speed > 100) params->update_speed = 100;
+        params->actuator_speed = params->update_speed;
+
+        if(!strcmp(request->arg("command").c_str(),"open")){
+            params->current_direction = 1;
+        }
+            else if(!strcmp(request->arg("command").c_str(),"close")){
+            params->current_direction = -1;
+            }
+        else if(!strcmp(request->arg("command").c_str(),"stop")){
+            params->current_direction = 2;
+            params->actuator_speed = 0;
+        }   
         // strcpy(params->name, request->arg("heading").c_str());
         // request->send(200, "text/plain", "Success");
     });
@@ -107,4 +126,24 @@ int EEPROMCount(int addr)
     EEPROM.write(addr, data);
     EEPROM.commit();
     return data;
+}
+
+void initClaw()
+{
+    pinMode(act_PHASE, OUTPUT);
+    digitalWrite(act_PHASE,LOW);
+}
+
+bool openClaw()
+{
+    digitalWrite(act_PHASE,HIGH);
+    if(digitalRead(act_PHASE) == HIGH) return true;
+    else return false;
+}
+
+bool closeClaw()
+{
+    digitalWrite(act_PHASE,LOW);
+    if(digitalRead(act_PHASE) == LOW) return true;
+    else return false;
 }

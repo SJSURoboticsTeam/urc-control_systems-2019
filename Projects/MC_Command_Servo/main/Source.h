@@ -1,5 +1,8 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
+#include "freertos/event_groups.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -10,18 +13,18 @@
 extern "C" {
 #endif
 
-constexpr int kRotundaPin = 18;		
+constexpr int kRotundaPin = 18;		//Servo 1
 constexpr int kRotundaPosMin = 0;
 constexpr int kRotundaPosmax = 3600;
 constexpr double kRotundaStartPos = 1800;
 constexpr double kRotundaStartDuty = 50.0;
+constexpr double kRotundaFreq = 50;
 constexpr double kRotundaPWMMin = 5;
 constexpr double kRotundaPWMMax = 10;
-constexpr double kRotundaFreq = 50;
 
-constexpr int kElbowPin = 25;
+constexpr int kElbowPin = 25;		//Servo 2
 constexpr int kElbowLimitMin = 0;
-constexpr int kElbowLimitMax = 220;
+constexpr int kElbowLimitMax = 300;
 constexpr double kElbowRange = 300;
 constexpr double kElbowStartPos = 150;
 constexpr double kElbowFreq = 50;
@@ -29,11 +32,18 @@ constexpr double kElbowPWMMin = 2.5;
 constexpr double kElbowPWMMax = 12.5;
 
 
+constexpr uint32_t kMotorFreq = 5000;
 constexpr uint32_t kShoulderSigPin = 33;
 constexpr uint32_t kShoulderDirPin = 32;
-constexpr uint32_t kShoulderFreq = 5000;
-constexpr int kShoulderEnablePWMMin = 0;	//percentage
-constexpr int kShoulderEnablePWMMax = 50;	//percentage
+constexpr uint32_t kShoulderEnablePWMMin = 0;	//percentage
+constexpr uint32_t kShoulderEnablePWMMax = 50;	//percentage
+
+constexpr uint32_t kWristLeftSigPin = 16;
+constexpr uint32_t kWristLeftDirPin = 4;
+
+constexpr uint32_t kWristRightSigPin = 0;
+constexpr uint32_t kWristRightDirPin = 2;
+
 
 /* PINOUTS:
 	Servo 1: GPIO 6
@@ -69,6 +79,15 @@ struct ParamsStruct {
 	double RotundaTarget = -180.0; //range of -180 to 180
 	double ElbowTarget = kElbowStartPos;
 	double ShoudlerDuration_ms = 0;
+	int Wrist_Dimension = 0;;
+	double Wrist_Delta = 0;   
+	SemaphoreHandle_t xWristSemaphore;
+
+	//Raul's Stuff
+	int current_direction = 0;
+   //PWM Signal between 0-50 to limit voltage up to 12V
+   uint32_t actuator_speed = 0;
+   uint32_t update_speed = 0;
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
@@ -76,6 +95,12 @@ void initServer(AsyncWebServer* server, ParamsStruct* params);
 bool initEEPROM();
 
 int EEPROMCount(int addr);
+
+void initClaw();
+
+bool openClaw();
+
+bool closeClaw();
 
 /*
 	Rotunda:

@@ -18,6 +18,10 @@ extern "C" void vElbowTask(void *pvParameters);
 
 extern "C" void vShoulderTask(void *pvParameters);
 
+extern "C" void vDiffGearboxTask(void *pvParameters);
+
+extern "C" void vClawTask(void *pvPArameters);
+
 #ifdef _cplusplus
 }
 #endif
