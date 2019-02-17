@@ -32,28 +32,58 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         the paramsStruct struct located in Source.h first. 
     */
     server->on("/Arm", HTTP_POST, [=](AsyncWebServerRequest *request){
-        params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
-        params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
-        params->ShoudlerDuration_ms = atoi(request->arg("ShoudlerDuration_ms").c_str());
-        params->Wrist_Delta = atoi(request->arg("Wrist_Delta").c_str());
-        params->Wrist_Dimension = atoi((request->arg("Wrist_Dimension").c_str()));
-        xSemaphoreGive(params->xWristSemaphore);
-
-        //Raul's stuff
-        params->update_speed = atoi(request->arg("speed").c_str());
-        if(params->update_speed > 100) params->update_speed = 100;
-        params->actuator_speed = params->update_speed;
-
-        if(!strcmp(request->arg("command").c_str(),"open")){
-            params->current_direction = 1;
+        if(request->hasArg("RotundaTarget"))
+        {
+            params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
         }
-            else if(!strcmp(request->arg("command").c_str(),"close")){
-            params->current_direction = -1;
+        printf("RotundaTarget Param\n");
+        if(request->hasArg("ElbowTarget"))
+        {
+            params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
+        }
+        printf("ElbowTarget Param\n");
+        if(request->hasArg("ShoudlerDuration_ms"))
+        {
+            params->ShoudlerDuration_ms = atoi(request->arg("ShoudlerDuration_ms").c_str());
+        }
+        printf("ShoudlerDuration_ms Param\n");
+        if(request->hasArg("Wrist_Delta"))
+        {
+            params->Wrist_Delta = atoi(request->arg("Wrist_Delta").c_str());
+        }
+        printf("Wrist_Delta Param\n");
+        if(request->hasArg("Wrist_Dimension"))
+        {
+            params->Wrist_Dimension = atoi((request->arg("Wrist_Dimension").c_str()));
+        }
+        printf("Wrist_Dimension Param\n");
+        if(request->hasArg("Wrist_Dimension") || request->hasArg("Wrist_Delta"))
+        {
+            xSemaphoreGive(params->xWristSemaphore);
+        }
+        //Raul's stuff
+        if(request->hasArg("speed"))
+        {
+            params->update_speed = atoi(request->arg("speed").c_str());
+        }
+        printf("speed Param\n");
+        if(request->hasArg("command"))
+        {
+            if(params->update_speed > 100) params->update_speed = 100;
+            params->actuator_speed = params->update_speed;
+
+            if(!strcmp(request->arg("command").c_str(),"open")){
+                params->current_direction = 1;
             }
-        else if(!strcmp(request->arg("command").c_str(),"stop")){
-            params->current_direction = 2;
-            params->actuator_speed = 0;
-        }   
+                else if(!strcmp(request->arg("command").c_str(),"close")){
+                params->current_direction = -1;
+                }
+            else if(!strcmp(request->arg("command").c_str(),"stop")){
+                params->current_direction = 2;
+                params->actuator_speed = 0;
+            }   
+        }
+        printf("command Param\n");
         // strcpy(params->name, request->arg("heading").c_str());
         // request->send(200, "text/plain", "Success");
     });

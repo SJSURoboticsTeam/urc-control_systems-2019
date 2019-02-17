@@ -36,7 +36,7 @@ extern "C" void vElbowTask(void *pvParameters)
         {
             //update currentTarget
             currentTarget = myParams->ElbowTarget;
-            printf("currentTarget: %f\n", currentTarget);
+            printf("Elbow's currentTarget: %f\n", currentTarget);
 
             //check to make sure Target is within bounds
             if((currentTarget > kElbowLimitMin) && (currentTarget < kElbowLimitMax)) //Need to set this to our mechanical constraints
@@ -360,6 +360,6 @@ extern "C" void vClawTask(void *pvParameters)
         myParams->current_direction = 0;
     }
     printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
-    vTaskDelay(100);
+    vTaskDelay(300);
     }
 }
