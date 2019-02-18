@@ -61,6 +61,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         {
             xSemaphoreGive(params->xWristSemaphore);
         }
+        printf("Wrist Semaphore Sent\n");
         //Raul's stuff
         if(request->hasArg("speed"))
         {

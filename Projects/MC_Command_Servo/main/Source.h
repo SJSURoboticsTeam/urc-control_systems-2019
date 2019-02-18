@@ -38,11 +38,11 @@ constexpr uint32_t kShoulderDirPin = 32;
 constexpr uint32_t kShoulderEnablePWMMin = 0;	//percentage
 constexpr uint32_t kShoulderEnablePWMMax = 50;	//percentage
 
-constexpr uint32_t kWristLeftSigPin = 16;
-constexpr uint32_t kWristLeftDirPin = 4;
+constexpr uint32_t kWristLeftSigPin = 4;
+constexpr uint32_t kWristLeftDirPin = 16;
 
-constexpr uint32_t kWristRightSigPin = 0;
-constexpr uint32_t kWristRightDirPin = 2;
+constexpr uint32_t kWristRightSigPin = 17;
+constexpr uint32_t kWristRightDirPin = 5;
 
 
 /* PINOUTS:

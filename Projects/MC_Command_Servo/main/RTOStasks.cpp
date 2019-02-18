@@ -247,7 +247,7 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
 
     printf("Init Left Fin\n");
     Wrist_Right.InitMotor(kWristRightSigPin, 19, kWristRightDirPin, 3, 3, 
-                        5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
+                        5000, kShoulderEnablePWMMin, 47.5);
     printf("Init Right Fin\n");
 
     while(1)
