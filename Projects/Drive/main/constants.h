@@ -15,6 +15,7 @@
 
 // Relevant rover dimensions in inches //
 constexpr double SIDE = 40.25;
+constexpr double S_HALF = 20.125;
 constexpr double SIDE_2_MID = 11.619;
 constexpr double CORNER_2_MID = 23.238;
 constexpr double MAX_DIST = 685.777; // Distance where out wheel turns 1 degree

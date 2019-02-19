@@ -275,16 +275,16 @@ extern "C" void vDriveTask(void *pvParameters)
             //    radius_rover = 20;
             //}
             printf("Radii:\n    Rover: %f\n", radius_rover);
-            radius_left = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
+            radius_left = sqrt(pow(radius_rover-S_HALF, 2)+pow(SIDE_2_MID, 2));
             printf("    Left: %f\n", radius_left);
-            radius_right = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
+            radius_right = sqrt(pow(radius_rover+S_HALF, 2)+pow(SIDE_2_MID, 2));
             printf("    Right: %f\n", radius_right);
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
             printf("    Back: %f\n\n", radius_back);
             
-            angle_left = 0 - atan2(radius_rover-SIDE/2, SIDE_2_MID)*180/3.1416;
+            angle_left = 0 - atan2(radius_rover-S_HALF, SIDE_2_MID)*180/3.1416;
             printf("Angles:\n    Left: %f\n", angle_left);
-            angle_right = 0 - atan2(radius_rover+SIDE/2, SIDE_2_MID)*180/3.1416;
+            angle_right = 0 - atan2(radius_rover+S_HALF, SIDE_2_MID)*180/3.1416;
             printf("    Right: %f\n", angle_right);
             angle_back = atan2(radius_rover, CORNER_2_MID) * 180/3.14159;
             printf("    Back: %f\n\n", angle_back);
@@ -307,16 +307,16 @@ extern "C" void vDriveTask(void *pvParameters)
             //    radius_rover = 20;
             //}
             printf("Radii:\n    Rover: %f\n", radius_rover);
-            radius_right = sqrt(pow(radius_rover-SIDE/2, 2)+pow(SIDE_2_MID, 2));
+            radius_right = sqrt(pow(radius_rover-S_HALF, 2)+pow(SIDE_2_MID, 2));
             printf("    Right: %f\n", radius_right);
-            radius_left = sqrt(pow(radius_rover+SIDE/2, 2)+pow(SIDE_2_MID, 2));
+            radius_left = sqrt(pow(radius_rover+S_HALF, 2)+pow(SIDE_2_MID, 2));
             printf("    Left: %f\n", radius_left);
             radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
             printf("    Back: %f\n\n", radius_back);
             
-            angle_right = atan2(radius_rover-SIDE/2, SIDE_2_MID) * 180/3.1416;
+            angle_right = atan2(radius_rover-S_HALF, SIDE_2_MID) * 180/3.1416;
             printf("Angles:\n    Right: %f\n", angle_right);
-            angle_left = atan2(radius_rover+(SIDE/2), SIDE_2_MID) * 180/3.1416;
+            angle_left = atan2(radius_rover+(S_HALF), SIDE_2_MID) * 180/3.1416;
             printf("    Left: %f\n", angle_left);
             angle_back = 0 - atan2(radius_rover, CORNER_2_MID) * 180/3.1416;
             printf("    Back: %f\n\n", angle_back);
@@ -443,8 +443,8 @@ extern "C" void vCrabTask(void *pvParameters)
     ParamsStruct *Params = (ParamsStruct *) pvParameters;
 
     double cam_offset = Params->mast_position;
-    double heading_x = 0 - Params->AXIS_X;
-    double heading_y = 0 - Params->AXIS_Y;
+    double heading_x = 0 - Params->AXIS_Y;
+    double heading_y = 0 - Params->AXIS_X;
     double heading = atan2(heading_y, heading_x) * 180/3.1416;
     double current_heading = heading;
     double wheel_A_heading = heading;
@@ -459,12 +459,13 @@ extern "C" void vCrabTask(void *pvParameters)
 
     while (1)
     {
-        speed = sqrt(pow(Params->AXIS_X, 2) + pow(Params->AXIS_Y, 2)) * Params->THROTTLE;
         if (Params->button_0 != current_brakes)
         {
             applyBrakes(Params->button_0);
             current_brakes = Params->button_0;
         }
+        // Calculate current speed
+        speed = sqrt(pow(Params->AXIS_X, 2) + pow(Params->AXIS_Y, 2)) * Params->THROTTLE;
         // Adjust parameters for new instance of crab mode
         if (cam_offset != Params->mast_position)
         {
@@ -475,17 +476,16 @@ extern "C" void vCrabTask(void *pvParameters)
         }
 
         // Update parameters for new heading from mission control 
-        if ((heading_x != 0 - Params->AXIS_X) | 
-            (heading_y != 0 - Params->AXIS_Y))
+        if ((heading_y != 0 - Params->AXIS_X) | 
+            (heading_x != 0 - Params->AXIS_Y))
         {
-            heading_x = 0 - Params->AXIS_X;
-            heading_y = 0 - Params->AXIS_Y;
+            heading_y = 0 - Params->AXIS_X;
+            heading_x = 0 - Params->AXIS_Y;
             heading = atan2(heading_y, heading_x);
             wheel_A_heading = wheel_A_heading + (heading - current_heading);
             wheel_B_heading = wheel_B_heading + (heading - current_heading);
             wheel_B_heading = wheel_C_heading + (heading - current_heading);
             current_heading = heading;
-        
 
             // If wheels hit boundaries, flip them 180 degrees and switch 
             // direction they rotate.

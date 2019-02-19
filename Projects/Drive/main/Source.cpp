@@ -67,7 +67,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             }
             else 
             {
-                printf("ERROR. %s doesn't exist", vars[i]);
+                printf("ERROR. %s doesn't exist\n", vars[i]);
             }
         }
         
