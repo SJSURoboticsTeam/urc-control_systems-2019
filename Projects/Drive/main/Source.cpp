@@ -41,7 +41,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->mode = request->arg("mode").toInt();  
                 }
                 if (strcmp(vars[i], "AXIS_X")) {
-                    params->AXIS_X = (0 - request->arg("AXIS_X").toFloat());    
+                    params->AXIS_X = 0 - (request->arg("AXIS_X").toFloat());
+                    if (params->AXIS_X == -1)
+                    {
+                        params->AXIS_X = -0.99;
+                    }   
                 }
                 if (strcmp(vars[i], "AXIS_Y")) {
                     params->AXIS_Y = request->arg("AXIS_Y").toFloat();    
@@ -70,7 +74,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 printf("ERROR. %s doesn't exist\n", vars[i]);
             }
         }
-        
+        /*
         printf("handle_update endpoint running\n");
         printf("    mode: %i \n", params->mode);
         printf("    AXIS_X: %f \n", params->AXIS_X);
@@ -82,7 +86,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("    wheel_C: %d \n", params->wheel_C);
         printf("    mast_position: %f \n", params->mast_position);
         printf("\n");
-
+        */
         request->send(200, "text/plain", "Success");
     });
     /* SSE Example.
@@ -137,6 +141,7 @@ void initComponents()
 
     servo_B.InitServo(SERVO_B_PIN, SERVO_B_CHANNEL, SERVO_TIMER,
                       SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
+
 
     servo_C.InitServo(SERVO_C_PIN, SERVO_C_CHANNEL, SERVO_TIMER,
                       SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);

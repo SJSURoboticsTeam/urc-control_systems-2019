@@ -269,11 +269,8 @@ extern "C" void vDriveTask(void *pvParameters)
         if (Params->AXIS_X < 0)
         {
             // A 685.777in radius turns the inner wheel 1 degree
-            radius_rover =  MAX_DIST - fabs(Params->AXIS_X) * MAX_DIST;
-            //if (radius_rover < 20)
-            //{
-            //    radius_rover = 20;
-            //}
+            radius_rover =  (MAX_DIST - fabs(Params->AXIS_X) * MAX_DIST) + 50;
+            
             printf("Radii:\n    Rover: %f\n", radius_rover);
             radius_left = sqrt(pow(radius_rover-S_HALF, 2)+pow(SIDE_2_MID, 2));
             printf("    Left: %f\n", radius_left);
@@ -301,7 +298,7 @@ extern "C" void vDriveTask(void *pvParameters)
         if (Params->AXIS_X > 0)
         {
             // A 1058.355 in radius turns the inner wheel 1 degree
-            radius_rover = MAX_DIST - fabs(Params->AXIS_X) * MAX_DIST;
+            radius_rover = MAX_DIST - fabs(Params->AXIS_X) * MAX_DIST + 50;
             //if (radius_rover < 20)
             //{
             //    radius_rover = 20;
@@ -342,11 +339,6 @@ extern "C" void vDriveTask(void *pvParameters)
                 setSpeedAllWheels(fabs(current_speed));
                 previous_speed = current_speed;
             }
-            /* following angle values for testing rig (hobby servos)
-            angle_left = 150;
-            angle_right = 30;
-            angle_back = 90;
-            */
             /* following angle values for actual motors */
             angle_left = 210;
             angle_right = 90;
@@ -442,20 +434,28 @@ extern "C" void vCrabTask(void *pvParameters)
 {
     ParamsStruct *Params = (ParamsStruct *) pvParameters;
 
-    double cam_offset = Params->mast_position;
-    double heading_x = 0 - Params->AXIS_Y;
-    double heading_y = 0 - Params->AXIS_X;
-    double heading = atan2(heading_y, heading_x) * 180/3.1416;
+    double cam_offset = 0;
+    double heading_x = 0;
+    double heading_y = 0;
+    double heading = 0;
     double current_heading = heading;
-    double wheel_A_heading = heading;
+    double wheel_A_heading = 90;
     bool wheel_A_dir = 0;
-    double wheel_B_heading = heading;
+    double wheel_B_heading = 210;
     bool wheel_B_dir = 0;
-    double wheel_C_heading = heading;
+    double wheel_C_heading = 150;
     bool wheel_C_dir = 1;
     double current_speed = 0;
     double speed = 0;
     bool current_brakes= 1;
+    servo_A.SetPositionPercent(100 * wheel_A_heading/MAX_ROTATION);
+    servo_B.SetPositionPercent(100 * wheel_B_heading/MAX_ROTATION);
+    servo_C.SetPositionPercent(100 * wheel_C_heading/MAX_ROTATION);
+    printf("Initial headings:\n    rover: %f\n", heading);
+    printf("    x: %f\n    y: %f\n", heading_x, heading_y);
+    printf("    wheel A: %f\n    wheel B: %f\n", wheel_A_heading, wheel_B_heading);
+    printf("    wheel_C: %f\n", wheel_C_heading);
+
 
     while (1)
     {
@@ -470,60 +470,93 @@ extern "C" void vCrabTask(void *pvParameters)
         if (cam_offset != Params->mast_position)
         {
             cam_offset = Params->mast_position;
-            wheel_A_heading = heading + cam_offset + 30;
-            wheel_B_heading = heading + cam_offset - 30;
-            wheel_C_heading = heading + cam_offset + 180;
+            wheel_A_heading = wheel_A_heading + cam_offset;
+            wheel_B_heading = wheel_B_heading + cam_offset;
+            wheel_C_heading = wheel_B_heading + cam_offset;
         }
-
         // Update parameters for new heading from mission control 
-        if ((heading_y != 0 - Params->AXIS_X) | 
-            (heading_x != 0 - Params->AXIS_Y))
+        if ((heading_y != 0 - Params->AXIS_Y) | 
+            (heading_x != 0 - Params->AXIS_X))
         {
-            heading_y = 0 - Params->AXIS_X;
+            heading_y = Params->AXIS_X;
             heading_x = 0 - Params->AXIS_Y;
-            heading = atan2(heading_y, heading_x);
-            wheel_A_heading = wheel_A_heading + (heading - current_heading);
-            wheel_B_heading = wheel_B_heading + (heading - current_heading);
-            wheel_B_heading = wheel_C_heading + (heading - current_heading);
+            heading = atan2(heading_y, heading_x) * 180/3.1416;
+            wheel_A_heading = wheel_A_heading - (current_heading - heading);
+            wheel_B_heading = wheel_B_heading - (current_heading - heading);
+            wheel_C_heading = wheel_C_heading - (current_heading - heading);
+            //printf("Headings:\n");
+            //printf("    rover: %f\n    x: %f\n", heading, heading_x);
+            //printf("    y: %f\n    wheel A: %f\n", heading_y, wheel_A_heading);
+            //printf("    wheel B: %f\n    wheel C:    %f\n", wheel_B_heading, wheel_C_heading);
             current_heading = heading;
 
             // If wheels hit boundaries, flip them 180 degrees and switch 
             // direction they rotate.
             if (wheel_A_heading < MIN_ROTATION)
             {
+                applyBrakes(0);
                 wheel_A_heading = wheel_A_heading + 180;
-                wheel_A_dir = ~wheel_A_dir;
+                wheel_A_dir = !wheel_A_dir;
+                //printf("wheel A direction: %d\n", wheel_A_dir);
                 motor_A.SetDirection(wheel_A_dir);
+                //servo_A.SetPositionPercent(100 * wheel_A_heading/MAX_ROTATION);
+                //delay(350);
+                applyBrakes(current_brakes);
             }
             else if (wheel_A_heading > MAX_ROTATION)
             {
+                applyBrakes(0);
                 wheel_A_heading = wheel_A_heading - 180;
-                wheel_A_dir = ~wheel_A_dir;
+                wheel_A_dir = !wheel_A_dir;
+                printf("wheel A direction: %d\n", wheel_A_dir);
                 motor_A.SetDirection(wheel_A_dir);
+                //servo_A.SetPositionPercent(100 * wheel_A_heading/MAX_ROTATION);
+                //delay(1000);
+                applyBrakes(current_brakes);
             }
             if (wheel_B_heading < MIN_ROTATION)
             {
+                applyBrakes(0);
                 wheel_B_heading = wheel_B_heading + 180;
-                wheel_B_dir = ~wheel_B_dir;
+                wheel_B_dir = !wheel_B_dir;
+                printf("wheel B direction: %d\n", wheel_B_dir);
                 motor_B.SetDirection(wheel_B_dir);
+                //servo_B.SetPositionPercent(100 * wheel_B_heading/MAX_ROTATION);
+                //delay(1000);
+                applyBrakes(current_brakes);
             }
             else if (wheel_B_heading > MAX_ROTATION)
             {
+                applyBrakes(0);
                 wheel_B_heading = wheel_B_heading - 180;
-                wheel_B_dir = ~wheel_B_dir;
+                wheel_B_dir = !wheel_B_dir;
+                printf("wheel B direction: %d\n", wheel_B_dir);
                 motor_B.SetDirection(wheel_B_dir);
+                //servo_B.SetPositionPercent(100 * wheel_B_heading/MAX_ROTATION);
+                //delay(1000);
+                applyBrakes(current_brakes);
             }
             if (wheel_C_heading < MIN_ROTATION)
             {
+                applyBrakes(0);
                 wheel_C_heading = wheel_C_heading + 180;
-                wheel_C_dir = ~wheel_C_dir;
+                wheel_C_dir = !wheel_C_dir;
+                printf("wheel C direction: %d\n", wheel_C_dir);
                 motor_C.SetDirection(wheel_C_dir);
+                //servo_C.SetPositionPercent(100 * wheel_C_heading/MAX_ROTATION);
+                //delay(1000);
+                applyBrakes(current_brakes);
             }
             else if (wheel_C_heading > MAX_ROTATION)
             {
+                applyBrakes(0);
                 wheel_C_heading = wheel_C_heading - 180;
-                wheel_C_dir = ~wheel_C_dir;
+                wheel_C_dir = !wheel_C_dir;
+                printf("wheel C direction: %d\n", wheel_C_dir);
                 motor_C.SetDirection(wheel_C_dir);
+                //servo_C.SetPositionPercent(100 * wheel_C_heading/MAX_ROTATION);
+                //delay(1000);
+                applyBrakes(current_brakes);
             }
 
             // Update servo positions and speed
@@ -533,6 +566,7 @@ extern "C" void vCrabTask(void *pvParameters)
         }
         if (speed != current_speed)
         {
+            //printf("speed: %f\n", speed);
             setSpeedAllWheels(speed);
             current_speed = speed;
         }

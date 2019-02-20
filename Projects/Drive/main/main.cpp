@@ -44,9 +44,9 @@ extern "C" void app_main() {
     //delay(100);
     
     //Create freeRTOS tasks.
-    xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, &xDebugHandle);
+    //xTaskCreate(vDebugTask, "Debug", 4096, (void *) &params, 1, &xDebugHandle);
     //xTaskCreate(vDriveTask, "Drive", 4096, (void *) &params, 1, &xDriveHandle);
-    //xTaskCreate(vCrabTask, "Crab", 4096, (void *) &params, 1, &xCrabHandle);
+    xTaskCreate(vCrabTask, "Crab", 4096, (void *) &params, 1, &xCrabHandle);
     //xTaskCreate(vSpinTask, "Spin", 4096, (void *) &params, 1, &xSpinHandle);
     //xTaskCreate(vModeTaskHandler, "TaskHandler", 4096, (void *) &params, 2, NULL);
 
