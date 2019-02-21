@@ -79,7 +79,7 @@ void Motor::SetSpeed(double percentage)
     // Set the Duty Cycle //
     ledc_set_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel, signal_duty_cycle);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, pwm_s_channel);
-    printf("Speed set to %f percent of total range.\n", percentage);
+    // printf("Speed set to %f percent of total range.\n", percentage);
 }
 
 void Motor::SetSpeedAndDirection(double percentage, bool direction)

@@ -42,7 +42,7 @@ constexpr uint32_t kWristLeftSigPin = 4;
 constexpr uint32_t kWristLeftDirPin = 16;
 
 constexpr uint32_t kWristRightSigPin = 17;
-constexpr uint32_t kWristRightDirPin = 5;
+constexpr uint32_t kWristRightDirPin = 5;	//port 2
 
 
 /* PINOUTS:

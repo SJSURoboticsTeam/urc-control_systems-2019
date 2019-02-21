@@ -24,7 +24,7 @@ extern "C" void vElbowTask(void *pvParameters)
     double currentAngle = kElbowStartPos;   //Feedback?
 
     //(pin, Chanel, Timer, Freq, Max, Min)
-    Servo Elbow(kElbowPin, 2, 0, kElbowFreq, kElbowPWMMax, kElbowPWMMin);
+    Servo Elbow(kElbowPin, 0, 0, kElbowFreq, kElbowPWMMax, kElbowPWMMin);
     Elbow.SetPositionPercent((kElbowStartPos / kElbowRange) * 100);
     printf("Elbow's Starting Position: %f\n", kElbowStartPos);
     printf("Elbow's Starting Duty: %f\n", (kElbowStartPos / kElbowRange) * 100);
@@ -70,7 +70,7 @@ extern "C" void vRotundaTask(void *pvParameters)
     double dutyPercent;
 
     //(pin, Chanel, Timer, Freq, Max, Min)
-    Servo myServo(kRotundaPin, 0, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin);  
+    Servo myServo(kRotundaPin, 1, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin);  
     myServo.SetPositionPercent(kRotundaStartDuty);
     
     printf("Rotunda Starting Duty: %f\n", kRotundaStartDuty);
@@ -181,7 +181,7 @@ extern "C" void vShoulderTask(void *pvParameters)
     Motor shoulder;
                         //Sig, Break, Dir, s_channel, timer, freq, min, max
                         //Break Pin is a dummy number, not present to our subsystem
-    shoulder.InitMotor(kShoulderSigPin, 19, kShoulderDirPin, 3, 3, 
+    shoulder.InitMotor(kShoulderSigPin, 19, kShoulderDirPin, 2, 2, 
                         kMotorFreq, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
 
     double duration;
@@ -221,7 +221,6 @@ extern "C" void vShoulderTask(void *pvParameters)
             if Dir pin is diff, pitch will adjust
             But which way??
             Dir1 = 0 and Dir2 = 1, will gearbox rise or fall?
-
     */
 extern "C" void vDiffGearboxTask(void *pvParameters)
 {
@@ -240,15 +239,15 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
 
     ledc_fade_func_install(ESP_INTR_FLAG_LEVEL1);
 
-    printf("Starting Init\n");
+    // printf("Starting Init\n");
                         // pin_sig,  pin_brake,dir, s_channel, timer, freq, min, max
-    Wrist_Left.InitMotor(kWristLeftSigPin, 19, kWristLeftDirPin, 1, 3, 
+    Wrist_Left.InitMotor(kWristLeftSigPin, 19, kWristLeftDirPin, 3, 2, 
                         5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
 
-    printf("Init Left Fin\n");
-    Wrist_Right.InitMotor(kWristRightSigPin, 19, kWristRightDirPin, 3, 3, 
-                        5000, kShoulderEnablePWMMin, 47.5);
-    printf("Init Right Fin\n");
+    // printf("Init Left Fin\n");
+    Wrist_Right.InitMotor(kWristRightSigPin, 19, kWristRightDirPin, 4, 2, 
+                        5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
+    // printf("Init Right Fin\n");
 
     while(1)
     {
@@ -256,7 +255,7 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
         //if command from MS is diff;   the semaphore
         if(xSemaphoreTake(params->xWristSemaphore, portMAX_DELAY))
         {
-            printf("Wrist command Received: %i\n", params->Wrist_Dimension);
+            // printf("Wrist command Received: %i\n", params->Wrist_Dimension);
             Delta = params->Wrist_Delta;
             //Check which dimension needs to be changed
             
@@ -319,8 +318,9 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
                 Wrist_Left.SetSpeed(0);
                 Wrist_Right.SetSpeed(0);
             }
+            printf("End Wrist\n");    
         }
-        printf("end While\n\n\n");
+        // printf("end While\n\n\n");
     }
 }
 
@@ -331,7 +331,7 @@ extern "C" void vClawTask(void *pvParameters)
     ParamsStruct* myParams = (ParamsStruct*) pvParameters;
     bool task_complete = false;
     //Pin, Channel, Timer, Freq, max, min
-    Servo Claw(act_ENABLE,1,1,5000,50,0);
+    Servo Claw(act_ENABLE,5,2,5000,40,0);
     Claw.SetPositionPercent(0); //Set Duty Cycle to 0 at init
     initClaw();
     while(1) {
@@ -359,7 +359,7 @@ extern "C" void vClawTask(void *pvParameters)
         task_complete = false;
         myParams->current_direction = 0;
     }
-    printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
+    // printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
     vTaskDelay(300);
     }
 }

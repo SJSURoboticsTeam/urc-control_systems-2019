@@ -20,5 +20,5 @@
 #define BNO055_PWR_MODE    0x3E
 #define BNO055_SYS_TRIGGER 0x3F
 
-#define act_PHASE 16
-#define act_ENABLE 4
+#define act_PHASE 0
+#define act_ENABLE 2

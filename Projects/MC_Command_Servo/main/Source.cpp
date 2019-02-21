@@ -36,38 +36,45 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         {
             params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
         }
-        printf("RotundaTarget Param\n");
+        // printf("RotundaTarget Param\n");
+
         if(request->hasArg("ElbowTarget"))
         {
             params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
         }
-        printf("ElbowTarget Param\n");
+        // printf("ElbowTarget Param\n");
+
         if(request->hasArg("ShoudlerDuration_ms"))
         {
             params->ShoudlerDuration_ms = atoi(request->arg("ShoudlerDuration_ms").c_str());
         }
-        printf("ShoudlerDuration_ms Param\n");
+        // printf("ShoudlerDuration_ms Param\n");
+
         if(request->hasArg("Wrist_Delta"))
         {
             params->Wrist_Delta = atoi(request->arg("Wrist_Delta").c_str());
         }
-        printf("Wrist_Delta Param\n");
+        // printf("Wrist_Delta Param\n");
+
         if(request->hasArg("Wrist_Dimension"))
         {
             params->Wrist_Dimension = atoi((request->arg("Wrist_Dimension").c_str()));
         }
-        printf("Wrist_Dimension Param\n");
+        // printf("Wrist_Dimension Param\n");
+
         if(request->hasArg("Wrist_Dimension") || request->hasArg("Wrist_Delta"))
         {
             xSemaphoreGive(params->xWristSemaphore);
         }
-        printf("Wrist Semaphore Sent\n");
+        // printf("Wrist Semaphore Sent\n");
+
         //Raul's stuff
         if(request->hasArg("speed"))
         {
             params->update_speed = atoi(request->arg("speed").c_str());
         }
-        printf("speed Param\n");
+        // printf("speed Param\n");
+
         if(request->hasArg("command"))
         {
             if(params->update_speed > 100) params->update_speed = 100;
@@ -84,7 +91,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 params->actuator_speed = 0;
             }   
         }
-        printf("command Param\n");
+        // printf("command Param\n");
+
         // strcpy(params->name, request->arg("heading").c_str());
         // request->send(200, "text/plain", "Success");
     });
