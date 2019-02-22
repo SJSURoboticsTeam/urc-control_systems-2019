@@ -85,11 +85,11 @@ constexpr float DRIVE_POSITION_2[3] = {16.67, 50, 83.33};
 
 /* Real Servos DH-03X */
 // Left = A, Right = B, Back = C
-constexpr float DRIVE_POSITION_0[3] = {70.00, 30.00, 50};
+constexpr float DRIVE_POSITION_0[3] = {30.00, 70.00, 50};
 // Left = B, Right = C, Back = A
-constexpr float DRIVE_POSITION_1[3] = {50, 70.00, 30.00};
+constexpr float DRIVE_POSITION_1[3] = {50, 30.00, 70.00};
 // Left = C, Right = A, Back = B
-constexpr float DRIVE_POSITION_2[3] = {30.00, 50, 70.00};
+constexpr float DRIVE_POSITION_2[3] = {70.00, 50, 30.00};
 
 
 // Positions for Spin Mode (percent)

@@ -12,7 +12,7 @@
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
-    WiFi.softAP("😻", "drive1234");
+    WiFi.softAP("Drive", "drive1234");
     Serial.println();
     Serial.print("IP address: ");
     Serial.println(WiFi.softAPIP());
@@ -51,7 +51,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->AXIS_Y = request->arg("AXIS_Y").toFloat();    
                 }
                 if (strcmp(vars[i], "THROTTLE")) {
-                    params->THROTTLE = (0 - (request->arg("THROTTLE").toFloat()) + 1)/2;    
+                    params->THROTTLE = (0 - (request->arg("THROTTLE").toFloat()) + 1)/2;
+                    params->THROTTLE = params->THROTTLE * 0.3;    
                 }
                 if (strcmp(vars[i], "button_0")) {
                     params->button_0 = request->arg("button_0").toInt();    
@@ -74,7 +75,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 printf("ERROR. %s doesn't exist\n", vars[i]);
             }
         }
-        /*
+        
         printf("handle_update endpoint running\n");
         printf("    mode: %i \n", params->mode);
         printf("    AXIS_X: %f \n", params->AXIS_X);
@@ -86,7 +87,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("    wheel_C: %d \n", params->wheel_C);
         printf("    mast_position: %f \n", params->mast_position);
         printf("\n");
-        */
+        
         request->send(200, "text/plain", "Success");
     });
     /* SSE Example.
@@ -196,6 +197,7 @@ void initSpinMode(bool direction)
         servo_B.SetPositionPercent(ROTATE_POSITION_1);
         servo_C.SetPositionPercent(ROTATE_POSITION_1);
     }
+    printf("Spin Mode set to position %d.\n", direction);
 }
 
 void initCrabMode()
