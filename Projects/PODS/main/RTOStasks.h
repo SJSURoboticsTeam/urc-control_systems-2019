@@ -14,6 +14,8 @@ extern "C" {
 
 extern "C" void vGygerTask(void *pvParameters);// reads from interupt queue and calculataed cpm
 
+extern "C" void vLidTask(void *pvParameters);
+
 #ifdef _cplusplus
 }
 #endif

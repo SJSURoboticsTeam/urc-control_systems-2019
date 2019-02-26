@@ -74,7 +74,12 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          }
         startPOD(z,x);
          
-         request->send(200, "text/plain", "pod toggled");
+         y = "Pod toggled";
+
+
+        char response[y.length() + 1];
+		strcpy(response, y.c_str());
+         request->send(200, "text/plain", response);
 
     });
        /*****************************
@@ -101,20 +106,61 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 			########### unused#########
     ***************************/
     server->on("/data", HTTP_POST, [=](AsyncWebServerRequest *request){
-        String type = request->arg("type").c_str();
-        int x = atoi(request->arg("id").c_str());
-        int z = writeData(false, x, 0);
-        char c[15];
+        
+        int x = atoi(request->arg("pod").c_str());
+        String data = writeData(false, x, 0, 0);
+        data += "\n";
+        resetString(x);
+        //char c[15];
 
-        String data;
-         itoa(z, c, 10);
-         data = c;
-        if(type == "cpm")
-         	{
+        //String data = "";
+         //itoa(z, c, 10);
+        // data += ;
+      
         		request->send(200, "text/plain", data);
-        	}
-    });
+        	
+    }); 
+   /*****************
+	open/close pod lid from mission control
+		- pod -> id number
+		- state ->  true = open lid
+					false = close lid 
+   *********************/
+    server->on("/toggle_lid", HTTP_POST, [=](AsyncWebServerRequest *request){
+         printf("XHR recieved \n");
+         int x = atoi(request->arg("pod").c_str()); 
+         printf(" toggle lid id: %d\n", x );
+         string y = request->arg("state").c_str();
+         int m = 0;
+         std::cout << y << "\n";
+         std::cout << x << "\n";
+         bool z;
 
+         if(y =="True" or y == "true" or y == "TRUE")
+         {
+         	 z = true;
+         	 m = x + 100;
+         	
+         }
+         else if(y == "false" or y == "False" or y == "FALSE")
+         {
+         	z = false;
+         	m = x;
+         }
+
+  	
+
+
+
+        xTaskCreate(vLidTask, "toggle lid" , 4060, (void*) m, 2, NULL);
+         y = "Pod lid toggled";
+
+
+        char response[y.length() + 1];
+		strcpy(response, y.c_str());
+         request->send(200, "text/plain", response);
+
+    });
     /* SSE Example.
         - SSEs will be used to continuously send data that was
         not necessarily requested by mission control
@@ -139,6 +185,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
       }
       // send event with message "hello!", id current millis
       // and set reconnect delay to 1 second
+     client->send("HELLO! Conection Established", NULL, millis(), 1000);
+     /*
       client->send("hello!", NULL, millis(), 1000);
       delay(1000);
       client->send("hello!", NULL, millis(), 1000);
@@ -147,6 +195,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
       delay(1000);
       client->send("hello!", NULL, millis(), 1000);
       delay(1000);
+      */
     });
 
     //Attach event source to the server.
@@ -159,7 +208,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
 /**********************
 	start/stop PODS
-		-bool start -> "false" = stop POD "true" = start POD
+		-bool start -> "false" = stop POD 
+						"true" = start POD
 		-int id -> POD ID
 ***********************/
 void startPOD(bool start, int x)
@@ -167,7 +217,7 @@ void startPOD(bool start, int x)
 
 	
 		printf("startPOD function\n x = %d \n", x);
-		printf("state = %d \n", state );
+		//printf("state = %d \n", start );
 		
 	if(start == true)
 	{
@@ -211,22 +261,40 @@ void startPOD(bool start, int x)
 	closes lid of POD 
 		- (int)x -> POD ID
 *************************/
-void sealPODS(int x)
+void sealPODS(int x, bool open)
 {
 
 uint32_t servo1_frequency = 50; //hz
 uint32_t servo1_gpio_pin = servoLidPin(x);
 uint32_t servo1_timer = 0;
-uint32_t servo1_channel = 0;
-float servo1_min = 5;
-float servo1_max = 10;
-
+uint32_t servo1_channel = x;
+float servo1_min = 2.5;//%
+float servo1_max = 12;//%
+int open_angle = 90;
+int close_angle = -90;
 		//servo object for PODS door
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
+//	printf("moving servo open\n");
+	//servo1.SetPositionDuty(1);
+//	servo1.SetPositionPercent(getPercent(open_angle));
+	//printf("user given percent: %f \n", getPercent(close_angle) );
+	//vTaskDelay(3000/portTICK_PERIOD_MS);
+	//delay(3000);
+	if(open == true)
+	{
+		servo1.SetPositionPercent(getPercent(open_angle));
+		//printf("%f \n", getPercent(open_angle) );
+		printf("moving lid open\n");
+	}
 
-	servo1.SetPositionPercent(getPercent(-90));
-
+	else if(open == false)
+	{
+		servo1.SetPositionPercent(getPercent(close_angle));
+		//printf("User given percent: %f \n", getPercent(open_angle) );
+		//servo1.SetPositionDuty(150);
+		printf("moving lid close\n");
+	}
 
 }
 
@@ -241,44 +309,22 @@ uint32_t servo1_frequency = 50; //hz
 uint32_t servo1_gpio_pin = servoInoculationPin(x);
 uint32_t servo1_timer = 0;
 uint32_t servo1_channel = 0;
-float servo1_min = 5;
-float servo1_max = 10;
-int up = 90;
-int down = -90;
+float servo1_min = 2.5;
+float servo1_max = 12;
+double up = 90;
+double down = -90;
 
 
-/*
-	if(x == 7)
-	{
-		//servo object for sterilization fluid
-	
-	Servo servo2(inoculation_servo7_pin,servo1_channel,servo1_timer, 
-					servo1_frequency, servo1_max, servo1_min);
-	}
-
-
-	*/
 		//servo object for inoculation fluid
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
 
 	servo1.SetPositionPercent(getPercent(down));
 
-/*
-	if(x == 7)
-	{
-		servo2.SetPositionPercent(getPercent(down));
-	}
 
-*/
-	vTaskDelay(10000 / portTICK_PERIOD_MS);
+	vTaskDelay(5000 / portTICK_PERIOD_MS);
 
-/*
-	if(x == 7)
-	{
-		servo2.SetPositionPercent(getPercent(up));
-	}
-*/
+
 	servo1.SetPositionPercent(getPercent(up));
 
 }
@@ -290,7 +336,7 @@ int down = -90;
 double getPercent(int angle)
 {
 	//servo 5-10% 
-	int percent = map(angle, -90, 90, 0, 100);
+	double percent = map(angle, -90, 90, 0, 100);
 
 	return percent;
 }
@@ -392,7 +438,7 @@ int gygerPin(int id)
 						but the parameter is still required
 
 *****************************************/
-int writeData(bool type, int id, int val)
+String writeData(bool type, int id, int val, u_long time_stamp)
 {
 
 	if(type == true)
@@ -400,18 +446,46 @@ int writeData(bool type, int id, int val)
 			switch (id)
 		{
 		case 0:  cpm0 = val;
+			data_string_0 += " ";
+			data_string_0 += val;
+			data_string_0 += ";";
+			data_string_0 += time_stamp;
 			break;
 		case 1:  cpm1 = val;
+			data_string_1 += " ";
+			data_string_1 += val;
+			data_string_1 += ";";
+			data_string_1 += time_stamp;		
 			break;
 		case 2:  cpm2 = val;
+			data_string_2 += " ";
+			data_string_2 += val;
+			data_string_2 += ";";
+			data_string_2 += time_stamp;
 			break;
 		case 3:  cpm3 = val;
+			data_string_3 += " ";
+			data_string_3 += val;
+			data_string_3 += ";";
+			data_string_3 += time_stamp;
 			break;
 		case 4:  cpm4 = val;
+			data_string_4 += " ";
+			data_string_4 += val;
+			data_string_4 += ";";
+			data_string_4 += time_stamp;
 			break;
 		case 5:  cpm5 = val;
+			data_string_5 += " ";
+			data_string_5 += val;
+			data_string_5 += ";";
+			data_string_5 += time_stamp;
 			break;
 		case 6: cpm6 = val;
+			data_string_6 += " ";
+			data_string_6 += val;
+			data_string_6 += ";";
+			data_string_6 += time_stamp;
 			break;
 		default:  
 			break;
@@ -424,32 +498,55 @@ int writeData(bool type, int id, int val)
 	{
 			switch (id)
 		{
-		case 0: return cpm0;
+		case 0: return data_string_0;
 			break;
-		case 1: return cpm1;
+		case 1: return data_string_1;
 			break;
-		case 2: return cpm2;
+		case 2: return data_string_2;
 			break;
-		case 3: return cpm3;
+		case 3: return data_string_3;
 			break;
-		case 4: return cpm4;
+		case 4: return data_string_4;
 			break;
-		case 5: return cpm5;
+		case 5: return data_string_5;
 			break;
-		case 6: return cpm6;
+		case 6: return data_string_6;
 			break;
 		default: 
 			break;
 		}
 	}
 
-	return -1;
+	return "-1";
+}
+
+void resetString(int id)
+{
+			switch (id)
+		{
+		case 0:  data_string_0 = "POD: 0 cpm: ";
+			break;
+		case 1:  data_string_1 = "POD: 1 cpm: ";
+			break;
+		case 2:  data_string_2 = "POD: 2 cpm: ";
+			break;
+		case 3:  data_string_3 = "POD: 3 cpm: ";
+			break;
+		case 4:  data_string_4 = "POD: 4 cpm: ";
+			break;
+		case 5:  data_string_5 = "POD: 5 cpm: ";
+			break;
+		case 6:  data_string_6 = "POD: 6 cpm: ";
+			break;
+		default: 
+			break;
+		}	
 }
 
 /****************************
 	interupt function
-	writes converts pin_num to POD ID number (0-6) then writes ID to queue for 
-	gyget task to read 
+	converts pin_num to POD ID number (0-6) then writes ID to queue for 
+	gyger task to read 
 		-pin_num -> recieves pin number that called the ISR
 
 
