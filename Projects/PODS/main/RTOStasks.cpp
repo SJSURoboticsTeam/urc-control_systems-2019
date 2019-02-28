@@ -25,7 +25,7 @@ extern "C" void vGygerTask(void *pvParameters)
 	u_long task_start = millis();
 	int count = 0; 
 	int current_cpm = 0 ;
-	int *ISR_queue_ID, *task_queue_id;
+	int *ISR_queue_ID, *terminate;
 	bool start = false;
 	int *task_data;
 	int rst = 100;
@@ -106,7 +106,14 @@ extern "C" void vGygerTask(void *pvParameters)
       			ISR_queue_ID = &rst;//set local isr_id varialbe to -1
       		}
 
-      	}           	      		
+      	}   
+
+      	//terminate if 
+      	if(xQueuePeek(xQueueTerminateTask, &terminate, (TickType_t)0) and (int)terminate == id) 
+      	{
+      		xQueueReceive(xQueueTerminateTask, &terminate, (TickType_t) 0);
+      		vTaskDelete(NULL);
+      	}       	      		
 
 	}
 

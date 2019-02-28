@@ -11,14 +11,14 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
-extern QueueHandle_t xQueueISR;//, xQueueLid;//, xTaskQueue; 
+extern QueueHandle_t xQueueISR, xQueueTerminateTask;//, xQueueLid;//, xTaskQueue; 
 
 
 /******************
 variables for gyger data
 	-stores emission data in counts per minute
 *******************/
-static	int cpm0, cpm1, cpm2, cpm3, cpm4, cpm5, cpm6;
+//static	int cpm0, cpm1, cpm2, cpm3, cpm4, cpm5, cpm6;
 static String data_string_0, data_string_1, data_string_2,data_string_3,data_string_4,
 		data_string_5, data_string_6;
 

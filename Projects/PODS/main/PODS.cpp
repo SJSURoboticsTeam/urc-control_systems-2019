@@ -134,17 +134,17 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          int m = 0;
          std::cout << y << "\n";
          std::cout << x << "\n";
-         bool z;
+         //bool z;
 
          if(y =="True" or y == "true" or y == "TRUE")
          {
-         	 z = true;
+         	 //z = true;
          	 m = x + 100;
          	
          }
          else if(y == "false" or y == "False" or y == "FALSE")
          {
-         	z = false;
+         	//z = false;
          	m = x;
          }
 
@@ -224,25 +224,25 @@ void startPOD(bool start, int x)
 		switch(x)
 		{
 		case 0: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 1, NULL); 
-				printf("task %d toggled \n", x);
+				printf("task %d started \n", x);
 			break;
 		case 1: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)1, 1, NULL); 
-				printf("task %d toggled \n", x);				
+				printf("task %d started \n", x);				
 			break;
 		case 2: xTaskCreate(vGygerTask, "gyger2 data", 4060, (void*)2, 1, NULL); 
-				printf("task %d toggled \n", x);
+				printf("task %d started \n", x);
 			break;
 		case 3: xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 1, NULL); 
-				printf("task %d toggled \n", x);
+				printf("task %d started \n", x);
 			break;
 		case 4: xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 1, NULL);
-				printf("task %d toggled \n", x);
+				printf("task %d started \n", x);
 			break;
 		case 5: xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 1, NULL);
-				printf("task %d toggled \n", x);
+				printf("task %d started \n", x);
 			break;
 		case 6: xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 1, NULL);
-				printf("task %d toggled \n", x);
+				printf("task %d started \n", x);
 			break;
 		default:
 			break;
@@ -251,7 +251,32 @@ void startPOD(bool start, int x)
 
 	else if(start == false)
 	{
-
+		switch(x)
+		{
+		case 0: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+				printf("task %d stopped \n", x);
+			break;
+		case 1: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+				printf("task %d stopped \n", x);				
+			break;
+		case 2: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE); 
+				printf("task %d stopped \n", x);
+			break;
+		case 3:xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+				printf("task %d stopped \n", x);
+			break;
+		case 4: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+				printf("task %d stopped \n", x);
+			break;
+		case 5: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+				printf("task %d stopped \n", x);
+			break;
+		case 6:xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+				printf("task %d stopped \n", x);
+			break;
+		default:
+			break;
+		}
 	}	
 
 	
@@ -445,43 +470,43 @@ String writeData(bool type, int id, int val, u_long time_stamp)
 	{
 			switch (id)
 		{
-		case 0:  cpm0 = val;
+		case 0://  cpm0 = val;
 			data_string_0 += " ";
 			data_string_0 += val;
 			data_string_0 += ";";
 			data_string_0 += time_stamp;
 			break;
-		case 1:  cpm1 = val;
+		case 1: // cpm1 = val;
 			data_string_1 += " ";
 			data_string_1 += val;
 			data_string_1 += ";";
 			data_string_1 += time_stamp;		
 			break;
-		case 2:  cpm2 = val;
+		case 2:  //cpm2 = val;
 			data_string_2 += " ";
 			data_string_2 += val;
 			data_string_2 += ";";
 			data_string_2 += time_stamp;
 			break;
-		case 3:  cpm3 = val;
+		case 3:  //cpm3 = val;
 			data_string_3 += " ";
 			data_string_3 += val;
 			data_string_3 += ";";
 			data_string_3 += time_stamp;
 			break;
-		case 4:  cpm4 = val;
+		case 4: // cpm4 = val;
 			data_string_4 += " ";
 			data_string_4 += val;
 			data_string_4 += ";";
 			data_string_4 += time_stamp;
 			break;
-		case 5:  cpm5 = val;
+		case 5: // cpm5 = val;
 			data_string_5 += " ";
 			data_string_5 += val;
 			data_string_5 += ";";
 			data_string_5 += time_stamp;
 			break;
-		case 6: cpm6 = val;
+		case 6:// cpm6 = val;
 			data_string_6 += " ";
 			data_string_6 += val;
 			data_string_6 += ";";

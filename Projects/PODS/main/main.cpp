@@ -12,7 +12,7 @@
 #include "PODS.h"
 #include "constants.h" 
 
-QueueHandle_t xQueueISR;//, xQueueLid;
+QueueHandle_t xQueueISR, xQueueTerminateTask;//, xQueueLid;
 ParamsStruct params;
 AsyncWebServer server(80);
 
@@ -26,6 +26,7 @@ extern "C" void app_main()
     	resetString(x);
     }
     xQueueISR = xQueueCreate(10, sizeof(int));// queue to pass interupt id
+    xQueueTerminateTask = xQueueCreate(1, sizeof(int));
    // xQueueLid = xQueueCreate(2, sizeof(int));
    // sealPODS(0, false);
     //xTaskCreate(vGygerTask, "gyger0 data", 4060, (void*)0, 1, NULL);
