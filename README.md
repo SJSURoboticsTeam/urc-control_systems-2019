@@ -109,8 +109,6 @@ read_data_wifi(READ_ITEM_SIZE);
 ```
 
 ### Unit Testing ###
-
-##### Basics #####
 * We use Catch2 for unit testing C++.
     * https://github.com/catchorg/Catch2/tree/master/docs
     * https://github.com/meekrosoft/fff
@@ -124,21 +122,6 @@ read_data_wifi(READ_ITEM_SIZE);
         ./a.out
         ```
         This will run all of your unit tests.
-
-##### Suites #####
-* TBD
-
-##### Tests #####
-* TBD
-
-##### Stubs #####
-* Stubs are used to mock functions which manipulate or utilize hardware such as gpio.  Stubs that are used generally throughout all subsystems are located in the following directory: "controlsystems2018/Testing/stubs/"
-* If there are functions that you require to be mocked but is not in the general stubs folder, you must create it inside the testing subfolder in your subsystem's project directory.
-* Steps to mock a function
-1. Create the header file in which the function is located inside of the test directory in your subsystem.
-2. Declare the function, and any required structures, in the same way as in the original header file.
-3. Inside your tests.cpp, mock void functions as followed: "FAKE_VOID_FUNC(function_name, parameters, ...);"
-   To mock functions which return a value: "FAKE_VALUE_FUNC(return_type, function_name, parameters, ...);"
 
 ### Setting Up ESP Loader ###
 
@@ -160,7 +143,7 @@ For WSL users, this will be `tar -xzf ~/../../mnt/c/Users/(your Windows username
 `export IDF_PATH=(directory path to controlsystems2019)/controlsystems2019/esp-idf`  
 **Example lines:**  
 `export PATH=$PATH:$HOME/Documents/2018-2019/controlsystems2019/xtensa-esp32-elf/bin`  
-`export IDF_PATH=~/Documents/2018-2019/controlsystems2018/esp-idf`     
+`export IDF_PATH=~/Documents/2018-2019/controlsystems2019/esp-idf`     
 **Note:** you may wish to change the access permissions to your COM ports at this point as you will need to do so in order to program the esp32 boards. To do this, add the command `sudo chmod 666 /dev/tty*` after the PATH commands in .profile.
 Once you update the paths, enter the command `source ~/.profile` for the changes to take effect. You must enter this command for each terminal or bash session.
 
