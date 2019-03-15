@@ -38,6 +38,12 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         params->command_move = request->arg("command_move").toInt();
         params->manual_move = request->arg("manual_move").toFloat();
         params->pitch_position = request->arg("pitch_position").toFloat();
+
+        printf("handle_update endpoint running\n");
+        printf("    mode: %s \n", params->mode);
+        printf("    command move: %i \n", params->command_move);
+        printf("    manual_move: %f \n", params->manual_move);
+        printf("    pitch_position: %f \n", params->pitch_position);
         request->send(200, "text/plain", "Success");
     }); 
     
@@ -112,10 +118,15 @@ int EEPROMCount(int addr)
 
 void initGimbal() {
     Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
-                      SERVO_FREQUENCY, SERVO_MIN, SERVO_MAX);
+                      SERVO_FREQUENCY, PITCH_SERVO_MIN, PITCH_SERVO_MAX);
     printf("Gimbal has been initialized for movement.\n");
 
 }
+
+// void initCameraLens() {
+//     Pitch_Servo.InitServo(SERVO_PIN, SERVO_CHANNEL, SERVO_TIMER, 
+//                       SERVO_FREQUENCY, SERVO_MIN, SERVO_MAX);
+// }
 
 void centerMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_CENTER);

@@ -28,6 +28,8 @@ extern "C" void vPitchTask(void *pvParameters) {
     vTaskDelay(500);
     initGimbal();
 
+    int count = 0;
+
     while(1) {
         /*
             Debug mode to troubleshoot the gimbal for any errors. IN PROGRESS.
@@ -50,26 +52,26 @@ extern "C" void vPitchTask(void *pvParameters) {
         else if (strcmp(params->mode, "manual") == 0) {
             printf("Manual mode\n");
             printf("----------------------.\n");
-                switch(params->command_move) {
-                    case MANUAL: // MANUAL
-                        if (params->manual_move != 0) {
-                            manualMovePitch(params->manual_move);
-                            params->pitch_position = params->manual_move;
-                        } 
-                        break;
-                    case UP: // UP
-                        upMovePitch();
-                        break;
-                    case CENTER: // CENTER
-                        centerMovePitch();
-                        break;
-                    case DOWN: // DOWN
-                        downMovePitch();
-                        break;
-                    default:
-                        printf("Awaiting pitch position input from mission control.\n");
-                        break;
-                }
+            switch(params->command_move) {
+                case MANUAL: // MANUAL
+                    if (params->manual_move != 0) {
+                        manualMovePitch(params->manual_move);
+                        params->pitch_position = params->manual_move;
+                    } 
+                    break;
+                case UP: // UP
+                    upMovePitch();
+                    break;
+                case CENTER: // CENTER
+                    centerMovePitch();
+                    break;
+                case DOWN: // DOWN
+                    downMovePitch();
+                    break;
+                default:
+                    printf("Awaiting pitch position input from mission control.\n");
+                    break;
+            }
         }
         /*
             Arm mode forces the camera to stay downwards as the rotunda with the 
@@ -81,13 +83,13 @@ extern "C" void vPitchTask(void *pvParameters) {
             downMovePitch();
         }
         else {
-            printf("Mode not valid\n");
-            printf("----------------------.\n");
+            // printf("Mode not valid\n");
+            // printf("----------------------.\n");
         }
 
         // upMovePitch();
-        // downMovePitch();
         // centerMovePitch();
+        // downMovePitch();
     }   
 }
 
