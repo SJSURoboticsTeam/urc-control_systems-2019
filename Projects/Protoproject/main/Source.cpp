@@ -117,16 +117,16 @@ int EEPROMCount(int addr)
 }
 
 void initGimbal() {
-    Pitch_Servo.InitServo(PITCH_SERVO_PIN, PITCH_SERVO_CHANNEL, SERVO_TIMER, 
+    Pitch_Servo.InitServo(PITCH_SERVO_PIN, SERVO_CHANNEL, SERVO_TIMER, 
                       SERVO_FREQUENCY, PITCH_SERVO_MIN, PITCH_SERVO_MAX);
     printf("Gimbal has been initialized for movement.\n");
 
 }
 
-// void initCameraLens() {
-//     Pitch_Servo.InitServo(SERVO_PIN, SERVO_CHANNEL, SERVO_TIMER, 
-//                       SERVO_FREQUENCY, SERVO_MIN, SERVO_MAX);
-// }
+void initCameraLens() {
+    Pitch_Servo.InitServo(LENS_SERVO_PIN, SERVO_CHANNEL, SERVO_TIMER, 
+                      SERVO_FREQUENCY, LENS_SERVO_MIN, LENS_SERVO_MAX);
+}
 
 void centerMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_CENTER);
