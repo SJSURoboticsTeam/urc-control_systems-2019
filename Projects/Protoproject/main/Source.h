@@ -37,6 +37,8 @@ void hello_world(char* name);
 
 void initGimbal(); // Initialize the servo object of the camera pitch
 
+void initCameraLens(); // Initialize the servo object of the DC Camera Lens
+
 void readIMU(); // Interprets values from the IMU underneath the gimbal
 
 void centerMovePitch(); // Rotates gimbal to the center
