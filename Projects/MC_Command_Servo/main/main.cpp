@@ -21,6 +21,7 @@ using namespace std;
 
 extern "C" void app_main() 
 {
+    params.xWristSemaphore = xSemaphoreCreateBinary();
     
     Serial.begin(115200);
     initArduino();
@@ -31,6 +32,8 @@ extern "C" void app_main()
     // xTaskCreate(vSayHelloTask, "Hello", 4096, &params, 1, NULL);
     xTaskCreate(vElbowTask,   "Elbow",   4096, &params, 1, NULL);
     xTaskCreate(vRotundaTask, "Rotunda", 4096, &params, 1, NULL);
-    // xTaskCreate(vShoulderTask, "Rotunda", 4096, &params, 1, NULL);
+    xTaskCreate(vShoulderTask, "Shoulder", 4096, &params, 1, NULL);
+    xTaskCreate(vDiffGearboxTask, "Wrist", 4096, &params, 1, NULL);
+    xTaskCreate(vClawTask, "Claw", 4096, &params, 1, NULL);
 }
 

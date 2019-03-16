@@ -32,9 +32,67 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         the paramsStruct struct located in Source.h first. 
     */
     server->on("/Arm", HTTP_POST, [=](AsyncWebServerRequest *request){
-        // params->heading = atoi(request->arg("heading").c_str());
-        params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
-        params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
+        if(request->hasArg("RotundaTarget"))
+        {
+            params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
+        }
+        // printf("RotundaTarget Param\n");
+
+        if(request->hasArg("ElbowTarget"))
+        {
+            params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
+        }
+        // printf("ElbowTarget Param\n");
+
+        if(request->hasArg("ShoudlerDuration_ms"))
+        {
+            params->ShoudlerDuration_ms = atoi(request->arg("ShoudlerDuration_ms").c_str());
+        }
+        // printf("ShoudlerDuration_ms Param\n");
+
+        if(request->hasArg("Wrist_Delta"))
+        {
+            params->Wrist_Delta = atoi(request->arg("Wrist_Delta").c_str());
+        }
+        // printf("Wrist_Delta Param\n");
+
+        if(request->hasArg("Wrist_Dimension"))
+        {
+            params->Wrist_Dimension = atoi((request->arg("Wrist_Dimension").c_str()));
+        }
+        // printf("Wrist_Dimension Param\n");
+
+        if(request->hasArg("Wrist_Dimension") || request->hasArg("Wrist_Delta"))
+        {
+            xSemaphoreGive(params->xWristSemaphore);
+        }
+        // printf("Wrist Semaphore Sent\n");
+
+        //Raul's stuff
+        if(request->hasArg("speed"))
+        {
+            params->update_speed = atoi(request->arg("speed").c_str());
+        }
+        // printf("speed Param\n");
+
+        if(request->hasArg("command"))
+        {
+            if(params->update_speed > 100) params->update_speed = 100;
+            params->actuator_speed = params->update_speed;
+
+            if(!strcmp(request->arg("command").c_str(),"open")){
+                params->current_direction = 1;
+            }
+                else if(!strcmp(request->arg("command").c_str(),"close")){
+                params->current_direction = -1;
+                }
+            else if(!strcmp(request->arg("command").c_str(),"stop")){
+                params->current_direction = 2;
+                params->actuator_speed = 0;
+            }   
+        }
+        // printf("command Param\n");
+
         // strcpy(params->name, request->arg("heading").c_str());
         // request->send(200, "text/plain", "Success");
     });
@@ -107,4 +165,24 @@ int EEPROMCount(int addr)
     EEPROM.write(addr, data);
     EEPROM.commit();
     return data;
+}
+
+void initClaw()
+{
+    pinMode(act_PHASE, OUTPUT);
+    digitalWrite(act_PHASE,LOW);
+}
+
+bool openClaw()
+{
+    digitalWrite(act_PHASE,HIGH);
+    if(digitalRead(act_PHASE) == HIGH) return true;
+    else return false;
+}
+
+bool closeClaw()
+{
+    digitalWrite(act_PHASE,LOW);
+    if(digitalRead(act_PHASE) == LOW) return true;
+    else return false;
 }
