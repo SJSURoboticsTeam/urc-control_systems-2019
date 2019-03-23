@@ -22,7 +22,7 @@ constexpr uint32_t SERVO_CHANNEL = 0;
 
 constexpr uint32_t SERVO_TIMER = 0;
 
-constexpr uint32_t SERVO_FREQUENCY = 50; //Frequency = 50 Hz
+constexpr uint32_t SERVO_FREQUENCY = 40; //Frequency = 50 Hz
 
 // Pitch Servo Constants //
 
@@ -32,11 +32,13 @@ constexpr float PITCH_SERVO_MIN = 2.5; // Constrained pitch min duty cycle (2.5)
 
 constexpr float PITCH_SERVO_MAX = 12.5; // Constrained pitch max duty cycle (12.5)
 
-constexpr float SERVO_CENTER = 50; //Pitch init duty cycle to rotate camera to the middle (50)
+constexpr float SERVO_CENTER = 35; //Pitch init duty cycle to rotate camera to the middle (50)
 
-constexpr float SERVO_DOWN = 63; // Pitch duty cycle to rotate camera up (63)
+constexpr float SERVO_DOWN = 45; // Pitch duty cycle to rotate camera up (63 Limit)
 
-constexpr float SERVO_UP = 37; // Pitch duty cycle to rotate camera down (37)
+constexpr float SERVO_UP = 25; // Pitch duty cycle to rotate camera down (37 Limit)
+
+constexpr float SERVO_SHIFT = 2; // Pitch duty cycle value to increment or decrement when moving the gimbal up or down
 
 // Camera Lens Constants //
 

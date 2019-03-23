@@ -35,15 +35,13 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
    server->on("/pitch_update", HTTP_POST, [=](AsyncWebServerRequest *request){
         strcpy(params->name, request->arg("name").c_str());
         strcpy(params->mode, request->arg("mode").c_str());
-        params->command_move = request->arg("command_move").toInt();
-        params->manual_move = request->arg("manual_move").toFloat();
-        params->pitch_position = request->arg("pitch_position").toFloat();
+        params->manual_move = request->arg("manual_move").toInt();
+        params->gimbal_position = request->arg("gimbal_position").toFloat();
 
         printf("handle_update endpoint running\n");
         printf("    mode: %s \n", params->mode);
-        printf("    command move: %i \n", params->command_move);
-        printf("    manual_move: %f \n", params->manual_move);
-        printf("    pitch_position: %f \n", params->pitch_position);
+        printf("    manual move: %i \n", params->manual_move);
+        printf("    gimbal_position: %f \n", params->gimbal_position);
         request->send(200, "text/plain", "Success");
     }); 
     
@@ -119,6 +117,10 @@ int EEPROMCount(int addr)
 void initGimbal() {
     Pitch_Servo.InitServo(PITCH_SERVO_PIN, SERVO_CHANNEL, SERVO_TIMER, 
                       SERVO_FREQUENCY, PITCH_SERVO_MIN, PITCH_SERVO_MAX);
+
+    // Pitch_Servo.InitServoMotor(uint32_t pin, uint32_t channel, uint32_t timer, 
+    //                         uint32_t frequency, float max, float min, 
+    //                         float dead_min, float dead_max);
     printf("Gimbal has been initialized for movement.\n");
 
 }
@@ -132,36 +134,28 @@ void centerMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_CENTER);
     printf("The camera is now centered.\n");
 
-    vTaskDelay(500);
+    vTaskDelay(200);
 }
 
-void upMovePitch() {
-    Pitch_Servo.SetPositionPercent(SERVO_UP);
-    printf("The camera is now facing up.\n");
+void upMovePitch(int position) {
+    Pitch_Servo.SetPositionPercent(position);
+    printf("The camera is rotating upwards.\n");
 
-    vTaskDelay(500);
+    vTaskDelay(200);
 }
 
-void downMovePitch() {
-    Pitch_Servo.SetPositionPercent(SERVO_DOWN);
-    printf("The camera is now facing down.\n");
+void downMovePitch(int position) {
+    Pitch_Servo.SetPositionPercent(position);
+    printf("The camera is rotating downwards.\n");
 
-    vTaskDelay(500);
-}
-
-void manualMovePitch(double percentage) {
-
-    Pitch_Servo.SetPositionPercent(percentage);
-    printf("The pitch position is now %f %%.\n", percentage);
-
-    vTaskDelay(500);
+    vTaskDelay(200);
 }
 
 void sweepMovePitch() {
 
-    upMovePitch();
+    upMovePitch(SERVO_UP);
     centerMovePitch();
-    downMovePitch(); 
+    downMovePitch(SERVO_DOWN);
     printf("Sweeping has been enabled.\n");
     
 }

@@ -15,16 +15,14 @@ extern "C" {
 struct ParamsStruct {
     char name[20]; // test parameter
     char mode[20]; // debug, manual, or arm control mode based on "debug", "manual", or "arm" keywords 
-    int command_move; // changes the position of the gimbal manual, up, center, or down based on "0", "1", "2", or "3" respectively
-    double manual_move = 0; // manually changes the position of the gimbal based on a custom value between 37 and 63 position percent
-    double pitch_position = 0; // current y axis value of the gimbal
+    int manual_move; // changes the position of the gimbal manual, up, center, or down based on "0", "1", "2", or "3" respectively
+    double gimbal_position = 0; // current y axis value of the gimbal
 };
 
 typedef enum CommandMoveMode {
-    MANUAL = 0,
-    UP = 1,
-    CENTER = 2, 
-    DOWN = 3,
+    CENTER = 0, 
+    UP = 1, 
+    DOWN = 2,
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
@@ -41,13 +39,11 @@ void initCameraLens(); // Initialize the servo object of the DC Camera Lens
 
 void readIMU(); // Interprets values from the IMU underneath the gimbal
 
-void centerMovePitch(); // Rotates gimbal to the center
+void centerMovePitch(); // Rotates gimbal where the camera aligns all the way to the center
 
-void upMovePitch(); // Rotates gimbal to face the camera upwards
+void upMovePitch(int position); // Rotates gimbal to shift the camera upwards
 
-void downMovePitch(); // Rotates gimbal to face the camera downwards
-
-void manualMovePitch(double percentage); // Interprets duty cycle percentages in order manually rotate the camera pitch
+void downMovePitch(int position); // Rotates gimbal to shift the camera downwards
 
 void sweepMovePitch(); // Test function to make sure the gimbal works
 
