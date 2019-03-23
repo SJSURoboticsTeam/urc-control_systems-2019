@@ -74,7 +74,9 @@ void initIMU(uint8_t IMU_ADDRESS)
     printf("ID = %x\n",chipID);
 
     //Set to IMU Mode
-    writeByte(IMU_ADDRESS, BNO055_OPR_MODE, 0xF8);
+    uint8_t opr_mode = readByte(IMU_ADDRESS, BNO055_OPR_MODE) & ~(0xF);
+    opr_mode |= 0x08;
+    writeByte(IMU_ADDRESS, BNO055_OPR_MODE, opr_mode);
 }
 
 void writeByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS, uint8_t VALUE)
@@ -113,4 +115,9 @@ int16_t getAxis(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
 {
     int16_t axis_value = readTwoBytes(IMU_ADDRESS, REGISTER_ADDRESS);
     return axis_value;
+}
+
+int16_t convertEuler(int16_t euler_angle_reading, int16_t min_angle_reading, int16_t max_angle_reading, int16_t min_output_value, int16_t max_output_value)
+{
+    return ((euler_angle_reading - min_angle_reading) * (max_output_value - min_output_value) / (max_angle_reading - min_angle_reading)) + min_output_value; 
 }
