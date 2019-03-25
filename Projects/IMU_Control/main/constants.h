@@ -29,3 +29,10 @@
 #define BNO055_OPR_MODE       0x3D
 #define BNO055_PWR_MODE       0x3E
 #define BNO055_SYS_TRIGGER    0x3F
+
+#define YAW_MIN 140
+#define YAW_MAX 5900
+#define PITCH_MIN -3080
+#define PITCH_MAX 3070
+#define ROLL_MIN 1400
+#define ROLL_MAX -1450
