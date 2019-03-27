@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <WiFi.h>
 #include <string.h>
+#include <math.h>
 #include "Source.h"
 #include "Arduino.h"
 #include "EEPROM.h"
@@ -75,7 +76,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 printf("ERROR. %s doesn't exist\n", vars[i]);
             }
         }
-        
+        /*
         printf("handle_update endpoint running\n");
         printf("    mode: %i \n", params->mode);
         printf("    AXIS_X: %f \n", params->AXIS_X);
@@ -87,7 +88,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("    wheel_C: %d \n", params->wheel_C);
         printf("    mast_position: %f \n", params->mast_position);
         printf("\n");
-        
+        */
         request->send(200, "text/plain", "Success");
     });
     /* SSE Example.
@@ -280,6 +281,32 @@ void applyBrakes(bool signal)
     //printf("brakes applied\n");
 }
 
+double fmap(double x, double in_min, double in_max, double out_min, double out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+double driveModeMapping(double x, double y)
+{
+    // convert raw data to target angle
+    double target_angle = atan2(fabs(x), fabs(y));
+    double param1 = (target_angle * 180/3.1416) / 90;
+    double param2 = 0;
+    if(target_angle * 180/3.1416 == 45)
+    {
+        param2 = sqrt(pow(x, 2) + pow(y, 2)) / sqrt(2);
+    }
+    else if (target_angle * 180/3.1416 > 45)
+    {
+        param2 = sqrt(pow(x, 2) + pow(y, 2)) / sqrt(1 + pow(y, 2));
+    }
+    else
+    {
+        param2 = sqrt(pow(x, 2) + pow(y, 2)) / sqrt(pow(x, 2) + 1);
+    }
+    target_angle = param1 * param2 * 45;
+    return target_angle;
+}
 /*
 char *getHeading(double gps_data);
 {

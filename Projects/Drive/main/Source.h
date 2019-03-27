@@ -111,6 +111,16 @@ void setHeading(uint32_t wheel, double percentage);
  */
 void applyBrakes(bool signal);
 
+/**
+ * Modified arduino mapping function for floats/doubles
+ */
+double fmap(double x, double in_min, double in_max, double out_min, double out_max);
+
+/**
+ * Processes raw joystic data to drive mode steering angles
+ */
+double driveModeMapping(double x, double y);
+
 #ifdef _cplusplus
 }
 #endif

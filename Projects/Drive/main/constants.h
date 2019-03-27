@@ -65,7 +65,8 @@ constexpr uint32_t MOTOR_TIMER = 1;
 constexpr uint32_t BRAKE_TIMER = 2;
 
 /* Motors*/
-constexpr uint32_t MOTOR_FREQUENCY = 78000;
+// Frequency that enables 10 bits of precision on the DAC
+constexpr uint32_t MOTOR_FREQUENCY = 25000;
 
 
 constexpr float MOTOR_MIN = 0;
