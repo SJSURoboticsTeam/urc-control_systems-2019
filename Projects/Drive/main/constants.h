@@ -113,10 +113,4 @@ extern Motor motor_A;
 extern Motor motor_B;
 extern Motor motor_C;
 
-// RTOS handlers //
-extern TaskHandle_t xDriveHandle;
-extern TaskHandle_t xCrabHandle;
-extern TaskHandle_t xSpinHandle;
-extern TaskHandle_t xDebugHandle;
-
 #endif
