@@ -69,7 +69,7 @@ extern "C" void vGygerTask(void *pvParameters)
       	{
       		xQueueReceive(xQueueISR, &ISR_queue_ID, (TickType_t) 0);
       		//printf("Task %d \n", id );
-      		printf("Item recieved from queue. ID %d retreived. \n", (int)ISR_queue_ID );
+      		//printf("Item recieved from queue. ID %d retreived. \n", (int)ISR_queue_ID );
 
       		count++;
 
@@ -153,4 +153,20 @@ extern "C" void vLidTask(void *pvParameters)
 			vTaskDelete(NULL);
 		}
 	
+}
+
+
+
+
+extern "C" void vServoTask(void *pvParameters)
+{
+	printf("ServoTask Started");
+
+	moveServo(test_id, test_servo, test_angle);
+	vTaskDelay(2000/ portTICK_PERIOD_MS);
+	while(1)
+	{
+		vTaskDelete(NULL);
+	}
+
 }

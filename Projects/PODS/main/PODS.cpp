@@ -59,7 +59,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          printf("XHR recieved \n");
          int x = atoi(request->arg("pod").c_str()); 
          string y = request->arg("state").c_str();
-
+         x -= 1;
          std::cout << y << "\n";
          std::cout << x << "\n";
          bool z;
@@ -118,6 +118,17 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         // data += ;
       
         		request->send(200, "text/plain", data);
+        	
+    }); 
+        server->on("/servo", HTTP_POST, [=](AsyncWebServerRequest *request){
+        
+        test_id = atoi(request->arg("pod").c_str());
+        test_servo = request->arg("type").c_str();
+        test_angle = atoi(request->arg("angle").c_str());
+
+        xTaskCreate(vLidTask, "toggle lid" , 4060, NULL, 2, NULL);
+      
+   		request->send(200, "text/plain", "servo moved");
         	
     }); 
    /*****************
@@ -282,6 +293,8 @@ void startPOD(bool start, int x)
 	
 }
 
+
+
 /***********************
 	closes lid of POD 
 		- (int)x -> POD ID
@@ -292,7 +305,7 @@ void sealPODS(int x, bool open)
 uint32_t servo1_frequency = 50; //hz
 uint32_t servo1_gpio_pin = servoLidPin(x);
 uint32_t servo1_timer = 0;
-uint32_t servo1_channel = x;
+uint32_t servo1_channel = 0;
 float servo1_min = 2.5;//%
 float servo1_max = 12;//%
 int open_angle = 90;
@@ -351,6 +364,40 @@ double down = -90;
 
 
 	servo1.SetPositionPercent(getPercent(up));
+
+}
+
+
+void moveServo(int x, String servo, int angle)
+{
+	
+	uint32_t servo1_frequency = 50; //hz
+	uint32_t servo1_gpio_pin = -1;
+	uint32_t servo1_timer = 0;
+	uint32_t servo1_channel = 0;
+	float servo1_min = 2.5;//%
+	float servo1_max = 12;//%
+
+	if(servo == "fluid")
+	{
+
+		 servo1_gpio_pin = servoInoculationPin(x);
+
+
+	}
+	else if(servo == "lid")
+	{
+
+		 servo1_gpio_pin = servoLidPin(x);
+
+
+
+	}
+		//servo object for inoculation fluid
+	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
+		servo1_frequency, servo1_max, servo1_min);
+
+	servo1.SetPositionPercent(getPercent(angle));
 
 }
 

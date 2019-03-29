@@ -25,23 +25,29 @@ void sealPODS(int x, bool open); //seals POD x
 								// open = true -> open lid
 								// open = false -> close lid
 
+void moveServo(int x, String servo, int angle); //x = POD id
+												// string = "lid" or "fluid"
+												//angle = +- 90
+
 void startPOD(bool start, int x);//takes boolean to start/stop gygercounter  and pod id ->x
 
 double getPercent(int angle);//maps -+90 to 0 - 100
 
 int gygerPin(int id); // returns pin number for gyger counter take POD ID parameter(0-6)
 
-String writeData(bool type, int id, int val, u_long time_stamp); //TRUE to write data. will return -1 
-											//FALSE to return data
+String writeData(bool type, int id, int val, u_long time_stamp); //TRUE to write data to global string. 
+											//will return -1 
+											//FALSE to return data string
 											// id -> PODS identifier (0-6) val -> cpm
-void resetString(int id); //resets string that writeData() writes to to "POD: id"
+											//String format "Pod: <ID> cpm: <cpm>;<timestamp> <cpm>;<timestamp> ..."
+void resetString(int id); //resets string that writeData() writes to to "POD: <id> cpm: "
 
 int servoInoculationPin(int x); //returns servo pin for PODS #x that controls the incoculationi fluid
 
 int servoLidPin(int x);// returns servo pin on PODS #x that seals the PODS
 
 //interupt finctions that count the number of emmisions detected
-void emissionCount(void* id);
+void emissionCount(void* id); // writes <id> to queue when an interrupt is detected
 
 
 

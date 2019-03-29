@@ -22,7 +22,8 @@ variables for gyger data
 static String data_string_0, data_string_1, data_string_2,data_string_3,data_string_4,
 		data_string_5, data_string_6;
 
-
+static int test_angle, test_id;
+static String test_servo;
 /*********************
 pins for gyger counter interupts
 *********************/

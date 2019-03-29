@@ -14,8 +14,9 @@ extern "C" {
 
 extern "C" void vGygerTask(void *pvParameters);// reads from interupt queue and calculataed cpm
 
-extern "C" void vLidTask(void *pvParameters);
+extern "C" void vLidTask(void *pvParameters);// allows mission control to toggle lid manually
 
+extern "C" void vServoTask(void *pvParameters);//allows for specifing the angle of individual servos
 #ifdef _cplusplus
 }
 #endif
