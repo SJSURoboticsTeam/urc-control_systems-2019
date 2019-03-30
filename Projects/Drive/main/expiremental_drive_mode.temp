@@ -1,0 +1,204 @@
+while(mode == DRIVE)
+        {
+            if (Params->mode != DRIVE)
+            {
+                continue;
+            }
+            if (previous_mode != DRIVE)
+            {
+                previous_mode = DRIVE;
+                applyBrakes(1);
+                left_servo = servo_A;
+                right_servo = servo_B;
+                back_servo = servo_C;
+                left_motor = motor_A;
+                right_motor = motor_B;
+                back_motor = motor_C;
+                angle_left = 210;
+                angle_right = 90;
+                angle_back = 150;
+                target_angle = 0;
+                current_angle = 0;
+            }
+            printf("Drive Mode\n");
+            // Set the brakes
+            if (current_brakes != Params->button_0)
+            {
+                applyBrakes(Params->button_0);
+                current_brakes = Params->button_0;
+            }
+
+            // Update the front of the rover
+            if (Params->wheel_A)
+            {
+                front = 1;
+            }
+            else if (Params->wheel_B)
+            {
+                front = 2;
+            }
+            else if (Params->wheel_C)
+            {
+                front = 0;
+            }
+            if (previous_front != front)
+            {
+                setSpeedAllWheels(0);
+                vTaskDelay(100);
+                initDriveMode(front);
+                switch (front)
+                {
+                    case 0: //Left = A, Right = B, Back = C
+                        left_servo = servo_A;
+                        right_servo = servo_B;
+                        back_servo = servo_C;
+                        left_motor = motor_A;
+                        right_motor = motor_B;
+                        back_motor = motor_C;
+                        break;
+                    case 1: //Left = B, Right = C, Back = A 
+                        left_servo = servo_B;
+                        right_servo = servo_C;
+                        back_servo = servo_A;
+                        left_motor = motor_B;
+                        right_motor = motor_C;
+                        back_motor = motor_A;
+                        break;
+                    case 2: //Left = C, Right = A, Back = B
+                        left_servo = servo_C;
+                        right_servo = servo_A;
+                        back_servo = servo_B;
+                        left_motor = motor_C;
+                        right_motor = motor_A;
+                        back_motor = motor_B;
+                        break;
+                    default: //Left = A, Right = B, Back = C
+                        left_servo = servo_A;
+                        right_servo = servo_B;
+                        back_servo = servo_C;
+                        left_motor = motor_A;
+                        right_motor = motor_B;
+                        back_motor = motor_C;
+                        break;
+                }
+
+                // following angle values for actual servos //
+                angle_left = 210;
+                angle_right = 90;
+                angle_back = 150;
+                
+                previous_front = front;
+            }
+
+            target_speed = (0 - Params->AXIS_Y) * Params->THROTTLE;
+            // Exponential Moving Average
+            current_speed = (target_speed * 0.5) * (current_speed * (0 - 0.5));
+
+            target_angle = driveModeMapping(Params->AXIS_X, Params->AXIS_Y);
+            // Exponential Moving Average
+            current_angle = (target_angle * 0.5) * (current_angle * (0 - 0.5));
+
+            // Calculate parameters for turning left
+            if (Params->AXIS_X > 0)
+            {
+                angle_right = current_angle;
+                radius_rover = 2 * SIDE_2_MID * tan(current_angle * 3.1416/180) + SIDE;
+                radius_right = sqrt(pow(radius_rover-S_HALF, 2)+pow(SIDE_2_MID, 2));
+                radius_left = sqrt(pow(radius_rover+S_HALF, 2)+pow(SIDE_2_MID, 2));
+                radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
+                angle_left = atan2(radius_rover+S_HALF, 2*SIDE_2_MID)*180/3.1416;
+                angle_back = atan2(radius_rover, CORNER_2_MID) * 180/3.14159;
+
+
+                // Max rot/s for hub motors = 3.6
+                speed_left = fabs(current_speed);
+                speed_right = speed_left * (radius_right/radius_rover);
+                speed_back = speed_left * (radius_back/radius_rover);
+
+            }
+            // Calculate parameters for turning right
+            if (Params->AXIS_X < 0)
+            {
+                angle_left = current_angle;
+                radius_rover = 2 * SIDE_2_MID * tan(current_angle * 3.1416/180) + SIDE;
+                radius_left = sqrt(pow(radius_rover-S_HALF, 2)+pow(SIDE_2_MID, 2));
+                radius_right = sqrt(pow(radius_rover+S_HALF, 2)+pow(SIDE_2_MID, 2));
+                radius_back = sqrt(pow(radius_rover, 2) + pow(CORNER_2_MID, 2));
+                angle_right = atan2(radius_rover+S_HALF, 2*SIDE_2_MID)*180/3.1416;
+                angle_back = atan2(radius_rover, CORNER_2_MID) * 180/3.14159;
+
+
+                // Max rot/s for hub motors = 3.6
+                speed_right = fabs(current_speed);
+                speed_left = speed_right * (radius_left/radius_rover);
+                speed_back = speed_right * (radius_back/radius_rover);
+            }
+            // If heading is straight forward, straighten out the rover
+            if (Params->AXIS_X == 0)
+            {
+                initDriveMode(front);
+                if (current_speed != previous_speed)
+                {
+
+                    left_motor.SetDirection((Params->AXIS_Y > 0) ? 1:0);
+                    right_motor.SetDirection((Params->AXIS_Y > 0) ? 1:0);
+                    back_motor.SetDirection((Params->AXIS_Y > 0) ? 0:1);
+                    setSpeedAllWheels(100 * fabs(current_speed));
+                    previous_speed = current_speed;
+                }
+                // following angle values for actual motors //
+                angle_left = 210;
+                angle_right = 90;
+                angle_back = 150;
+                
+            }
+            else if ((current_heading != Params->AXIS_X) | 
+                    (current_speed != previous_speed))
+            {
+                if (Params->AXIS_X > 0)
+                {
+                    //printf("turning left\n");
+                    left_servo.SetPositionPercent(left_servo.GetPercentage(300,
+                                                (90 + fabs(angle_left))));
+                    //printf("left angle: %f percent\n", 100 * (210 - 90 + fabs(angle_left))/300);
+                    right_servo.SetPositionPercent(right_servo.GetPercentage(300,
+                                                (210 + fabs(angle_right))));
+                    //printf("right angle: %f percent\n", 100 * (90 - 90 + fabs(angle_right))/300);
+                    back_servo.SetPositionPercent(back_servo.GetPercentage(300,
+                                                (150 - fabs(angle_back))));
+                }
+                else
+                {
+                    //printf("turning right\n");
+                    left_servo.SetPositionPercent(left_servo.GetPercentage(300,
+                                                (90 - fabs(angle_left))));
+                    //printf("left_servo: %f percent\n", 100 * (210 + 90 + fabs(angle_left))/300);
+                    right_servo.SetPositionPercent(right_servo.GetPercentage(300,
+                                                (210 - fabs(angle_right))));
+                    //printf("right_angle: %f percent\n", 100 * (90 + 90 + fabs(angle_right))/300);
+                    back_servo.SetPositionPercent(back_servo.GetPercentage(300,
+                                                (150 + fabs(angle_back))));
+                }
+
+                left_motor.SetDirection((Params->AXIS_Y > 0) ? 1:0);
+                right_motor.SetDirection((Params->AXIS_Y > 0) ? 1:0);
+                back_motor.SetDirection((Params->AXIS_Y > 0) ? 0:1);
+                
+                left_motor.SetSpeed(100 * speed_left);
+                //printf("speed left after adjustment: %f\n", speed_left);
+                right_motor.SetSpeed(100 * speed_right);
+                //printf("speed right after adjustment: %f\n", speed_right);
+                back_motor.SetSpeed(100 * speed_back);
+                //printf("speed back after adjustment: %f\n", speed_back);
+
+                previous_speed = current_speed;
+
+                current_angle_left = angle_left;
+                current_angle_right = angle_right;
+                current_angle_back = angle_back;
+
+                current_heading = Params->AXIS_X;
+            }
+            // Delay 10 ms
+            vTaskDelay(10);
+        }
