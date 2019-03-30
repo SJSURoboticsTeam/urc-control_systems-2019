@@ -121,6 +121,11 @@ double fmap(double x, double in_min, double in_max, double out_min, double out_m
  */
 double driveModeMapping(double x, double y);
 
+/**
+ * Sets wheel angles for current mast position.
+ */
+void SetForward(double offset, double array[]);
+
 #ifdef _cplusplus
 }
 #endif

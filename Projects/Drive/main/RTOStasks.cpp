@@ -57,11 +57,14 @@ extern "C" void vMoveTask(void *pvParameters)
     
 
     // Crab/Spin Mode variables //
+    double wheel_arr[6] = {0};
     double cam_offset = 0;
     double heading_x = 0;
     double heading_y = 0;
     double heading = 0;
+    double target_heading = 0;
     double previous_heading = 0;
+    double wheel_position = 0;
     double wheel_A_heading = 90;
     bool wheel_A_dir = 0;
     double wheel_B_heading = 210;
@@ -86,7 +89,7 @@ extern "C" void vMoveTask(void *pvParameters)
                 applyBrakes(0);    
             }
             printf("Debug Mode\n");
-            // Convert AXIS 0 to 0% - 100% scale
+            // Convert AXIS_X to 0% - 100% scale
             heading = (1 + Params->AXIS_X) * 50;
             speed = 100 * (0 - Params->AXIS_Y) * Params->THROTTLE;
             if (heading != previous_heading)
@@ -144,6 +147,129 @@ extern "C" void vMoveTask(void *pvParameters)
 
         }
 
+        while(Params->mode == CRAB)
+        {
+            if (Params->mode != CRAB)
+            {
+                continue;
+            }
+            if(previous_mode != CRAB)
+            {
+                printf("Crab Mode\n");
+                applyBrakes(0);
+                cam_offset = Params->mast_position;
+                SetForward(cam_offset, wheel_arr);
+                wheel_A_heading = wheel_arr[0];
+                wheel_A_dir = wheel_arr[1];
+                printf("Wheel A: %f, dir: %d\n", wheel_A_heading, wheel_A_dir);
+                wheel_B_heading = wheel_arr[2];
+                wheel_B_dir = wheel_arr[3];
+                printf("Wheel B: %f, dir: %d\n", wheel_B_heading, wheel_B_dir);
+                wheel_C_heading = wheel_arr[4];
+                wheel_C_dir = wheel_arr[5];
+                printf("Wheel C: %f, dir: %d\n", wheel_C_heading, wheel_C_dir);
+                wheel_position = 0;
+                previous_mode = CRAB;
+            }
+            //printf("Crab Mode\n");
+            if (Params->button_0 != current_brakes)
+            {
+                applyBrakes(Params->button_0);
+                current_brakes = Params->button_0;
+            }
+            // Calculate current speed
+            if ((abs(Params->AXIS_X) == 1) | (abs(Params->AXIS_Y) == 1))
+            {
+                speed = Params->THROTTLE;
+            }
+            else
+            {
+                speed = sqrt(pow(Params->AXIS_X, 2) + pow(Params->AXIS_Y, 2))/1.414124 * Params->THROTTLE;
+            }
+            // Adjust parameters for new instance of crab mode
+            if (cam_offset != Params->mast_position)
+            {
+                cam_offset = Params->mast_position;
+                SetForward(cam_offset, wheel_arr);
+                wheel_A_heading = wheel_arr[0];
+                wheel_A_dir = wheel_arr[1];
+                printf("Wheel A: %f, dir: %d\n", wheel_A_heading, wheel_A_dir);
+                wheel_B_heading = wheel_arr[2];
+                wheel_B_dir = wheel_arr[3];
+                printf("Wheel B: %f, dir: %d\n", wheel_B_heading, wheel_B_dir);
+                wheel_C_heading = wheel_arr[4];
+                wheel_C_dir = wheel_arr[5];
+                printf("Wheel C: %f, dir: %d\n", wheel_C_heading, wheel_C_dir);
+                wheel_position = 0;
+            }
+            // Update parameters for new heading from mission control
+            heading_y = Params->AXIS_X;
+            heading_x = 0 - Params->AXIS_Y;
+            target_heading = atan2(heading_y, heading_x) * 180/3.1416; 
+            
+            if (current_heading != target_heading)
+            {
+                // Exponential Moving Average
+                heading = (target_heading * 0.5) + (heading * (1-0.5));
+                printf("heading: %f\n", heading);
+                wheel_A_heading = wheel_A_heading - (current_heading - heading);
+                printf("wheel_A_heading: %f\n", wheel_A_heading);
+                wheel_B_heading = wheel_B_heading - (current_heading - heading);
+                printf("wheel_B_heading: %f\n", wheel_B_heading);
+                wheel_C_heading = wheel_C_heading - (current_heading - heading);
+                printf("wheel_C_heading: %f\n", wheel_C_heading);
+                wheel_position = wheel_position - (current_heading - heading);
+                printf("wheel_position: %f\n", wheel_position);
+                current_heading = heading;
+
+                // If wheels hit boundaries, flip them 180 degrees and switch 
+                // direction they rotate.
+                if (wheel_position < MIN_ROTATION)
+                {
+                    applyBrakes(0);
+                    wheel_A_heading = wheel_A_heading + 180;
+                    wheel_A_dir = !wheel_A_dir;
+                    wheel_B_heading = wheel_B_heading + 180;
+                    wheel_B_dir = !wheel_B_dir;
+                    wheel_C_heading = wheel_C_heading + 180;
+                    wheel_C_dir = !wheel_C_dir;
+                    wheel_position = wheel_position + 180;
+                    motor_A.SetDirection(wheel_A_dir);
+                    motor_B.SetDirection(wheel_B_dir);
+                    motor_C.SetDirection(wheel_C_dir);
+                    applyBrakes(current_brakes);
+                }
+                else if (wheel_position > MAX_ROTATION)
+                {
+                    applyBrakes(0);
+                    wheel_A_heading = wheel_A_heading - 180;
+                    wheel_A_dir = !wheel_A_dir;
+                    wheel_B_heading = wheel_B_heading - 180;
+                    wheel_B_dir = !wheel_B_dir;
+                    wheel_C_heading = wheel_C_heading - 180;
+                    wheel_C_dir = !wheel_C_dir;
+                    wheel_position = wheel_position - 180;
+                    motor_A.SetDirection(wheel_A_dir);
+                    motor_B.SetDirection(wheel_B_dir);
+                    motor_C.SetDirection(wheel_C_dir);
+                    applyBrakes(current_brakes);
+                }
+
+                // Update servo positions and speed
+                servo_A.SetPositionPercent(100 * (wheel_A_heading + 90)/(2 * MAX_ROTATION));
+                servo_B.SetPositionPercent(100 * (wheel_B_heading + 90)/(2 * MAX_ROTATION));
+                servo_C.SetPositionPercent(100 * (wheel_C_heading + 90)/(2 * MAX_ROTATION));
+            }
+            if (speed != current_speed)
+            {
+                //printf("speed: %f\n", speed);
+                setSpeedAllWheels(100 * speed);
+                current_speed = speed;
+            }
+            // Delay 10 ms
+            vTaskDelay(10);
+        }
+        /*
         while(Params->mode == CRAB)
         {
             if (Params->mode != CRAB)
@@ -282,6 +408,7 @@ extern "C" void vMoveTask(void *pvParameters)
             // Delay 10 ms
             vTaskDelay(10);
         }
+        */
 
         while(Params->mode == SPIN)
         {

@@ -12,11 +12,29 @@
 #include "Motor_Control_rev1.hpp"
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
-    //Create Access Point
-    WiFi.softAP("Drive", "drive1234");
+    // Create addresses for network connections
+    char * ssid = "SJSURoboticsAP";
+    char * password = "cerberus2019";
+    IPAddress Ip(192, 168, 10, 19);
+    IPAddress Gateway(192, 168, 10, 100);
+    IPAddress NMask(255, 255, 255, 0);
+    
+    // Configure the soft AP
+    WiFi.mode(WIFI_AP_STA);    
+    WiFi.softAP("MyESP32AP", "testpassword");
     Serial.println();
-    Serial.print("IP address: ");
+    Serial.print("AP IP address: ");
     Serial.println(WiFi.softAPIP());
+
+    // Connect to the Rover's AP
+    WiFi.config(Ip, Gateway, NMask);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        printf("Connecting to WiFi... ");
+    }
+    printf("\nConnected to %s\n", ssid);
     
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
@@ -306,6 +324,98 @@ double driveModeMapping(double x, double y)
     }
     target_angle = param1 * param2 * 45;
     return target_angle;
+}
+
+void SetForward(double offset, double array[])
+{
+    double wheels[6] = {0}; 
+
+    if(offset > -15 && offset < 15)
+    { 
+        wheels[0] = 210 + offset;
+        wheels[1] = 0;
+        wheels[2] = 90 + offset;
+        wheels[3] = 0;
+        wheels[4] = 150 + offset;
+        wheels[5] = 1;
+    }
+    else if(offset > 45 && offset < 60)
+    {
+        wheels[0] = 90 + offset;
+        wheels[1] = 1;
+        wheels[2] = 90 + offset;
+        wheels[3] = 0;
+        wheels[4] = 150 + offset;
+        wheels[5] = 1;
+    }
+    else if(offset >= 60 && offset < 75)
+    {
+        wheels[0] = 150 + offset - 120;
+        wheels[1] = 1;
+        wheels[2] = 210 + offset - 120;
+        wheels[3] = 0;
+        wheels[4] = 210 + offset - 120;
+        wheels[5] = 1;   
+    }
+    else if(offset > 105 && offset < 135)
+    {
+        wheels[0] = 150 + offset - 120;
+        wheels[1] = 1;
+        wheels[2] = 210 + offset - 120;
+        wheels[3] = 0;
+        wheels[4] = 90 + offset - 120;
+        wheels[5] = 10;
+    }
+    else if(offset > 165 && offset <= 180)
+    {
+        wheels[0] = 150 + offset - 120;
+        wheels[1] = 1;
+        wheels[2] = 90 + offset - 120;
+        wheels[3] = 1;
+        wheels[4] = 90 + offset - 120;
+        wheels[5] = 0;
+    }
+    else if(offset >= -180 && offset < -165)
+    {
+        wheels[0] = 210 + offset + 120;
+        wheels[1] = 1;
+        wheels[2] = 150 + offset + 120;
+        wheels[3] = 1;
+        wheels[4] = 210 + offset + 120;
+        wheels[5] = 0;
+    }
+    else if (offset > -35 && offset < -105)
+    {
+        wheels[0] = 90 + offset + 120;
+        wheels[1] = 0;
+        wheels[2] = 150 + offset + 120;
+        wheels[3] = 1;
+        wheels[4] = 210 + offset + 120;
+        wheels[5] = 0;
+    }
+    else if(offset > -75 && offset < -60)
+    {
+        wheels[0] = 90 + offset + 120;
+        wheels[1] = 0;
+        wheels[2] = 150 + offset + 120;
+        wheels[3] = 1;
+        wheels[4] = 90 + offset + 120;
+        wheels[5] = 1;
+    }
+    else if(offset >= -60 && offset < -45)
+    {
+        wheels[0] = 210 + offset;
+        wheels[1] = 0;
+        wheels[2] = 210 + offset;
+        wheels[3] = 1;
+        wheels[4] = 150 + offset;
+        wheels[5] = 1;
+    }
+
+    for (uint16_t i = 0; i < 6; i++)
+    {
+        array[i] = wheels[i];
+    }
 }
 /*
 char *getHeading(double gps_data);

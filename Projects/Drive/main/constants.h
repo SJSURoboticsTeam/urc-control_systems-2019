@@ -18,13 +18,8 @@ constexpr double SIDE = 40.25;
 constexpr double S_HALF = 20.125;
 constexpr double SIDE_2_MID = 11.619;
 constexpr double CORNER_2_MID = 23.238;
-constexpr double MAX_DIST = 685.777; // Distance where out wheel turns 1 degree
+//constexpr double MAX_DIST = 685.777; // Distance where out wheel turns 1 degree
 //constexpr double MAX_DIST = 500;
-
-// HAL Sensor Pins //
-//constexpr uint32_t HAL_A_PIN = 35;
-//constexpr uint32_t HAL_B_PIN = 0;
-//constexpr uint32_t HAL_C_PIN = 4;
 
 // Constants for the steering servos //
 constexpr uint32_t SERVO_A_PIN = 26;
@@ -99,9 +94,12 @@ constexpr float ROTATE_POSITION_0 = 20.00;
 constexpr float ROTATE_POSITION_1 = 80.00;
 
 /* Servos DH-03X */
+/*
 constexpr double MAX_ROTATION = 300;
 constexpr double MIN_ROTATION = 0;
-
+*/
+constexpr float MAX_ROTATION = 90.00;
+constexpr float MIN_ROTATION = -90.00;
 
 // Create the Steering Servos //
 extern Servo servo_A;
