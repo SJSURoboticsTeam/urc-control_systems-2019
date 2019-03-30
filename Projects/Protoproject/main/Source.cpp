@@ -19,9 +19,14 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     IPAddress Gateway(192, 168, 10, 100);
     IPAddress NMask(255, 255, 255, 0);
     
-    // Configure settings to connect to external WiFi network
-    WiFi.mode(WIFI_STA);
-    // WiFi.enableSTA(true);
+    // Configure the soft AP
+    WiFi.mode(WIFI_AP_STA);    
+    WiFi.softAP("MyESP32AP", "testpassword");
+    Serial.println();
+    Serial.print("AP IP address: ");
+    Serial.println(WiFi.softAPIP());
+
+    // Connect to the Rover's AP
     WiFi.config(Ip, Gateway, NMask);
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED)
@@ -30,14 +35,6 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("Connecting to WiFi... ");
     }
     printf("\nConnected to %s\n", ssid);
-
-    // Configure the soft AP
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP("MyESP32AP", "testpassword");
-    Serial.println();
-    Serial.print("AP IP address: ");
-    Serial.println(WiFi.softAPIP());
-
 
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
