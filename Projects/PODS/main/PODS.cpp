@@ -331,6 +331,9 @@ float servo1_min = 2.5;//%
 float servo1_max = 12;//%
 int open_angle = 80;
 int close_angle = -70;
+
+
+
 		//servo object for PODS door
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
@@ -367,7 +370,7 @@ void dispenseFluid(int x)
 uint32_t servo1_frequency = 50; //hz
 uint32_t servo1_gpio_pin = servoInoculationPin(x);
 uint32_t servo1_timer = 0;
-uint32_t servo1_channel = 0;
+uint32_t servo1_channel = 1;
 float servo1_min = 2.5;
 float servo1_max = 12;
 double up = 90;
@@ -395,14 +398,23 @@ void moveServo(int x, int angle)
 	uint32_t servo1_frequency = 50; //hz
 	uint32_t servo1_gpio_pin = test_servo_pin;
 	uint32_t servo1_timer = 0;
-	uint32_t servo1_channel = x;
+	uint32_t servo1_channel;
 	float servo1_min = 2.5;//%
 	float servo1_max = 12;//%
 
 	printf("%i \n", servo1_gpio_pin );
 
+	if(test_servo =="fluid")
+	{
+		servo1_channel = 2;
+		
+	}
+	if(test_servo == "lid")
+	{
+		servo1_channel = 3;
+	}
 
-		//servo object for inoculation fluid
+	//servo object for inoculation fluid
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
 
