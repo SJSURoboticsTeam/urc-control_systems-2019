@@ -13,6 +13,7 @@
 #include "constants.h" 
 
 QueueHandle_t xQueueISR, xQueueTerminateTask;//, xQueueLid;
+TaskHandle_t task0, task1, task2, task3, task4, task5, task6;
 ParamsStruct params;
 AsyncWebServer server(80);
 

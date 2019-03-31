@@ -7,13 +7,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "driver/ledc.h"
 #include <string>
+#include "freertos/FreeRTOS.h"
 
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
 extern QueueHandle_t xQueueISR, xQueueTerminateTask;//, xQueueLid;//, xTaskQueue; 
 
-
+extern TaskHandle_t task0, task1, task2, task3, task4, task5, task6;
 /******************
 variables for gyger data
 	-stores emission data in counts per minute
@@ -22,7 +23,7 @@ variables for gyger data
 static String data_string_0, data_string_1, data_string_2,data_string_3,data_string_4,
 		data_string_5, data_string_6;
 
-static int test_angle, test_id;
+static int test_angle, test_id, test_servo_pin;
 static String test_servo;
 /*********************
 pins for gyger counter interupts

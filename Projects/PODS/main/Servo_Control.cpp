@@ -52,10 +52,10 @@ void Servo::SetFrequency(uint32_t frequency)
 
 void Servo::SetPositionPercent(double percentage)
 {
-    printf("percentage from user %f\n", percentage);
+    //printf("percentage from user %f\n", percentage);
     // Calculates the duty cycle based upon the input percentage //
     duty_cycle = base_duty + (range * percentage / 100);
-    printf("duty cycle calculated: %d\n", duty_cycle);
+    //printf("duty cycle calculated: %d\n", duty_cycle);
     // Safety net in case the percentage exceeds the boundaries //
     if (duty_cycle > top_duty)
     {

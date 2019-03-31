@@ -68,10 +68,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          {
          	 z = true;
          }
-         else if(y == "false" or y == "False" or y == "FALSE")
+         if(y == "false" or y == "False" or y == "FALSE")
          {
          	z = false;
          }
+       ///start pod
         startPOD(z,x);
          
          y = "Pod toggled";
@@ -125,8 +126,28 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         test_id = atoi(request->arg("pod").c_str());
         test_servo = request->arg("type").c_str();
         test_angle = atoi(request->arg("angle").c_str());
+ 		
 
-        xTaskCreate(vLidTask, "toggle lid" , 4060, NULL, 2, NULL);
+        printf("test id %i \n", test_id);
+
+        printf( "test_servo %s \n", test_servo.c_str() );
+        //printf("\n");
+        printf("test_angle %i \n",test_angle);
+    	if(test_servo == "fluid")
+		{
+
+			 test_servo_pin = servoInoculationPin(test_id);
+
+
+		}
+		 if(test_servo == "lid")
+		{
+
+		 	test_servo_pin = servoLidPin(test_id);
+
+		}
+		printf("pin %i \n", test_servo_pin);
+        xTaskCreate(vServoTask, "moving servo" , 4060, NULL, 2, NULL);
       
    		request->send(200, "text/plain", "servo moved");
         	
@@ -227,32 +248,32 @@ void startPOD(bool start, int x)
 {
 
 	
-		printf("startPOD function\n x = %d \n", x);
+		//printf("startPOD function\n x = %d \n", x);
 		//printf("state = %d \n", start );
 		
 	if(start == true)
 	{
 		switch(x)
 		{
-		case 0: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 1, NULL); 
+		case 0: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)0, 1, &task0); 
 				printf("task %d started \n", x);
 			break;
-		case 1: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)1, 1, NULL); 
+		case 1: xTaskCreate(vGygerTask, "gyger1 data", 4060, (void*)1, 1, &task1); 
 				printf("task %d started \n", x);				
 			break;
-		case 2: xTaskCreate(vGygerTask, "gyger2 data", 4060, (void*)2, 1, NULL); 
+		case 2: xTaskCreate(vGygerTask, "gyger2 data", 4060, (void*)2, 1, &task2); 
 				printf("task %d started \n", x);
 			break;
-		case 3: xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 1, NULL); 
+		case 3: xTaskCreate(vGygerTask, "gyger3 data", 4060, (void*)3, 1, &task3); 
 				printf("task %d started \n", x);
 			break;
-		case 4: xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 1, NULL);
+		case 4: xTaskCreate(vGygerTask, "gyger4 data", 4060, (void*)4, 1, &task4);
 				printf("task %d started \n", x);
 			break;
-		case 5: xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 1, NULL);
+		case 5: xTaskCreate(vGygerTask, "gyger5 data", 4060, (void*)5, 1, &task5);
 				printf("task %d started \n", x);
 			break;
-		case 6: xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 1, NULL);
+		case 6: xTaskCreate(vGygerTask, "gyger6 data", 4060, (void*)6, 1, &task6);
 				printf("task %d started \n", x);
 			break;
 		default:
@@ -260,29 +281,29 @@ void startPOD(bool start, int x)
 		}
 	}
 
-	else if(start == false)
+	if(start == false)
 	{
 		switch(x)
 		{
-		case 0: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+		case 0: vTaskDelete(task0);
 				printf("task %d stopped \n", x);
 			break;
-		case 1: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+		case 1: vTaskDelete(task1);
 				printf("task %d stopped \n", x);				
 			break;
-		case 2: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE); 
+		case 2: vTaskDelete(task2);
 				printf("task %d stopped \n", x);
 			break;
-		case 3:xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+		case 3: vTaskDelete(task3);
 				printf("task %d stopped \n", x);
 			break;
-		case 4: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+		case 4: vTaskDelete(task4);
 				printf("task %d stopped \n", x);
 			break;
-		case 5: xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+		case 5: vTaskDelete(task5);
 				printf("task %d stopped \n", x);
 			break;
-		case 6:xQueueSend(xQueueTerminateTask, (void*) x,  pdFALSE);
+		case 6: vTaskDelete(task6);
 				printf("task %d stopped \n", x);
 			break;
 		default:
@@ -308,8 +329,8 @@ uint32_t servo1_timer = 0;
 uint32_t servo1_channel = 0;
 float servo1_min = 2.5;//%
 float servo1_max = 12;//%
-int open_angle = 90;
-int close_angle = -90;
+int open_angle = 80;
+int close_angle = -70;
 		//servo object for PODS door
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
@@ -350,7 +371,7 @@ uint32_t servo1_channel = 0;
 float servo1_min = 2.5;
 float servo1_max = 12;
 double up = 90;
-double down = -90;
+double down = -70;
 
 
 		//servo object for inoculation fluid
@@ -368,36 +389,25 @@ double down = -90;
 }
 
 
-void moveServo(int x, String servo, int angle)
+void moveServo(int x, int angle)
 {
 	
 	uint32_t servo1_frequency = 50; //hz
-	uint32_t servo1_gpio_pin = -1;
+	uint32_t servo1_gpio_pin = test_servo_pin;
 	uint32_t servo1_timer = 0;
-	uint32_t servo1_channel = 0;
+	uint32_t servo1_channel = x;
 	float servo1_min = 2.5;//%
 	float servo1_max = 12;//%
 
-	if(servo == "fluid")
-	{
-
-		 servo1_gpio_pin = servoInoculationPin(x);
+	printf("%i \n", servo1_gpio_pin );
 
 
-	}
-	else if(servo == "lid")
-	{
-
-		 servo1_gpio_pin = servoLidPin(x);
-
-
-
-	}
 		//servo object for inoculation fluid
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
 
-	servo1.SetPositionPercent(getPercent(angle));
+	servo1.SetPositionPercent(getPercent(test_angle));
+
 
 }
 

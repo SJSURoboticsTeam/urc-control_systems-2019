@@ -25,7 +25,7 @@ void sealPODS(int x, bool open); //seals POD x
 								// open = true -> open lid
 								// open = false -> close lid
 
-void moveServo(int x, String servo, int angle); //x = POD id
+void moveServo(int x, int angle); //x = POD id
 												// string = "lid" or "fluid"
 												//angle = +- 90
 

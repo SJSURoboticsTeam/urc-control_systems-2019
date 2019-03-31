@@ -109,12 +109,13 @@ extern "C" void vGygerTask(void *pvParameters)
       	}   
 
       	//terminate if 
-      	if(xQueuePeek(xQueueTerminateTask, &terminate, (TickType_t)0) and (int)terminate == id) 
+      	/*
+       	if(xQueuePeek(xQueueTerminateTask, &terminate, (TickType_t)0) and (int)terminate == id) 
       	{
       		xQueueReceive(xQueueTerminateTask, &terminate, (TickType_t) 0);
       		vTaskDelete(NULL);
       	}       	      		
-
+		*/
 	}
 
 
@@ -162,8 +163,10 @@ extern "C" void vServoTask(void *pvParameters)
 {
 	printf("ServoTask Started");
 
-	moveServo(test_id, test_servo, test_angle);
-	vTaskDelay(2000/ portTICK_PERIOD_MS);
+	moveServo(test_id, test_angle);
+	vTaskDelay(1000/ portTICK_PERIOD_MS);
+	test_servo = "";
+
 	while(1)
 	{
 		vTaskDelete(NULL);
