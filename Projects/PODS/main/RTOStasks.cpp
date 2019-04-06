@@ -129,20 +129,20 @@ extern "C" void vLidTask(void *pvParameters)
 	//printf("m = %d \n", m );
 	int id = m % 100;	
 
-	//printf("id = %d\n", id);
+	printf("id = %d\n", id);
 	int state_num = m / 100;
-	//printf("state num = %d\n", state_num);
+	printf("state num = %d\n", state_num);
 	bool state = NULL;
 
 	if(state_num == 1)
 	{
 		state = true;
-		//printf("state:: true\n");
+		printf("state:: true\n");
 	}
 	else if(state_num == 0)
 	{
 		state = false;
-		//printf("state false\n");
+		printf("state false\n");
 	}
 
 	 
@@ -165,7 +165,7 @@ extern "C" void vServoTask(void *pvParameters)
 
 	moveServo(test_id, test_angle);
 	vTaskDelay(1000/ portTICK_PERIOD_MS);
-	test_servo = "";
+	//test_servo = "";
 
 	while(1)
 	{

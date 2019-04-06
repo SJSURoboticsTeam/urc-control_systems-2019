@@ -1,5 +1,35 @@
 # README #
 
+
+###PODs XHR endpoints and parameters###
+*"/toggle_pod"
+	params
+		- "pod" 
+			(int) 0-6
+		-"state"
+			(string) "start" "stop"
+*"/stop_all"
+*"/data"
+	params
+		-"pod"
+			(int) 0-6
+	RETURNS DATA STRING: "Pod: id(int) cpm: cpm(int);time_stamp(U_long) ..."
+*"/servo"
+	params
+		-"pod"
+			(int) 0-6
+		-"type"
+			(string) "lid" or "fluid"
+		-"angle"
+			(int) +-80
+*"/toggle_lid"
+	params
+		-"pod"
+			(int) 0-6
+		-"state"
+			(string) "open" "close"
+
+			
 ### Framework ###
 
 ##### General #####

@@ -51,9 +51,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     /*******************************
 		start/stop PODS comand
 			-takes pod id (int) 0-6
-			-takes stape param "true" or "false"
-				-true starts pod
-				-false stops pod
+			-takes state param "start" or "stop"
     ********************************/
     server->on("/toggle_pod", HTTP_POST, [=](AsyncWebServerRequest *request){
          printf("XHR recieved \n");
@@ -64,11 +62,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          std::cout << x << "\n";
          bool z;
 
-         if(y =="True" or y == "true" or "TRUE")
+         if(y =="start" or y == "Start" or "START")
          {
          	 z = true;
          }
-         if(y == "false" or y == "False" or y == "FALSE")
+         if(y == "stop" or y == "Stop" or y == "STOP")
          {
          	z = false;
          }
@@ -121,6 +119,14 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         		request->send(200, "text/plain", data);
         	
     }); 
+
+    /******************************
+				
+				takes:
+					POD id (int) 0-6
+					type (string) "lid" or "fluid"
+					angle (int)  +-90
+    ***************************/
         server->on("/servo", HTTP_POST, [=](AsyncWebServerRequest *request){
         
         test_id = atoi(request->arg("pod").c_str());
@@ -155,8 +161,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
    /*****************
 	open/close pod lid from mission control
 		- pod -> id number
-		- state ->  true = open lid
-					false = close lid 
+		- state ->  "open" "close"
    *********************/
     server->on("/toggle_lid", HTTP_POST, [=](AsyncWebServerRequest *request){
          printf("XHR recieved \n");
@@ -168,13 +173,13 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          std::cout << x << "\n";
          //bool z;
 
-         if(y =="True" or y == "true" or y == "TRUE")
+         if(y =="open" or y == "Open" or y == "OPEN")
          {
          	 //z = true;
          	 m = x + 100;
          	
          }
-         else if(y == "false" or y == "False" or y == "FALSE")
+         else if(y == "CLOSE" or y == "Close" or y == "close")
          {
          	//z = false;
          	m = x;
@@ -329,8 +334,8 @@ uint32_t servo1_timer = 0;
 uint32_t servo1_channel = 0;
 float servo1_min = 2.5;//%
 float servo1_max = 12;//%
-int open_angle = 80;
-int close_angle = -70;
+int open_angle = 75;
+int close_angle = -60;
 
 
 
@@ -402,9 +407,9 @@ void moveServo(int x, int angle)
 	float servo1_min = 2.5;//%
 	float servo1_max = 12;//%
 
-	printf("%i \n", servo1_gpio_pin );
+	//printf("%i \n", servo1_gpio_pin );
 
-	if(test_servo =="fluid")
+	if(test_servo == "fluid")
 	{
 		servo1_channel = 2;
 		
@@ -412,8 +417,9 @@ void moveServo(int x, int angle)
 	if(test_servo == "lid")
 	{
 		servo1_channel = 3;
+		
 	}
-
+	printf("channel: %i", servo1_channel);
 	//servo object for inoculation fluid
 	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
 		servo1_frequency, servo1_max, servo1_min);
