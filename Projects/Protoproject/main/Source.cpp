@@ -11,7 +11,7 @@
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
-    WiFi.softAP("MyESP32AP", "testpassword");
+    WiFi.softAP("ZacksESP32AP", "testpassword");
     Serial.println();
     Serial.print("IP address: ");
     Serial.println(WiFi.softAPIP());
