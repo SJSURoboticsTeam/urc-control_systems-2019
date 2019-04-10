@@ -1,0 +1,41 @@
+
+#include <stdlib.h>
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
+#include "freertos/event_groups.h"
+#include "esp_log.h"
+#include "Arduino.h"
+#include "EEPROM.h"
+#include "Source.h"
+#include "constants.h"
+#include <string>
+#include "../../../Utilities/Servo_Control.hpp"
+#include "../../../Utilities/Servo_Control.cpp"
+
+//This task displays current levels of vPos and vNeg
+extern "C" void vClawTask(void *pvParameters)
+{
+    printf("Begin Claw Task...\n");
+    ParamsStruct* myParams = (ParamsStruct*) pvParameters;
+    int current_direction = 0;
+
+    //         Pin,Channel,Timer,Freq,Max,Min
+    Servo Claw(act_ENABLE,2,1,50,50,0);
+    Claw.SetPositionPercent(0); //Set Duty Cycle to 0 at init
+    initClaw();
+    while(1) {
+	printf("Testing...\n");
+
+	if (current_direction != 0)
+	{
+	}
+	else if(current_direction == 1)
+	{
+	}
+	else if(current_direction == -1)
+
+	printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->speed);
+	vTaskDelay(100);
+    }
+}
