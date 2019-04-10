@@ -63,12 +63,12 @@ extern "C" void vRotundaTask(void *pvParameters)
 
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
+    constexpr double kAlpha = 0.2;
     double current_position = kRotundaStartPos;
     double prev_target = params->RotundaTarget;
     double current_position_translate, rotunda_target_translate, new_target;
     double leftDistance, rightDistance;
     double dutyPercent;
-    constexpr double kAlpha = 0.2;
     //(pin, Chanel, Timer, Freq, Max, Min)
     Servo myServo(kRotundaPin, 1, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin);  
     
@@ -168,8 +168,9 @@ extern "C" void vRotundaTask(void *pvParameters)
             while(current_position != new_target)
             {
                 current_position = ExpMovingAvg(current_position, new_target , kAlpha);
-                myServo.SetPositionPercent( (current_position / kRotundaPosmax) * 100);
-                printf("Rotunda Duty: %f\n", (current_position / kRotundaPosmax) * 100);
+                dutyPercent = (current_position/kRotundaPosmax) * 100;
+                myServo.SetPositionPercent(dutyPercent);
+                printf("Rotunda Duty: %f\n", dutyPercent);
                 vTaskDelay(20);
             }
 
