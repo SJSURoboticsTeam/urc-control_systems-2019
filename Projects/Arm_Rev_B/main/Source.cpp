@@ -190,10 +190,10 @@ bool closeClaw()
 // Current = (Target * α) + (Current * (1 - α))
 double ExpMovingAvg(double Current, double Target, double Alpha)
 {
-    if(Alpha > 1)   return -1
+    if(Alpha > 1)   return -1;
 
     double TargetPortion = Target * Alpha;
-    double CurrentPortion = Current * (1 - Alpha);
+    double CurrentPotion = Current * (1 - Alpha);
     
     double EMA_Result = TargetPortion + CurrentPotion;
     return EMA_Result;

@@ -20,36 +20,10 @@
 #define BNO055_PWR_MODE    0x3E
 #define BNO055_SYS_TRIGGER 0x3F
 
-#define act_PHASE 0
-#define act_ENABLE 2
+#define act_PHASE 5
+#define act_ENABLE 17
 
-/* PINOUTS:
-	Servo 1: GPIO 6
-	Servo 2: GPIO 7
 
-	i2c:
-		SDA: GPIO 23
-		SCL: GPIO 21
-
-	Motors:
-		Motor Driver 1:	DIFF GEARBOX
-			VPROPI: GPIO 39
-			Mode 2: GPIO 27
-			Phase:	GPIO 16
-			Enable:	GPIO 4
-
-		Motor Driver 2:	DIFF GEARBOX
-			VPROPI: GPIO 36
-			Mode 2: GPIO 1
-			Phase:	GPIO 5
-			Enable:	GPIO 17
-
-		Motor Driver 3:
-			VPROPI: GPIO 34
-			Mode 2: GPIO 3
-			Phase:	GPIO 0
-			Enable:	GPIO 2
-*/
 
 constexpr int kRotundaPin = 18;		//Servo 1
 constexpr int kRotundaPosMin = 0;
@@ -60,7 +34,7 @@ constexpr double kRotundaFreq = 50;
 constexpr double kRotundaPWMMin = 5;
 constexpr double kRotundaPWMMax = 10;
 
-constexpr int kElbowPin = 25;		//Servo 2
+constexpr int kElbowPin = 27;		//Servo 2
 constexpr int kElbowLimitMin = 0;
 constexpr int kElbowLimitMax = 300;
 constexpr double kElbowRange = 300;
@@ -71,13 +45,13 @@ constexpr double kElbowPWMMax = 12.5;
 
 
 constexpr uint32_t kMotorFreq = 5000;
-constexpr uint32_t kShoulderSigPin = 33;
-constexpr uint32_t kShoulderDirPin = 32;
+constexpr uint32_t kShoulderSigPin = 25;
+constexpr uint32_t kShoulderDirPin = 26;
 constexpr uint32_t kShoulderEnablePWMMin = 0;	//percentage
 constexpr uint32_t kShoulderEnablePWMMax = 50;	//percentage
 
-constexpr uint32_t kWristLeftSigPin = 4;
-constexpr uint32_t kWristLeftDirPin = 16;
+constexpr uint32_t kWristLeftSigPin = 0;
+constexpr uint32_t kWristLeftDirPin = 2;
 
-constexpr uint32_t kWristRightSigPin = 17;
-constexpr uint32_t kWristRightDirPin = 5;	//port 2
+constexpr uint32_t kWristRightSigPin = 16;
+constexpr uint32_t kWristRightDirPin = 4;	//port 2
