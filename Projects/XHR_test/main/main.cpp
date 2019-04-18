@@ -67,38 +67,7 @@ void loop() {
 
 void XHRTask( void * parameter )
 {
-  server.on("/calculator", HTTP_POST, [](AsyncWebServerRequest *request){
-      int op = 2; //0 for add, 1 for subtract, 2 if uninitialized
-      int result = 0;
-      int args = request->args();
-      for(int i=0;i<args;i++) {
-        Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
-        //check if arg is op code or value
-        if (!strcmp(request->argName(i).c_str(),"operation")) {
-          //decide if performing addition or subtraction
-          op = (!strcmp(request->arg(i).c_str(),"\"add\"") ? 0 : 1);
-        } else {
-          int current_val = atoi(request->arg(i).c_str());
-          if (op == 0) { //addition
-            result += current_val;
-          }
-          else { //subtraction
-            if (i == 1) {
-              result = current_val; 
-            } else {
-              result -= current_val;
-            }
-          }
-        }
-      }
-
-    std::cout << "Result: " << result << std::endl;
-
-    //convert int to char for concatenation in return string
-    char result_str[10];
-    itoa(result, result_str, 10);
-    request->send(200, "text/plain", result_str);
-  });
+  
 
   while(true)
   {
