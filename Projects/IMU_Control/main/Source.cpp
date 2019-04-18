@@ -7,7 +7,7 @@
 #include "EEPROM.h"
 #include "constants.h"
 #include "Wire.h"
-
+#include "Adafruit_BNO055.h"
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Create Access Point
@@ -18,9 +18,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
-    server->on("/update_name", HTTP_POST, [=](AsyncWebServerRequest *request){
-        strcpy(params->name, request->arg("name").c_str());
-        request->send(200, "text/plain", "Success");
+    server->on("/imu", HTTP_POST, [=](AsyncWebServerRequest *request){
+        char yaw_str[10];
+	itoa(params->yaw[0],yaw_str,10);
+	printf("Yaw for IMU %i: %f",atoi(request->arg("imu_address").c_str()),params->yaw[0]);
+	request->send(200,"text/plain",yaw_str);
     });
 
     events.onConnect([](AsyncEventSourceClient *client) {
@@ -66,17 +68,29 @@ uint8_t  i2c_scanner()
     return device_address;
 }
 
-void initIMU(uint8_t IMU_ADDRESS)
+void initIMU(uint8_t IMU_ADDRESS, uint8_t MODE)
 {
     Wire.begin();
     //Get Device ID
     uint8_t chipID = readByte(IMU_ADDRESS, BNO055_CHIP_ID);;
     printf("ID = %x\n",chipID);
 
-    //Set to IMU Mode
+    //Set to Normal Power Mode
+    uint8_t pwr_mode = readByte(IMU_ADDRESS, BNO055_PWR_MODE) & ~(0x3);
+    writeByte(IMU_ADDRESS, BNO055_PWR_MODE, pwr_mode);
+
     uint8_t opr_mode = readByte(IMU_ADDRESS, BNO055_OPR_MODE) & ~(0xF);
-    opr_mode |= 0x08;
+    //Set to IMU Mode
+    opr_mode |= MODE;
+
+    //Set to NDOF Mode
+    //opr_mode |= 0x0C;
+
     writeByte(IMU_ADDRESS, BNO055_OPR_MODE, opr_mode);
+
+    // Unit Select
+    uint8_t unit_sel = readByte(IMU_ADDRESS, BNO055_UNIT_SEL) & ~(0x4);
+    writeByte(IMU_ADDRESS, BNO055_UNIT_SEL, unit_sel);
 }
 
 void writeByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS, uint8_t VALUE)
@@ -99,7 +113,7 @@ uint8_t readByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
     return byte_val;
 }
 
-uint16_t readTwoBytes (uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
+int16_t getAxis(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
 {
     uint16_t bytes_val = 0;
     Wire.beginTransmission(IMU_ADDRESS);
@@ -111,13 +125,16 @@ uint16_t readTwoBytes (uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
     return bytes_val;
 }
 
-int16_t getAxis(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
+double calculatePitch(double xAxis, double yAxis, double zAxis)
 {
-    int16_t axis_value = readTwoBytes(IMU_ADDRESS, REGISTER_ADDRESS);
-    return axis_value;
+    double pitch = atan2(-xAxis, sqrt(yAxis*yAxis + zAxis*zAxis)) * 180/PI;
+    return pitch;
 }
 
-int16_t convertEuler(int16_t euler_angle_reading, int16_t min_angle_reading, int16_t max_angle_reading, int16_t min_output_value, int16_t max_output_value)
+double calculateRoll(double xAxis, double yAxis, double zAxis)
 {
-    return ((euler_angle_reading - min_angle_reading) * (max_output_value - min_output_value) / (max_angle_reading - min_angle_reading)) + min_output_value; 
+    int sign = (zAxis > 0) ? 1 : -1;
+    float miu = 0.001;
+    double roll = atan2(yAxis, sign * sqrt(zAxis*zAxis + miu*xAxis*xAxis)) * 180/PI;
+    return roll;
 }

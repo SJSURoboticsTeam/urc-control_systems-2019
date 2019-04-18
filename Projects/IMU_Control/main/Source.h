@@ -12,26 +12,26 @@ extern "C" {
 
 struct ParamsStruct {
     char name[40];
-    int16_t yaw[4];
-    int16_t pitch[4];
-    int16_t roll[4];
+    float yaw[4];
+    float pitch[4];
+    float roll[4];
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
 
 uint8_t i2c_scanner();
 
-void initIMU(uint8_t IMU_ADDRESS);
+void initIMU(uint8_t IMU_ADDRESS, uint8_t MODE);
 
 void writeByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS, uint8_t VALUE);
 
 uint8_t readByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS);
 
-uint16_t readBytes(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS);
-
 int16_t getAxis(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS);
 
-int16_t convertEuler(int16_t euler_angle_reading, int16_t min_angle_reading, int16_t max_angle_reading, int16_t min_output_value, int16_t max_output_value);
+double calculatePitch(double xAxis, double yAxis, double zAxis);
+
+double calculateRoll(double xAxis, double yAxis, double zAxis);
 #ifdef _cplusplus
 }
 #endif

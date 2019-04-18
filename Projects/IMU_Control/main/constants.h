@@ -26,6 +26,7 @@
 
 #define BNO055_ADDR0          0x28
 #define BNO055_ADDR1          0x29
+#define BNO055_UNIT_SEL       0x3B
 #define BNO055_OPR_MODE       0x3D
 #define BNO055_PWR_MODE       0x3E
 #define BNO055_SYS_TRIGGER    0x3F
