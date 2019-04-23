@@ -23,17 +23,12 @@
 #define BNO055_EUL_ROLL_MSB   0x1D
 #define BNO055_EUL_PITCH_LSB  0x1E
 #define BNO055_EUL_PITCH_MSB  0x1F
-
-#define BNO055_ADDR0          0x28
-#define BNO055_ADDR1          0x29
 #define BNO055_UNIT_SEL       0x3B
 #define BNO055_OPR_MODE       0x3D
 #define BNO055_PWR_MODE       0x3E
 #define BNO055_SYS_TRIGGER    0x3F
 
-#define YAW_MIN 140
-#define YAW_MAX 5900
-#define PITCH_MIN -3080
-#define PITCH_MAX 3070
-#define ROLL_MIN 1400
-#define ROLL_MAX -1450
+#define IMU_ADDRESS_ROTUNDA   0x28
+#define IMU_ADDRESS_SHOULDER  0x29
+#define IMU_ADDRESS_ELBOW     0x2A
+#define IMU_ADDRESS_WRIST     0x2B
