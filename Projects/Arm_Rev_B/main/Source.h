@@ -15,13 +15,13 @@ extern "C" {
 #endif
 
 struct ParamsStruct {
-    // char name[40];
 	double RotundaTarget = -180.0; //range of -180 to 180
 	double ElbowTarget = kElbowStartPos;
-	double ShoudlerDuration_ms = 0;
-	int Wrist_Dimension = 0;;
-	double Wrist_Delta = 0;   
-	SemaphoreHandle_t xWristSemaphore;
+	double ShoulderDuration_ms = 0;
+	double WristPitch = 90;
+	double WristRoll = 90;   
+	SemaphoreHandle_t xWristPitchSemaphore;
+	SemaphoreHandle_t xWristRollSemaphore;
 
 	//Raul's Stuff
 	int current_direction = 0;
@@ -44,6 +44,8 @@ bool closeClaw();
 
 // Current = (Target * α) + (Current * (1 - α))
 double ExpMovingAvg(double Current, double Target, double Alpha);
+
+double fmap(double x, double in_min, double in_max, double out_min, double out_max);
 
 #ifdef _cplusplus
 }

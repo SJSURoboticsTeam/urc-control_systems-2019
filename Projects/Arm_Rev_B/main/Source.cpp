@@ -34,62 +34,96 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     server->on("/Arm", HTTP_POST, [=](AsyncWebServerRequest *request){
         if(request->hasArg("RotundaTarget"))
         {
-            params->RotundaTarget = atoi(request->arg("RotundaTarget").c_str());
+            params->RotundaTarget = atof(request->arg("RotundaTarget").c_str());
+            if((params->RotundaTarget <= 1) && (params->RotundaTarget >= -1))
+            {
+                params->RotundaTarget = fmap(params->RotundaTarget, -1, 1, -180, 180);
+            }
+            printf("RotundaTarget: %f\n", params->RotundaTarget);
         }
         // printf("RotundaTarget Param\n");
 
         if(request->hasArg("ElbowTarget"))
         {
-            params->ElbowTarget = atoi(request->arg("ElbowTarget").c_str());
+            params->ElbowTarget = atof(request->arg("ElbowTarget").c_str());
+            if((params->ElbowTarget <= 1) && (params->ElbowTarget >= -1))
+            {
+                params->ElbowTarget = fmap(params->ElbowTarget, -1, 1, kElbowLimitMin, kElbowLimitMax);
+            }
+            printf("ElbowTarget: %f\n", params->ElbowTarget);
         }
         // printf("ElbowTarget Param\n");
 
-        if(request->hasArg("ShoudlerDuration_ms"))
+        if(request->hasArg("ShoulderTarget"))
         {
-            params->ShoudlerDuration_ms = atoi(request->arg("ShoudlerDuration_ms").c_str());
-        }
-        // printf("ShoudlerDuration_ms Param\n");
+            // params->ShoulderDuration_ms = atof(request->arg("ShoulderTarget").c_str());
 
-        if(request->hasArg("Wrist_Delta"))
-        {
-            params->Wrist_Delta = atoi(request->arg("Wrist_Delta").c_str());
-        }
-        // printf("Wrist_Delta Param\n");
+            // if((params->ShoulderDuration_ms <= 1) && (params->ShoulderDuration_ms >= -1))
+            // {
+            //     params->ShoulderDuration_ms = fmap(params->ShoulderDuration_ms, -1, 1, kShoulderLimitMin, kShoulderLimitMax);
+            // }
+            // printf("Shoulder Target: %f \n", params->ShoulderDuration_ms);
+        
 
-        if(request->hasArg("Wrist_Dimension"))
-        {
-            params->Wrist_Dimension = atoi((request->arg("Wrist_Dimension").c_str()));
-        }
-        // printf("Wrist_Dimension Param\n");
 
-        if(request->hasArg("Wrist_Dimension") || request->hasArg("Wrist_Delta"))
-        {
-            xSemaphoreGive(params->xWristSemaphore);
+            //FOR THE MIMIC DEMO THIS IS WRONG CHANGE IT BACK AFTER
+            params->RotundaTarget = atof(request->arg("ShoulderTarget").c_str());
+            if((params->RotundaTarget <= 1) && (params->RotundaTarget >= -1))
+            {
+                params->RotundaTarget = fmap(params->RotundaTarget, -1, 1, -180, 180);
+            }
+            printf("RotundaTarget: %f\n", params->RotundaTarget);
         }
-        // printf("Wrist Semaphore Sent\n");
+        // printf("ShoulderDuration_ms Param\n");
+
+        if(request->hasArg("WristPitch"))
+        {
+            params->WristPitch = atof(request->arg("WristPitch").c_str());
+            if((params->WristPitch <= 1) && (params->WristPitch >= -1))
+            {
+                params->WristPitch = fmap(params->WristPitch, -1, 1, kWristPitchLimitMin, kWristPitchLimitMax);
+            }
+            printf("Wrist Pitch!: %f\n", params->WristPitch);
+            xSemaphoreGive(params->xWristPitchSemaphore);
+        }
+        // printf("WristPitch Param\n");
+
+        if(request->hasArg("WristRoll"))
+        {
+            params->WristRoll = atoi((request->arg("WristRoll").c_str()));
+            if((params->WristRoll <= 1) && (params->WristRoll >= -1))
+            {
+                params->WristRoll = fmap(params->WristRoll, -1, 1, 0, 360);
+            }
+            printf("WristRoll! : %f\n", params->WristRoll);
+            xSemaphoreGive(params->xWristRollSemaphore);
+        }
+        // printf("WristRoll Param\n");
 
         //Raul's stuff
         if(request->hasArg("speed"))
         {
             params->update_speed = atoi(request->arg("speed").c_str());
+            printf("Speed: %i\n", params->update_speed);
         }
         // printf("speed Param\n");
 
         if(request->hasArg("command"))
         {
             if(params->update_speed > 100) params->update_speed = 100;
-            params->actuator_speed = params->update_speed;
+            params->actuator_speed = 50;
 
             if(!strcmp(request->arg("command").c_str(),"open")){
                 params->current_direction = 1;
             }
-                else if(!strcmp(request->arg("command").c_str(),"close")){
+            else if(!strcmp(request->arg("command").c_str(),"close")){
                 params->current_direction = -1;
-                }
+            }
             else if(!strcmp(request->arg("command").c_str(),"stop")){
                 params->current_direction = 2;
                 params->actuator_speed = 0;
             }   
+            // printf("Command: %i\n", params->current_direction);
         }
         // printf("command Param\n");
 
@@ -197,4 +231,9 @@ double ExpMovingAvg(double Current, double Target, double Alpha)
     
     double EMA_Result = TargetPortion + CurrentPotion;
     return EMA_Result;
+}
+
+double fmap(double x, double in_min, double in_max, double out_min, double out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
