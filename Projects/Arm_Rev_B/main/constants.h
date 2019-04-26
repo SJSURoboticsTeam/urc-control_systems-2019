@@ -25,7 +25,7 @@
 
 
 
-constexpr int kRotundaPin = 18;		//Servo 1
+constexpr int kRotundaPin = 19;		//Servo 1
 constexpr int kRotundaPosMin = 0;
 constexpr int kRotundaPosmax = 3600;
 constexpr double kRotundaStartPos = 1800;
@@ -47,11 +47,14 @@ constexpr double kElbowPWMMax = 12.5;
 constexpr uint32_t kMotorFreq = 5000;
 constexpr uint32_t kShoulderSigPin = 25;
 constexpr uint32_t kShoulderDirPin = 26;
+constexpr double kShoulderLimitMin = -90;
+constexpr double kShoulderLimitMax = 90;
 constexpr uint32_t kShoulderEnablePWMMin = 0;	//percentage
 constexpr uint32_t kShoulderEnablePWMMax = 50;	//percentage
 
 constexpr uint32_t kWristLeftSigPin = 0;
 constexpr uint32_t kWristLeftDirPin = 2;
-
 constexpr uint32_t kWristRightSigPin = 16;
 constexpr uint32_t kWristRightDirPin = 4;	//port 2
+constexpr double kWristPitchLimitMin = -90;
+constexpr double kWristPitchLimitMax = 90;
