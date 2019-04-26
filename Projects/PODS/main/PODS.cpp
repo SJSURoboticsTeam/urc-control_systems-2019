@@ -16,7 +16,6 @@
 #include "esp_intr_alloc.h"
 
 using namespace std;
-//portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 ////////////////////////////////////////////////////////////////////////////////
 //                               BEGIN CODE HERE                              //
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,30 +128,33 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     ***************************/
         server->on("/servo", HTTP_POST, [=](AsyncWebServerRequest *request){
         
-        test_id = atoi(request->arg("pod").c_str());
-        test_servo = request->arg("type").c_str();
-        test_angle = atoi(request->arg("angle").c_str());
- 		
+        int id = atoi(request->arg("pod").c_str());
+        String servo = request->arg("type").c_str();
+        int angle = atoi(request->arg("angle").c_str());
+        int x;
+        printf("sending to queue\n");
+        xQueueSend(xQueueServoID, (void*) &id, (TickType_t)0);
+        xQueueSend(xQueueServoAngle, (void*) &angle,(TickType_t) 0);
+        
 
-        printf("test id %i \n", test_id);
-
-        printf( "test_servo %s \n", test_servo.c_str() );
-        //printf("\n");
-        printf("test_angle %i \n",test_angle);
-    	if(test_servo == "fluid")
+        printf("\ntest id: %i \n", id);
+        printf( "test_servo: %s \n", servo.c_str() );
+        printf("test_angle: %i \n",angle);
+    	
+    	if(servo == "fluid")
 		{
-
-			 test_servo_pin = servoInoculationPin(test_id);
-
+			x = 0;
+			 test_servo_pin = servoInoculationPin(id);
 
 		}
-		 if(test_servo == "lid")
+		 if(servo == "lid")
 		{
 
-		 	test_servo_pin = servoLidPin(test_id);
-
+		 	test_servo_pin = servoLidPin(id);	 	
+			x = 1;
 		}
-		printf("pin %i \n", test_servo_pin);
+		xQueueSend(xQueueServoType, (void*) &x, (TickType_t)0);
+		printf("pin: %i \n", test_servo_pin);
         xTaskCreate(vServoTask, "moving servo" , 4060, NULL, 2, NULL);
       
    		request->send(200, "text/plain", "servo moved");
@@ -328,38 +330,18 @@ void startPOD(bool start, int x)
 void sealPODS(int x, bool open)
 {
 
-uint32_t servo1_frequency = 50; //hz
-uint32_t servo1_gpio_pin = servoLidPin(x);
-uint32_t servo1_timer = 0;
-uint32_t servo1_channel = 0;
-float servo1_min = 2.5;//%
-float servo1_max = 12;//%
-int open_angle = 75;
-int close_angle = -60;
 
-
-
-		//servo object for PODS door
-	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
-		servo1_frequency, servo1_max, servo1_min);
-//	printf("moving servo open\n");
-	//servo1.SetPositionDuty(1);
-//	servo1.SetPositionPercent(getPercent(open_angle));
-	//printf("user given percent: %f \n", getPercent(close_angle) );
-	//vTaskDelay(3000/portTICK_PERIOD_MS);
-	//delay(3000);
 	if(open == true)
 	{
-		servo1.SetPositionPercent(getPercent(open_angle));
+		moveServo(x, open_angle, "lid");
 		//printf("%f \n", getPercent(open_angle) );
 		printf("moving lid open\n");
 	}
 
 	else if(open == false)
 	{
-		servo1.SetPositionPercent(getPercent(close_angle));
+		moveServo(x, close_angle, "lid");
 		//printf("User given percent: %f \n", getPercent(open_angle) );
-		//servo1.SetPositionDuty(150);
 		printf("moving lid close\n");
 	}
 
@@ -372,62 +354,91 @@ int close_angle = -60;
 void dispenseFluid(int x)
 {
 
-uint32_t servo1_frequency = 50; //hz
-uint32_t servo1_gpio_pin = servoInoculationPin(x);
-uint32_t servo1_timer = 0;
-uint32_t servo1_channel = 1;
-float servo1_min = 2.5;
-float servo1_max = 12;
-double up = 90;
-double down = -70;
 
-
-		//servo object for inoculation fluid
-	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
-		servo1_frequency, servo1_max, servo1_min);
-
-	servo1.SetPositionPercent(getPercent(down));
-
+	moveServo(x, down, "fluid");
 
 	vTaskDelay(5000 / portTICK_PERIOD_MS);
 
-
-	servo1.SetPositionPercent(getPercent(up));
-
+	moveServo(x, up, "fluid");
 }
 
 
-void moveServo(int x, int angle)
+void moveServo(int id, int angle, String type)
 {
+	printf("Moving servo \n");
+
+	//printf("Servos Created \n");
+	if (type == "fluid")
+	{
+		switch (id)
+		{
+			case 0: inoculation_servo0.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", inoculation_servo0_pin );
+				break;
+			case 1: inoculation_servo1.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", inoculation_servo1_pin );
+				break;
+			case 2: inoculation_servo2.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", inoculation_servo2_pin );
+				break;
+			case 3: inoculation_servo3.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", inoculation_servo3_pin );
+				break;
+			case 4: inoculation_servo4.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", inoculation_servo4_pin );
+				break;
+			case 5: inoculation_servo5.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", inoculation_servo5_pin );
+				break;
+			case 6: inoculation_servo6.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", inoculation_servo6_pin );
+				break;
+			default: 
+				break;
+
+		}
+	}
 	
-	uint32_t servo1_frequency = 50; //hz
-	uint32_t servo1_gpio_pin = test_servo_pin;
-	uint32_t servo1_timer = 0;
-	uint32_t servo1_channel;
-	float servo1_min = 2.5;//%
-	float servo1_max = 12;//%
+	 if ( type == "lid")
+	{
+		switch (id)
+		{
+			case 0: lid_servo0.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", lid_servo_pin0 );
+				break;
+			case 1: lid_servo1.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", lid_servo_pin1 );
+				break;
+			case 2: lid_servo2.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", lid_servo_pin2 );
+				break;
+			case 3: lid_servo3.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", lid_servo_pin3 );
+				break;
+			case 4: lid_servo4.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", lid_servo_pin4 );
+				break;
+			case 5: lid_servo5.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", lid_servo_pin5 );
+				break;
+			case 6: lid_servo6.SetPositionPercent(getPercent(angle));
+					printf("Using pin: %i \n", lid_servo_pin6 );
+				break;
+			default: 
+				break;
 
+		}	
+	}
+	
 	//printf("%i \n", servo1_gpio_pin );
-
-	if(test_servo == "fluid")
-	{
-		servo1_channel = 2;
-		
-	}
-	if(test_servo == "lid")
-	{
-		servo1_channel = 3;
-		
-	}
-	printf("channel: %i", servo1_channel);
-	//servo object for inoculation fluid
-	Servo servo1(servo1_gpio_pin,servo1_channel,servo1_timer, 
-		servo1_frequency, servo1_max, servo1_min);
-
-	servo1.SetPositionPercent(getPercent(test_angle));
-
+	printf("Using ID: %i \n", id);
+	printf("Using angle: %i \n", angle);
 
 }
+
+
+
+
 
 /*****************
 	returns percent (double)0-100

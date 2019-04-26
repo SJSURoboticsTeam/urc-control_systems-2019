@@ -124,6 +124,7 @@ extern "C" void vGygerTask(void *pvParameters)
 
 extern "C" void vLidTask(void *pvParameters)
 {
+
 	printf("lid task started\n");
 	int m = (int) pvParameters;
 	//printf("m = %d \n", m );
@@ -161,9 +162,30 @@ extern "C" void vLidTask(void *pvParameters)
 
 extern "C" void vServoTask(void *pvParameters)
 {
-	printf("ServoTask Started");
+	int angle;
+	int id;
+	int type;
+	String servo;
+	printf("recieving queue\n");
+	xQueueReceive(xQueueServoID, &id, (TickType_t)0);
+	xQueueReceive(xQueueServoAngle, &angle, (TickType_t)0);
+	xQueueReceive(xQueueServoType, &type, (TickType_t)0);
+	printf("queue recieved\n");
+	if(type == 0)
+	{
+		servo = "fluid";
+	}
+	if(type == 1)
+	{
+		servo = "lid";
+	}
+	printf(" \nServoTask Started \n");
+    printf("\ntest id: %i \n", id);
+    printf( "test_servo: %s \n", servo.c_str() );
+    printf("test_angle: %i \n",angle);
 
-	moveServo(test_id, test_angle);
+
+	moveServo(id, angle, servo);
 	vTaskDelay(1000/ portTICK_PERIOD_MS);
 	//test_servo = "";
 

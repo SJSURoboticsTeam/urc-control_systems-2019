@@ -2,6 +2,8 @@
 #include <ESPAsyncWebServer.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "constants.h"
+#include "Servo_Control.hpp"
 
 
 #ifndef PODS_H_
@@ -14,7 +16,10 @@ extern "C" {
 struct ParamsStruct{
 	char name[40];
 	int id;
+	int angle;
+	String type;
 };
+
 
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
@@ -25,7 +30,7 @@ void sealPODS(int x, bool open); //seals POD x
 								// open = true -> open lid
 								// open = false -> close lid
 
-void moveServo(int x, int angle); //x = POD id
+void moveServo(int id, int angle, String type); //id = POD id
 												// string = "lid" or "fluid"
 												//angle = +- 90
 
@@ -48,9 +53,6 @@ int servoLidPin(int x);// returns servo pin on PODS #x that seals the PODS
 
 //interupt finctions that count the number of emmisions detected
 void emissionCount(void* id); // writes <id> to queue when an interrupt is detected
-
-
-
 
 
 #ifdef _cplusplus
