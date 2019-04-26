@@ -9,17 +9,36 @@
 
 
 
+
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
-    //Create Access Point
+    
+    // Create addresses for network connections
+    char * ssid = "SJSURoboticsAP";
+    char * password = "cerberus2019";
+    IPAddress Ip(192, 168, 10, 60);
+    IPAddress Gateway(192, 168, 10, 100);
+    IPAddress NMask(255, 255, 255, 0);
+    
+    // Configure the soft AP
+    WiFi.mode(WIFI_AP_STA);    
     WiFi.softAP("MyESP32AP", "testpassword");
     Serial.println();
-    Serial.print("IP address: ");
+    Serial.print("AP IP address: ");
     Serial.println(WiFi.softAPIP());
 
-    
+    // Connect to the Rover's AP
+    WiFi.config(Ip, Gateway, NMask);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        printf("Connecting to WiFi... ");
+    }
+    printf("\nConnected to %s\n", ssid);
+
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
-
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "PUT, GET, OPTIONS");
     /* XHR Example.
         - Param "name" is sent from mission control.
         - "name" is copied to the params object

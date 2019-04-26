@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string>
 #include <iostream>
+#include <WiFi.h>
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include "Arduino.h"
