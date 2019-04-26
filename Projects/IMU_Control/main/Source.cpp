@@ -45,7 +45,7 @@ uint8_t  i2c_scanner()
     uint8_t error = 0, address = 0, device_address = 0;
     uint8_t nDevices = 0;
 
-    printf("Scanning...");
+    printf("Scanning...\n");
 
     for(address = 1; address < 127; address++)
     {
