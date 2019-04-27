@@ -13,6 +13,7 @@
 #include "../../../Utilities/Servo_Control.hpp"
 #include "../../../Utilities/Servo_Control.cpp"
 #include "Motor_Control_rev1.hpp"
+#include "Adafruit_BNO055.h"
 
 
 extern "C" void vElbowTask(void *pvParameters)
@@ -22,7 +23,7 @@ extern "C" void vElbowTask(void *pvParameters)
 
     double currentTarget = myParams->ElbowTarget;
     double currentAngle = kElbowStartPos;   //Feedback?
-    constexpr double kAlpha = 0.1;
+    constexpr double kAlpha = 0.05;
 
     //(pin, Chanel, Timer, Freq, Max, Min)
     Servo Elbow(kElbowPin, 0, 0, kElbowFreq, kElbowPWMMax, kElbowPWMMin);
@@ -50,12 +51,12 @@ extern "C" void vElbowTask(void *pvParameters)
                     // printf("currentTarget %f\n", currentTarget);
                     // printf("Angle: %f\n", currentAngle);
                     // printf("Duty: %f\n\n", (currentAngle / kElbowRange ) * 100);
-                    vTaskDelay(5);
+                    vTaskDelay(2);
                 }
-                // printf("Done\n\n");
+                printf("Done! Elbow angle = %f\n\n", currentAngle);
             }   
         }
-        vTaskDelay(500);
+        vTaskDelay(300);
     }
 }
 
@@ -66,7 +67,7 @@ extern "C" void vRotundaTask(void *pvParameters)
 
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
-    constexpr double kAlpha = 0.1;
+    constexpr double kAlpha = 0.01;
     double current_position = kRotundaStartPos;
     double prev_target = params->RotundaTarget;
     double current_position_translate, rotunda_target_translate, new_target = 0;
@@ -168,18 +169,18 @@ extern "C" void vRotundaTask(void *pvParameters)
             // printf("Rotunda Duty: %f\n\n\n", dutyPercent);
             // myServo.SetPositionPercent(dutyPercent);
 
-            // printf("new_target: %f\n", new_target);
+            printf("current_position: %f\n", current_position);
+            printf("new_target: %f\n", new_target);
+            
             while(abs(current_position-new_target) > .1)
             {
-                // printf("new_target: %f\n", new_target);
-                // printf("current_position: %f\n", current_position);
-                current_position = ExpMovingAvg(current_position, new_target , kAlpha);
+                current_position = ExpMovingAvg(current_position, new_target , 0.01);
                 dutyPercent = (current_position/kRotundaPosmax) * 100;
                 myServo.SetPositionPercent(dutyPercent);
-                // printf("Rotunda Duty: %f\n\n", dutyPercent);
-                vTaskDelay(30);
+                // printf("current_position: %f\n", current_position);
+                vTaskDelay(5);
             }
-            // printf("Done\n\n");
+            printf("Done\n\n");
             prev_target = params->RotundaTarget;
         }
 
@@ -220,7 +221,7 @@ extern "C" void vShoulderTask(void *pvParameters)
             myParams->ShoulderDuration_ms = 0;
         }
         // printf("Looped\n");
-        vTaskDelay(500);
+        vTaskDelay(100);
     }
 }
 
@@ -334,5 +335,48 @@ extern "C" void vClawTask(void *pvParameters)
     }
     // printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
     vTaskDelay(300);
+    }
+}
+
+
+extern "C" void vReadAxisTask(void *pvParameters) {
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
+
+    // System Calibration Data
+    uint8_t system_cal = 0;
+    uint8_t gyro_cal = 0;
+    uint8_t accel_cal = 0;
+    uint8_t mag_cal = 0;
+
+    sensors_event_t event[4];
+    //Adafruit_BNO055 imuRotunda (0,IMU_ADDRESS_ROTUNDA);
+    Adafruit_BNO055 imuShoulder(0,IMU_ADDRESS_SHOULDER);
+    //Adafruit_BNO055 imuElbow   (2,IMU_ADDRESS_ELBOW);
+    // Adafruit_BNO055 imuWrist   (1,IMU_ADDRESS_WRIST);
+    i2c_scanner();
+    i2c_scanner();
+    //initIMU(IMU_ADDRESS_ROTUNDA , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    initIMU(IMU_ADDRESS_SHOULDER, Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    //initIMU(IMU_ADDRESS_ELBOW   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    // initIMU(IMU_ADDRESS_WRIST   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+
+    while(1){
+    // Euler Angles (Relative Position)
+        imuShoulder.getEvent(&event[0]);
+        // imuWrist.getEvent(&event[1]);
+    
+    for ( int i = 0; i < 1; i++ )
+    {
+        params->yaw[i]   = event[i].orientation.x;
+        params->roll[i]  = event[i].orientation.y;
+        params->pitch[i] = event[i].orientation.z;
+        printf("%i) YAW: %.2f\tROLL: %.2f\tPITCH: %.2f\n",i,params->yaw[i],params->roll[i],params->pitch[i]);
+    }
+
+    // Get Calibration Info for ACCEL, GYRO, and MAG
+    //imuShoulder.getCalibration(&system_cal, &gyro_cal, &accel_cal, &mag_cal);
+    //printf("Calibration Data: SYS: %i\tGYR: %i\tACC: %i\tMAG: %i\n",system_cal,gyro_cal,accel_cal,mag_cal);
+
+        vTaskDelay(50);
     }
 }
