@@ -24,25 +24,26 @@ extern "C" void vReadAxisTask(void *pvParameters) {
     //Adafruit_BNO055 imuRotunda (0,IMU_ADDRESS_ROTUNDA);
     Adafruit_BNO055 imuShoulder(0,IMU_ADDRESS_SHOULDER);
     //Adafruit_BNO055 imuElbow   (2,IMU_ADDRESS_ELBOW);
-    Adafruit_BNO055 imuWrist   (1,IMU_ADDRESS_WRIST);
+    //Adafruit_BNO055 imuWrist   (1,IMU_ADDRESS_WRIST);
+
     i2c_scanner();
     i2c_scanner();
+
     //initIMU(IMU_ADDRESS_ROTUNDA , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
     initIMU(IMU_ADDRESS_SHOULDER, Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
     //initIMU(IMU_ADDRESS_ELBOW   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
-    initIMU(IMU_ADDRESS_WRIST   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    //initIMU(IMU_ADDRESS_WRIST   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
 
     while(1){
 	// Euler Angles (Relative Position)
         imuShoulder.getEvent(&event[0]);
-        imuWrist.getEvent(&event[1]);
+        //imuWrist.getEvent(&event[1]);
 	
-	for ( int i = 0; i < 2; i++ )
+	for ( int i = 0; i < 1; i++ )
 	{
         	params->yaw[i]   = event[i].orientation.x;
 		params->roll[i]  = event[i].orientation.y;
 		params->pitch[i] = event[i].orientation.z;
-  		//printf("%i) YAW: %.2f\tROLL: %.2f\tPITCH: %.2f\n",i,params->yaw[i],params->roll[i],params->pitch[i]);
 	}
 
 	// Get Calibration Info for ACCEL, GYRO, and MAG
@@ -58,10 +59,10 @@ extern "C" void vI2CScannerTask(void *pvParameters)
     ParamsStruct *params = (ParamsStruct*) pvParameters;
     while(1)
     {
-        i2c_scanner();
-	for(int i = 0; i < 2; i++)
+        //i2c_scanner();
+	for(int i = 0; i < 1; i++)
 	{
-		//printf("%i) YAW: %.2f\tPITCH: %.2f\tROLL: %.2f\n",i,params->yaw[i],params->pitch[i],params->roll[i]);
+		printf("%i) YAW: %.2f\tPITCH: %.2f\tROLL: %.2f\n",i,params->yaw[i],params->pitch[i],params->roll[i]);
 	}
 	vTaskDelay(100);
     }
