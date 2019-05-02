@@ -229,6 +229,7 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
 {
     vTaskDelay(200);
     ParamsStruct* params = (ParamsStruct*) pvParameters;
+    constexpr int kError = 3;
     
     Motor Wrist_Left, Wrist_Right;
 
@@ -244,9 +245,17 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
                         5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
     // printf("Init Right Fin\n");
 
+    double pid_speed;
+
+    // PID(double* Input, double* Output, double* Setpoint,
+    //     double Kp, double Ki, double Kd, int ControllerDirection);
+    PID pid(&params->IMU_WRIST_PITCH, double* pid_speed, &params->WRIST_PTICH_TARGET,
+        double Kp, double Ki, double Kd, int ControllerDirection);
+
     while(1)
     {
 
+    /*
         //if command from MS is diff;   the semaphore
         if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
         {
@@ -292,6 +301,54 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
             vTaskDelay(abs(params->WristRoll) / 10);
             Wrist_Left.SetSpeed(0);
             Wrist_Right.SetSpeed(0);
+        }
+    */
+
+        while((IMU_PITCH + kError) < WristPitchTarget)  //increase Pitch
+        {
+            Wrist_Left.SetDirection(true);
+            Wrist_Right.SetDirection(false);
+            Wrist_Left.SetSpeed(50);
+            Wrist_Right.SetSpeed(50);
+        }
+        //stop after adjusting pitch
+        Wrist_Left.SetSpeed(0);
+        Wrist_Right.SetSpeed(0);
+
+        while((IMU_PITCH - kError) > WristPitchTarget)  //decrease Pitch
+        {
+            Wrist_Left.SetDirection(false);
+            Wrist_Right.SetDirection(true);
+            Wrist_Left.SetSpeed(50);
+            Wrist_Right.SetSpeed(50);
+        }
+        //stop after adjusting pitch
+        Wrist_Left.SetSpeed(0);
+        Wrist_Right.SetSpeed(0);
+
+        //Now onto adjusting Roll
+        if(Roll needs adjustment)
+        {
+            if(Will rotate left)
+            {
+                // Set one motor to 50% power;
+                Wrist_Left.SetSpeedAndDirection(50, true);
+                //PID the power on other motor, monitoring pitch
+                Wrist_Right.SetDirection(true);
+            }
+            else if(Will rotate right)
+            {
+                // Set one motor to 50% power;
+                Wrist_Left.SetSpeedAndDirection(50, false);
+                //PID the power on other motor, monitoring pitch
+                Wrist_Right.SetDirection(false);                
+            }
+
+            while(Roll is still off)
+            {
+                pid.compute();
+                Wrist_Right.SetSpeed(pid_speed);
+            }
         }
     }
 }
@@ -339,7 +396,8 @@ extern "C" void vClawTask(void *pvParameters)
 }
 
 
-extern "C" void vReadAxisTask(void *pvParameters) {
+extern "C" void vReadAxisTask(void *pvParameters) 
+{
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
     // System Calibration Data
