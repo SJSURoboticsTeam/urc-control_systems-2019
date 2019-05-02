@@ -56,12 +56,12 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
         if(request->hasArg("ShoulderTarget"))
         {
-            params->ShoulderDuration_ms = atof(request->arg("ShoulderTarget").c_str());
-            if((params->ShoulderDuration_ms <= 1) && (params->ShoulderDuration_ms >= -1))
+            params->ShoulderTarget = atof(request->arg("ShoulderTarget").c_str());
+            if((params->ShoulderTarget <= 1) && (params->ShoulderTarget >= -1))
             {
-                params->ShoulderDuration_ms = fmap(params->ShoulderDuration_ms, -1, 1, kShoulderLimitMin, kShoulderLimitMax);
+                params->ShoulderTarget = fmap(params->ShoulderTarget, -1, 1, kShoulderLimitMin, kShoulderLimitMax);
             }
-            printf("Shoulder Target: %f \n", params->ShoulderDuration_ms);
+            printf("Shoulder Target: %f \n", params->ShoulderTarget);
         
 
 

@@ -192,36 +192,55 @@ extern "C" void vShoulderTask(void *pvParameters)
 {
     // printf("Entered Shoulder Task\n");
     ParamsStruct* myParams = (ParamsStruct*) pvParameters;
-
+    constexpr int kError = 5;
     Motor shoulder;
                         //Sig, Break, Dir, s_channel, timer, freq, min, max
                         //Break Pin is a dummy number, not present to our subsystem
     shoulder.InitMotor(kShoulderSigPin, 19, kShoulderDirPin, 2, 2, 
                         kMotorFreq, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
 
-    double duration;
+    // double duration;
 
     // printf("Init finished?\n");
     while(1)
     {
-        if(myParams->ShoulderDuration_ms != 0 )
+        // if(myParams->ShoulderDuration_ms != 0 )
+        // {
+        //     duration = myParams->ShoulderDuration_ms;
+        //     // printf("Starting to move the thing!\n");
+        //     // printf("Time: %f\n", duration);
+
+        //     //assert motor @ 50%?
+        //     shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
+        //     //delay that duration
+        //     vTaskDelay(abs(duration ) / 10);
+        //     // printf("Finished moving the thing!\n\n\n");
+        //     //deassrt the motor
+        //     shoulder.SetSpeed(0);
+
+        //     myParams->ShoulderDuration_ms = 0;
+        // }
+        // // printf("Looped\n");
+        // vTaskDelay(100);
+    
+        if((myParams->pitch[0] != 0.00) && (myParams->pitch[0] != -0.06))
         {
-            duration = myParams->ShoulderDuration_ms;
-            // printf("Starting to move the thing!\n");
-            // printf("Time: %f\n", duration);
-
-            //assert motor @ 50%?
-            shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
-            //delay that duration
-            vTaskDelay(abs(duration ) / 10);
-            // printf("Finished moving the thing!\n\n\n");
-            //deassrt the motor
-            shoulder.SetSpeed(0);
-
-            myParams->ShoulderDuration_ms = 0;
+            if((myParams->pitch[0] + kError) < myParams->ShoulderTarget)
+            {
+                shoulder.SetSpeedAndDirection(50, false);
+            }
+            else if((myParams->pitch[0] - kError) > myParams->ShoulderTarget)
+            { 
+                //May have to change direction
+                shoulder.SetSpeedAndDirection(50, true);
+            }
+            else
+            {
+                shoulder.SetSpeed(0);
+            }
         }
         // printf("Looped\n");
-        vTaskDelay(100);
+        vTaskDelay(5);
     }
 }
 
