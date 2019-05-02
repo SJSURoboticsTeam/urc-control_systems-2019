@@ -56,6 +56,7 @@ extern "C" void vElbowTask(void *pvParameters)
                 printf("Done! Elbow angle = %f\n\n", currentAngle);
             }   
         }
+        printf("\nElbow Done\n");
         vTaskDelay(300);
     }
 }
@@ -180,7 +181,7 @@ extern "C" void vRotundaTask(void *pvParameters)
                 // printf("current_position: %f\n", current_position);
                 vTaskDelay(5);
             }
-            printf("Done\n\n");
+            printf("\nRotunda Done\n");
             prev_target = params->RotundaTarget;
         }
 
@@ -223,7 +224,7 @@ extern "C" void vShoulderTask(void *pvParameters)
         // // printf("Looped\n");
         // vTaskDelay(100);
     
-        if((myParams->pitch[0] != 0.00) && (myParams->pitch[0] != -0.06))
+        if((myParams->pitch[0] != 0.00) )
         {
             if((myParams->pitch[0] + kError) < myParams->ShoulderTarget)
             {
