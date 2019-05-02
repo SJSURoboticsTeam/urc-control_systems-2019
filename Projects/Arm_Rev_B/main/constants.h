@@ -31,8 +31,8 @@ constexpr int kRotundaPosmax = 3600;
 constexpr double kRotundaStartPos = 1800;
 constexpr double kRotundaStartDuty = 50.0;
 constexpr double kRotundaFreq = 50;
-constexpr double kRotundaPWMMin = 5;
-constexpr double kRotundaPWMMax = 10;
+constexpr double kRotundaPWMMin = 2.5;
+constexpr double kRotundaPWMMax = 12.5;
 
 constexpr int kElbowPin = 27;		//Servo 2
 constexpr int kElbowLimitMin = 0;

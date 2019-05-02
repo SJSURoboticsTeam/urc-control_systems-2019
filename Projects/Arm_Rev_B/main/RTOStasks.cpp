@@ -53,10 +53,10 @@ extern "C" void vElbowTask(void *pvParameters)
                     // printf("Duty: %f\n\n", (currentAngle / kElbowRange ) * 100);
                     vTaskDelay(2);
                 }
-                printf("Done! Elbow angle = %f\n\n", currentAngle);
+                // printf("Done! Elbow angle = %f\n\n", currentAngle);
             }   
         }
-        printf("\nElbow Done\n");
+        // printf("\nElbow Done\n");
         vTaskDelay(300);
     }
 }
@@ -75,7 +75,8 @@ extern "C" void vRotundaTask(void *pvParameters)
     double leftDistance, rightDistance;
     double dutyPercent;
     //(pin, Chanel, Timer, Freq, Max, Min)
-    Servo myServo(kRotundaPin, 1, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin);  
+    Servo myServo(kRotundaPin, 1, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin); 
+    myServo.SetPositionPercent((kRotundaStartPos/kRotundaPosmax) * 100);
     
     // printf("Rotunda Starting Duty: %f\n", kRotundaStartDuty);
     // printf("Rotunda Start Position: %f\n %f\n",kRotundaStartPos, (kRotundaStartPos / kRotundaPosmax)*100);
@@ -175,11 +176,11 @@ extern "C" void vRotundaTask(void *pvParameters)
             
             while(abs(current_position-new_target) > .1)
             {
-                current_position = ExpMovingAvg(current_position, new_target , 0.01);
+                current_position = ExpMovingAvg(current_position, new_target , 0.05);
                 dutyPercent = (current_position/kRotundaPosmax) * 100;
                 myServo.SetPositionPercent(dutyPercent);
                 // printf("current_position: %f\n", current_position);
-                vTaskDelay(5);
+                vTaskDelay(13);
             }
             printf("\nRotunda Done\n");
             prev_target = params->RotundaTarget;
