@@ -73,14 +73,14 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->AXIS_Y = request->arg("AXIS_Y").toFloat();    
                 }
                 if (strcmp(vars[i], "YAW")) {
-                    params->YAW = request->arg("YAW").toFloat();    
+                    params->YAW = request->arg("YAW").toFloat();
                 }
                 if (strcmp(vars[i], "THROTTLE")) {
                     params->THROTTLE = (0 - (request->arg("THROTTLE").toFloat()) + 1)/2;
-                    params->THROTTLE = params->THROTTLE * 0.3;    
+                    //params->THROTTLE = params->THROTTLE * 0.3;    
                 }
                 if (strcmp(vars[i], "BRAKES")) {
-                    params->BRAKES = request->arg("BRAKES").toFloat();    
+                    params->BRAKES = (request->arg("BRAKES").toFloat() + 1) / 2;    
                 }
                 if (strcmp(vars[i], "MAST_POSITION")) {
                     params->MAST_POSITION = request->arg("MAST_POSITION").toFloat();    

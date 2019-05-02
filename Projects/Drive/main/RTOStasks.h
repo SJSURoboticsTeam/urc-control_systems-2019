@@ -21,7 +21,7 @@ extern "C" void vCrabTask(void *pvParameters);
 
 extern "C" void vSpinTask(void *pvParameters);*/
 
-//extern "C" void vMoveTask(void *pvParameters);
+extern "C" void vMoveTask(void *pvParameters);
 
 #ifdef _cplusplus
 }

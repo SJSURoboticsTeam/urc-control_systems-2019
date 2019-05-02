@@ -8,7 +8,7 @@
 #include "Arduino.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-//#include "RTOStasks.h"
+#include "RTOStasks.h"
 #include "Source.h"
 #include "constants.h"
 
@@ -38,6 +38,6 @@ extern "C" void app_main() {
     //delay(100);
     
     //Create freeRTOS tasks.
-    //xTaskCreate(vMoveTask, "Move", 4096, (void *) &params, 1, NULL);
+    xTaskCreate(vMoveTask, "Move", 4096, (void *) &params, 1, NULL);
 
 }

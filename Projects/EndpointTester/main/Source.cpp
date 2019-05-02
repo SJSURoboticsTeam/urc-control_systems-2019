@@ -80,7 +80,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->THROTTLE = params->THROTTLE * 0.3;    
                 }
                 if (strcmp(vars[i], "BRAKES")) {
-                    params->BRAKES = request->arg("BRAKES").toFloat();    
+                    params->BRAKES = (request->arg("BRAKES").toFloat() +1) / 2;    
                 }
                 if (strcmp(vars[i], "MAST_POSITION")) {
                     params->MAST_POSITION = request->arg("MAST_POSITION").toFloat();    
