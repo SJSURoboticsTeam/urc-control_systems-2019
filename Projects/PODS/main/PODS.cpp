@@ -56,7 +56,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
          printf("XHR recieved \n");
          int x = atoi(request->arg("pod").c_str()); 
          string y = request->arg("state").c_str();
-         x -= 1;
+         
          std::cout << y << "\n";
          std::cout << x << "\n";
          bool z;

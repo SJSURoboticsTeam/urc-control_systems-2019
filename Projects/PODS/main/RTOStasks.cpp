@@ -69,11 +69,11 @@ extern "C" void vGygerTask(void *pvParameters)
       	{
       		xQueueReceive(xQueueISR, &ISR_queue_ID, (TickType_t) 0);
       		//printf("Task %d \n", id );
-      		//printf("Item recieved from queue. ID %d retreived. \n", (int)ISR_queue_ID );
+      		printf("Item recieved from queue. ID %d retreived. \n", (int)ISR_queue_ID );
 
       		count++;
 
-      		//printf("count %d \n",  count);
+      		printf("count %d \n",  count);
 			if(millis() - timer > sample_time)// calculates cpm once every samlpe_time or greater
 			{
 				printf("Task %d \n", id);
