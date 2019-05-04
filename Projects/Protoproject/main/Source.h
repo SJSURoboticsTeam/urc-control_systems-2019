@@ -23,6 +23,7 @@ typedef enum CommandMoveMode {
     CENTER = 0, 
     UP = 1, 
     DOWN = 2,
+    STOP = 3
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
@@ -44,6 +45,8 @@ void centerMovePitch(); // Rotates gimbal where the camera aligns all the way to
 void upMovePitch(int position); // Rotates gimbal to shift the camera upwards
 
 void downMovePitch(int position); // Rotates gimbal to shift the camera downwards
+
+void stopMovePitch(int position); // Keeps the gimbal at the position the user wants
 
 void sweepMovePitch(); // Test function to make sure the gimbal works
 

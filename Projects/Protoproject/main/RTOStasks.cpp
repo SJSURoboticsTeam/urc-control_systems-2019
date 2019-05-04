@@ -54,7 +54,7 @@ extern "C" void vPitchTask(void *pvParameters) {
             printf("----------------------.\n");
             switch(params->manual_move) {
                 case CENTER: // CENTER
-                    pitch_position = 35;
+                    pitch_position = SERVO_CENTER;
 
                     centerMovePitch();
                     printf("Pitch Position: %i\n", pitch_position);
@@ -80,6 +80,10 @@ extern "C" void vPitchTask(void *pvParameters) {
                     params->gimbal_position = pitch_position;
                     downMovePitch(pitch_position);
                     break;
+                case STOP: // STOP
+                    printf("Pitch Position: %i\n", pitch_position);
+                    params->gimbal_position = pitch_position;
+                    stopMovePitch(pitch_position);
                 default:
                     printf("Awaiting pitch position input from mission control.\n");
                     break;
@@ -99,9 +103,7 @@ extern "C" void vPitchTask(void *pvParameters) {
             // printf("----------------------.\n");
         }
 
-        // upMovePitch();
-        // centerMovePitch();
-        // downMovePitch();
+        // sweepMovePitch();
     }   
 }
 

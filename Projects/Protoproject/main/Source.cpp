@@ -12,15 +12,33 @@
 float move_pitch_position = 0;
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
-    //Create Access Point
-    WiFi.softAP("MyESP32AP", "testpassword");
+     // Create addresses for network connections
+    char * ssid = "SJSURoboticsAP";
+    char * password = "cerberus2019";
+    IPAddress Ip(192, 168, 10, 50);
+    IPAddress Gateway(192, 168, 10, 100);
+    IPAddress NMask(255, 255, 255, 0);
+    
+    // Configure the soft AP
+    WiFi.mode(WIFI_AP_STA);    
+    WiFi.softAP("GimbalESP32", "testpassword");
     Serial.println();
-    Serial.print("IP address: ");
+    Serial.print("AP IP address: ");
     Serial.println(WiFi.softAPIP());
 
-    
+    // Connect to the Rover's AP
+    WiFi.config(Ip, Gateway, NMask);
+    WiFi.begin(ssid, password);
+    // while (WiFi.status() != WL_CONNECTED)
+    // {
+    //     delay(500);
+    //     printf("Connecting to WiFi... ");
+    // }
+    printf("\nConnected to %s\n", ssid);
+
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "PUT, GET, OPTIONS");
 
     /* XHR Example.
         - Param "name" is sent from mission control.
@@ -125,7 +143,7 @@ void initGimbal() {
 
 }
 
-void initCameraLens() {
+    void initCameraLens() {
     Pitch_Servo.InitServo(LENS_SERVO_PIN, SERVO_CHANNEL, SERVO_TIMER, 
                       SERVO_FREQUENCY, LENS_SERVO_MIN, LENS_SERVO_MAX);
 }
@@ -134,21 +152,28 @@ void centerMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_CENTER);
     printf("The camera is now centered.\n");
 
-    vTaskDelay(200);
+    vTaskDelay(150);
 }
 
 void upMovePitch(int position) {
     Pitch_Servo.SetPositionPercent(position);
     printf("The camera is rotating upwards.\n");
 
-    vTaskDelay(200);
+    vTaskDelay(150);
 }
 
 void downMovePitch(int position) {
     Pitch_Servo.SetPositionPercent(position);
     printf("The camera is rotating downwards.\n");
 
-    vTaskDelay(200);
+    vTaskDelay(150);
+}
+
+void stopMovePitch(int position) {
+    Pitch_Servo.SetPositionPercent(position);
+    printf("The camera stopped moving.\n");
+
+    vTaskDelay(150);
 }
 
 void sweepMovePitch() {
