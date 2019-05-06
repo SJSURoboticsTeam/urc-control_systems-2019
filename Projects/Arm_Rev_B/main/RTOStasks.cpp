@@ -205,6 +205,7 @@ extern "C" void vShoulderTask(void *pvParameters)
     // printf("Init finished?\n");
     while(1)
     {
+    /*
         // if(myParams->ShoulderDuration_ms != 0 )
         // {
         //     duration = myParams->ShoulderDuration_ms;
@@ -223,21 +224,25 @@ extern "C" void vShoulderTask(void *pvParameters)
         // }
         // // printf("Looped\n");
         // vTaskDelay(100);
-    
-        if((myParams->pitch[0] != 0.00) )
+    */
+        if( myParams->pitch[0] != 0.00 )    //if IMUs decide to work
         {
-            if((myParams->pitch[0] + kError) < myParams->ShoulderTarget)
+            if( (myParams->ShoulderTarget >= kShoulderLimitMin) 
+                && (myParams->ShoulderTarget >= kShoulderLimitMax)) //If target is in accepted range
             {
-                shoulder.SetSpeedAndDirection(50, false);
-            }
-            else if((myParams->pitch[0] - kError) > myParams->ShoulderTarget)
-            { 
-                //May have to change direction
-                shoulder.SetSpeedAndDirection(50, true);
-            }
-            else
-            {
-                shoulder.SetSpeed(0);
+                if((myParams->pitch[0] + kError) < myParams->ShoulderTarget)
+                {
+                    shoulder.SetSpeedAndDirection(50, false);
+                }
+                else if((myParams->pitch[0] - kError) > myParams->ShoulderTarget)
+                { 
+                    //May have to change direction
+                    shoulder.SetSpeedAndDirection(50, true);
+                }
+                else
+                {
+                    shoulder.SetSpeed(0);
+                }
             }
         }
         // printf("Looped\n");
@@ -265,13 +270,15 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
                         5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
     // printf("Init Right Fin\n");
 
-    double pid_speed;
+    double roll_pid_speed, pitch_pid_speed, rollTarget;
 
     // PID(double* Input, double* Output, double* Setpoint,
     //     double Kp, double Ki, double Kd, int ControllerDirection);
-    PID pid(&params->IMU_WRIST_PITCH, double* pid_speed, &params->WRIST_PTICH_TARGET,
+    PID roll_pid(&params->IMU_WRIST_PITCH, &roll_pid_speed, &params->WRIST_PTICH_TARGET,
         double Kp, double Ki, double Kd, int ControllerDirection);
 
+    PID pitch_pid(&params->IMU_WRIST_PITCH, &pitch_pid_speed, &params->WRIST_PTICH_TARGET,
+        double Kp, double Ki, double Kd, int ControllerDirection);
     while(1)
     {
 
@@ -324,31 +331,41 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
         }
     */
 
-        while((IMU_PITCH + kError) < WristPitchTarget)  //increase Pitch
+        if(abs(params->WristPitch - params->IMU_WRIST_PITCH) < kError) //if pitch needs adjustments 
         {
-            Wrist_Left.SetDirection(true);
-            Wrist_Right.SetDirection(false);
-            Wrist_Left.SetSpeed(50);
-            Wrist_Right.SetSpeed(50);
-        }
-        //stop after adjusting pitch
-        Wrist_Left.SetSpeed(0);
-        Wrist_Right.SetSpeed(0);
+            if(params->IMU_WRIST_PITCH < params->WristPitch) //increase pitch
+            {
+                // set dir pins to increase pitch
+                //hope this is the correct direction!
+                Wrist_Left.SetDirection(true);
+                Wrist_Right.SetDirection(false);
+            }   
+            else if (params->IMU_WRIST_PITCH  > params->WristPitch)    //decrease pitch
+            {
+                // set dir pins to increase pitch
+                //hope this is the correct direction!
+                Wrist_Left.SetDirection(false);
+                Wrist_Right.SetDirection(true);
+            }
 
-        while((IMU_PITCH - kError) > WristPitchTarget)  //decrease Pitch
-        {
-            Wrist_Left.SetDirection(false);
-            Wrist_Right.SetDirection(true);
-            Wrist_Left.SetSpeed(50);
-            Wrist_Right.SetSpeed(50);
+            while(abs(params->WristPitch - params->IMU_WRIST_PITCH) < kError)  //while pitch is off
+            {
+                pitch_pid.compute();
+                Wrist_Right.SetSpeed(pitch_pid_speed);
+                Wrist_Left.SetSpeed(pitch_pid_speed);
+            }
+            Wrist_Right.SetSpeed(0);
+            Wrist_Left.SetSpeed(0);
         }
-        //stop after adjusting pitch
-        Wrist_Left.SetSpeed(0);
-        Wrist_Right.SetSpeed(0);
+
 
         //Now onto adjusting Roll
-        if(Roll needs adjustment)
+        if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
         {
+                        //rollTarget = (Delata + currentPos) % 360
+            rollTarget = (params->WristRoll + params->IMU_WRIST_ROLL) % 360;
+            printf("rollTarget: %f", rollTarget);
+
             if(Will rotate left)
             {
                 // Set one motor to 50% power;
@@ -364,11 +381,15 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
                 Wrist_Right.SetDirection(false);                
             }
 
-            while(Roll is still off)
+            while( ((params->IMU_WRIST_ROLL + kError) < rollTarget)
+                    || ((params->IMU_WRIST_ROLL - kError) > rollTarget) )
             {
-                pid.compute();
+                roll_pid.compute();
                 Wrist_Right.SetSpeed(pid_speed);
+                vTaskDelay(5);
             }
+            Wrist_Right.SetSpeed(0);
+            Wrist_Left.SetSpeed(0);
         }
     }
 }

@@ -47,8 +47,8 @@ constexpr double kElbowPWMMax = 12.5;
 constexpr uint32_t kMotorFreq = 5000;
 constexpr uint32_t kShoulderSigPin = 25;
 constexpr uint32_t kShoulderDirPin = 26;
-constexpr double kShoulderLimitMin = 0;
-constexpr double kShoulderLimitMax = 180;
+constexpr double kShoulderLimitMin = 10;
+constexpr double kShoulderLimitMax = 170;
 constexpr uint32_t kShoulderEnablePWMMin = 0;	//percentage
 constexpr uint32_t kShoulderEnablePWMMax = 100;	//percentage
 
