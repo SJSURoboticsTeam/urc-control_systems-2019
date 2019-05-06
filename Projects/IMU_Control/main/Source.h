@@ -21,6 +21,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params);
 
 uint8_t i2c_scanner();
 
+bool i2cScanAndInit(uint8_t imu_address);
+
 void initIMU(uint8_t IMU_ADDRESS, uint8_t MODE);
 
 void writeByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS, uint8_t VALUE);

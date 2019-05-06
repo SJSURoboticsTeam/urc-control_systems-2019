@@ -68,6 +68,40 @@ uint8_t  i2c_scanner()
     return device_address;
 }
 
+bool i2cScanAndInit(uint8_t imu_address)
+{
+    Wire.begin();
+    uint8_t error = 0, address = 0, device_address = 0;
+    uint8_t nDevices = 0;
+    bool device_found = false;
+    printf("Scanning...\n");
+
+    for(address = 1; address < 127; address++)
+    {
+	Wire.beginTransmission(address);
+	error = Wire.endTransmission();
+	if(error == 0)
+	{
+	    printf("I2C device found at address 0x%x\n",address);
+	    device_address = address;
+	    if(device_address == imu_address)
+	    {
+	    	device_found = true;
+	    	initIMU(imu_address, Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+	    }
+	    nDevices++;
+	}
+	else if(error == 4)
+	{
+	    printf("Unknown error at address 0x%x\n",address);
+	}
+    }
+    if(nDevices == 0) printf("No I2C devices found\n");
+    else       	      printf("done\n");
+
+    return device_found;
+}
+
 void initIMU(uint8_t IMU_ADDRESS, uint8_t MODE)
 {
     Wire.begin();
