@@ -201,11 +201,14 @@ extern "C" void vShoulderTask(void *pvParameters)
     shoulder.InitMotor(kShoulderSigPin, 19, kShoulderDirPin, 2, 2, 
                         kMotorFreq, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
 
-    // double duration;
+    double duration;
 
     // printf("Init finished?\n");
+    vTaskDelay(50);
     while(1)
     {
+
+    /*
         // if(myParams->ShoulderDuration_ms != 0 )
         // {
         //     duration = myParams->ShoulderDuration_ms;
@@ -224,8 +227,11 @@ extern "C" void vShoulderTask(void *pvParameters)
         // }
         // // printf("Looped\n");
         // vTaskDelay(100);
-    
-        if((myParams->pitch[0] != 0.00) )
+    */
+
+        if( (myParams->pitch[0] != 0.00) && 
+            (myParams->pitch[0] != myParams->roll[0]) &&
+            (myParams->pitch[0] != myParams->yaw[0]) )
         {
             if((myParams->pitch[0] + kError) < myParams->ShoulderTarget)
             {
@@ -241,8 +247,34 @@ extern "C" void vShoulderTask(void *pvParameters)
                 shoulder.SetSpeed(0);
             }
         }
+        vTaskDelay(50);
+
+        if(myParams->pitch[0] == 0.00)  //IF imu doesnt work
+        {
+            printf("\n\n\n!!!!!!!!!!!!!!!!\nENTERING NO IMU MODE\n!!!!!!!!!!!!!!!!!!!\n\n\n\n");
+            while(1)
+            {
+                if(myParams->ShoulderTarget != 0 )
+                {   
+                    duration = myParams->ShoulderTarget;
+                    // printf("Starting to move the thing!\n");
+                    // printf("Time: %f\n", duration);
+
+                    //assert motor @ 50%?
+                    shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
+                    //delay that duration
+                    vTaskDelay(abs(duration ) / 10);
+                    // printf("Finished moving the thing!\n\n\n");
+                    //deassrt the motor
+                    shoulder.SetSpeed(0);
+
+                    myParams->ShoulderTarget = 0;
+                }
+                vTaskDelay(5);
+            }
+        }
+
         // printf("Looped\n");
-        vTaskDelay(5);
     }
 }
 
@@ -391,7 +423,8 @@ extern "C" void vReadAxisTask(void *pvParameters) {
         params->yaw[i]   = event[i].orientation.x;
         params->roll[i]  = event[i].orientation.y;
         params->pitch[i] = event[i].orientation.z;
-        printf("%i) YAW: %.2f\tROLL: %.2f\tPITCH: %.2f\n",i,params->yaw[i],params->roll[i],params->pitch[i]);
+        // printf("%i) YAW: %.2f\tROLL: %.2f\tPITCH: %.2f\n",i,params->yaw[i],params->roll[i],params->pitch[i]);
+        printf("PITCH: %f\n",params->pitch[i]);
     }
 
     // Get Calibration Info for ACCEL, GYRO, and MAG
