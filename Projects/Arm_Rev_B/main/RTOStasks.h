@@ -22,6 +22,8 @@ extern "C" void vDiffGearboxTask(void *pvParameters);
 
 extern "C" void vClawTask(void *pvPArameters);
 
+extern "C" void vReadAxisTask(void *pvParameters);
+
 #ifdef _cplusplus
 }
 #endif

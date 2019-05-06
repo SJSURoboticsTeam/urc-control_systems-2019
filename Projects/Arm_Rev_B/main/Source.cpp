@@ -56,23 +56,22 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
         if(request->hasArg("ShoulderTarget"))
         {
-            // params->ShoulderDuration_ms = atof(request->arg("ShoulderTarget").c_str());
-
-            // if((params->ShoulderDuration_ms <= 1) && (params->ShoulderDuration_ms >= -1))
-            // {
-            //     params->ShoulderDuration_ms = fmap(params->ShoulderDuration_ms, -1, 1, kShoulderLimitMin, kShoulderLimitMax);
-            // }
-            // printf("Shoulder Target: %f \n", params->ShoulderDuration_ms);
+            params->ShoulderTarget = atof(request->arg("ShoulderTarget").c_str());
+            if((params->ShoulderTarget <= 1) && (params->ShoulderTarget >= -1))
+            {
+                params->ShoulderTarget = fmap(params->ShoulderTarget, -1, 1, kShoulderLimitMin, kShoulderLimitMax);
+            }
+            printf("Shoulder Target: %f \n", params->ShoulderTarget);
         
 
 
             //FOR THE MIMIC DEMO THIS IS WRONG CHANGE IT BACK AFTER
-            params->RotundaTarget = atof(request->arg("ShoulderTarget").c_str());
-            if((params->RotundaTarget <= 1) && (params->RotundaTarget >= -1))
-            {
-                params->RotundaTarget = fmap(params->RotundaTarget, -1, 1, -180, 180);
-            }
-            printf("RotundaTarget: %f\n", params->RotundaTarget);
+            // params->RotundaTarget = atof(request->arg("ShoulderTarget").c_str());
+            // if((params->RotundaTarget <= 1) && (params->RotundaTarget >= -1))
+            // {
+            //     params->RotundaTarget = fmap(params->RotundaTarget, -1, 1, -180, 180);
+            // }
+            // printf("RotundaTarget: %f\n", params->RotundaTarget);
         }
         // printf("ShoulderDuration_ms Param\n");
 
@@ -235,5 +234,83 @@ double ExpMovingAvg(double Current, double Target, double Alpha)
 
 double fmap(double x, double in_min, double in_max, double out_min, double out_max)
 {
+ 
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+
+
+
+uint8_t  i2c_scanner()
+{
+    Wire.begin();
+    uint8_t error = 0, address = 0, device_address = 0;
+    uint8_t nDevices = 0;
+
+    printf("Scanning...\n");
+
+    for(address = 1; address < 127; address++)
+    {
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+    if(error == 0)
+    {
+        printf("I2C device found at address 0x%x\n",address);
+        device_address = address;
+        nDevices++;
+    }
+    else if(error == 4)
+    {
+        printf("Unknown error at address 0x%x\n",address);
+    }
+    }
+    if(nDevices == 0) printf("No I2C devices found\n");
+    else              printf("done\n");
+
+    return device_address;
+}
+
+void initIMU(uint8_t IMU_ADDRESS, uint8_t MODE)
+{
+    Wire.begin();
+    //Get Device ID
+    uint8_t chipID = readByte(IMU_ADDRESS, BNO055_CHIP_ID);;
+    printf("ID = %x\n",chipID);
+
+    //Set to Normal Power Mode
+    uint8_t pwr_mode = readByte(IMU_ADDRESS, BNO055_PWR_MODE) & ~(0x3);
+    writeByte(IMU_ADDRESS, BNO055_PWR_MODE, pwr_mode);
+
+    uint8_t opr_mode = readByte(IMU_ADDRESS, BNO055_OPR_MODE) & ~(0xF);
+    //Set to IMU Mode
+    opr_mode |= MODE;
+
+    //Set to NDOF Mode
+    //opr_mode |= 0x0C;
+
+    writeByte(IMU_ADDRESS, BNO055_OPR_MODE, opr_mode);
+
+    // Unit Select
+    uint8_t unit_sel = readByte(IMU_ADDRESS, BNO055_UNIT_SEL) & ~(0x4);
+    writeByte(IMU_ADDRESS, BNO055_UNIT_SEL, unit_sel);
+}
+
+void writeByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS, uint8_t VALUE)
+{
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(REGISTER_ADDRESS);
+    Wire.write(VALUE);
+    Wire.endTransmission(); 
+}
+
+uint8_t readByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
+{
+    uint8_t byte_val = 0;
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(REGISTER_ADDRESS);
+    Wire.requestFrom(IMU_ADDRESS, 1);
+    byte_val = Wire.read();
+    Wire.endTransmission();
+
+    return byte_val;
 }

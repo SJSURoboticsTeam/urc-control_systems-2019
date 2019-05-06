@@ -60,10 +60,11 @@ extern "C" void vI2CScannerTask(void *pvParameters)
     ParamsStruct *params = (ParamsStruct*) pvParameters;
     while(1)
     {
-        //i2c_scanner();
-	for(int i = 0; i < 1; i++)
+    
+        i2c_scanner();
+	for(int i = 0; i < 2; i++)
 	{
-		printf("%i) YAW: %.2f\tPITCH: %.2f\tROLL: %.2f\n",i,params->yaw[i],params->pitch[i],params->roll[i]);
+		// printf("%i) YAW: %.2f\tPITCH: %.2f\tROLL: %.2f\n",i,params->yaw[i],params->pitch[i],params->roll[i]);
 	}
 	vTaskDelay(100);
     }

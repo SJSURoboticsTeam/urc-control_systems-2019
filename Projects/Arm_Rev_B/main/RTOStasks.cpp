@@ -13,6 +13,7 @@
 #include "../../../Utilities/Servo_Control.hpp"
 #include "../../../Utilities/Servo_Control.cpp"
 #include "Motor_Control_rev1.hpp"
+#include "Adafruit_BNO055.h"
 
 
 extern "C" void vElbowTask(void *pvParameters)
@@ -22,7 +23,7 @@ extern "C" void vElbowTask(void *pvParameters)
 
     double currentTarget = myParams->ElbowTarget;
     double currentAngle = kElbowStartPos;   //Feedback?
-    constexpr double kAlpha = 0.1;
+    constexpr double kAlpha = 0.05;
 
     //(pin, Chanel, Timer, Freq, Max, Min)
     Servo Elbow(kElbowPin, 0, 0, kElbowFreq, kElbowPWMMax, kElbowPWMMin);
@@ -50,12 +51,13 @@ extern "C" void vElbowTask(void *pvParameters)
                     // printf("currentTarget %f\n", currentTarget);
                     // printf("Angle: %f\n", currentAngle);
                     // printf("Duty: %f\n\n", (currentAngle / kElbowRange ) * 100);
-                    vTaskDelay(5);
+                    vTaskDelay(2);
                 }
-                // printf("Done\n\n");
+                // printf("Done! Elbow angle = %f\n\n", currentAngle);
             }   
         }
-        vTaskDelay(500);
+        // printf("\nElbow Done\n");
+        vTaskDelay(300);
     }
 }
 
@@ -66,14 +68,15 @@ extern "C" void vRotundaTask(void *pvParameters)
 
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
-    constexpr double kAlpha = 0.1;
+    constexpr double kAlpha = 0.01;
     double current_position = kRotundaStartPos;
     double prev_target = params->RotundaTarget;
     double current_position_translate, rotunda_target_translate, new_target = 0;
     double leftDistance, rightDistance;
     double dutyPercent;
     //(pin, Chanel, Timer, Freq, Max, Min)
-    Servo myServo(kRotundaPin, 1, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin);  
+    Servo myServo(kRotundaPin, 1, 0, kRotundaFreq, kRotundaPWMMax, kRotundaPWMMin); 
+    myServo.SetPositionPercent((kRotundaStartPos/kRotundaPosmax) * 100);
     
     // printf("Rotunda Starting Duty: %f\n", kRotundaStartDuty);
     // printf("Rotunda Start Position: %f\n %f\n",kRotundaStartPos, (kRotundaStartPos / kRotundaPosmax)*100);
@@ -168,18 +171,18 @@ extern "C" void vRotundaTask(void *pvParameters)
             // printf("Rotunda Duty: %f\n\n\n", dutyPercent);
             // myServo.SetPositionPercent(dutyPercent);
 
-            // printf("new_target: %f\n", new_target);
+            printf("current_position: %f\n", current_position);
+            printf("new_target: %f\n", new_target);
+            
             while(abs(current_position-new_target) > .1)
             {
-                // printf("new_target: %f\n", new_target);
-                // printf("current_position: %f\n", current_position);
-                current_position = ExpMovingAvg(current_position, new_target , kAlpha);
+                current_position = ExpMovingAvg(current_position, new_target , 0.05);
                 dutyPercent = (current_position/kRotundaPosmax) * 100;
                 myServo.SetPositionPercent(dutyPercent);
-                // printf("Rotunda Duty: %f\n\n", dutyPercent);
-                vTaskDelay(30);
+                // printf("current_position: %f\n", current_position);
+                vTaskDelay(13);
             }
-            // printf("Done\n\n");
+            printf("\nRotunda Done\n");
             prev_target = params->RotundaTarget;
         }
 
@@ -191,36 +194,55 @@ extern "C" void vShoulderTask(void *pvParameters)
 {
     // printf("Entered Shoulder Task\n");
     ParamsStruct* myParams = (ParamsStruct*) pvParameters;
-
+    constexpr int kError = 5;
     Motor shoulder;
                         //Sig, Break, Dir, s_channel, timer, freq, min, max
                         //Break Pin is a dummy number, not present to our subsystem
     shoulder.InitMotor(kShoulderSigPin, 19, kShoulderDirPin, 2, 2, 
                         kMotorFreq, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
 
-    double duration;
+    // double duration;
 
     // printf("Init finished?\n");
     while(1)
     {
-        if(myParams->ShoulderDuration_ms != 0 )
+        // if(myParams->ShoulderDuration_ms != 0 )
+        // {
+        //     duration = myParams->ShoulderDuration_ms;
+        //     // printf("Starting to move the thing!\n");
+        //     // printf("Time: %f\n", duration);
+
+        //     //assert motor @ 50%?
+        //     shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
+        //     //delay that duration
+        //     vTaskDelay(abs(duration ) / 10);
+        //     // printf("Finished moving the thing!\n\n\n");
+        //     //deassrt the motor
+        //     shoulder.SetSpeed(0);
+
+        //     myParams->ShoulderDuration_ms = 0;
+        // }
+        // // printf("Looped\n");
+        // vTaskDelay(100);
+    
+        if((myParams->pitch[0] != 0.00) )
         {
-            duration = myParams->ShoulderDuration_ms;
-            // printf("Starting to move the thing!\n");
-            // printf("Time: %f\n", duration);
-
-            //assert motor @ 50%?
-            shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
-            //delay that duration
-            vTaskDelay(abs(duration ) / 10);
-            // printf("Finished moving the thing!\n\n\n");
-            //deassrt the motor
-            shoulder.SetSpeed(0);
-
-            myParams->ShoulderDuration_ms = 0;
+            if((myParams->pitch[0] + kError) < myParams->ShoulderTarget)
+            {
+                shoulder.SetSpeedAndDirection(50, false);
+            }
+            else if((myParams->pitch[0] - kError) > myParams->ShoulderTarget)
+            { 
+                //May have to change direction
+                shoulder.SetSpeedAndDirection(50, true);
+            }
+            else
+            {
+                shoulder.SetSpeed(0);
+            }
         }
         // printf("Looped\n");
-        vTaskDelay(500);
+        vTaskDelay(5);
     }
 }
 
@@ -334,5 +356,48 @@ extern "C" void vClawTask(void *pvParameters)
     }
     // printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
     vTaskDelay(300);
+    }
+}
+
+
+extern "C" void vReadAxisTask(void *pvParameters) {
+    ParamsStruct* params = (ParamsStruct*) pvParameters;
+
+    // System Calibration Data
+    uint8_t system_cal = 0;
+    uint8_t gyro_cal = 0;
+    uint8_t accel_cal = 0;
+    uint8_t mag_cal = 0;
+
+    sensors_event_t event[4];
+    //Adafruit_BNO055 imuRotunda (0,IMU_ADDRESS_ROTUNDA);
+    Adafruit_BNO055 imuShoulder(0,IMU_ADDRESS_SHOULDER);
+    //Adafruit_BNO055 imuElbow   (2,IMU_ADDRESS_ELBOW);
+    // Adafruit_BNO055 imuWrist   (1,IMU_ADDRESS_WRIST);
+    i2c_scanner();
+    i2c_scanner();
+    //initIMU(IMU_ADDRESS_ROTUNDA , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    initIMU(IMU_ADDRESS_SHOULDER, Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    //initIMU(IMU_ADDRESS_ELBOW   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    // initIMU(IMU_ADDRESS_WRIST   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+
+    while(1){
+    // Euler Angles (Relative Position)
+        imuShoulder.getEvent(&event[0]);
+        // imuWrist.getEvent(&event[1]);
+    
+    for ( int i = 0; i < 1; i++ )
+    {
+        params->yaw[i]   = event[i].orientation.x;
+        params->roll[i]  = event[i].orientation.y;
+        params->pitch[i] = event[i].orientation.z;
+        printf("%i) YAW: %.2f\tROLL: %.2f\tPITCH: %.2f\n",i,params->yaw[i],params->roll[i],params->pitch[i]);
+    }
+
+    // Get Calibration Info for ACCEL, GYRO, and MAG
+    //imuShoulder.getCalibration(&system_cal, &gyro_cal, &accel_cal, &mag_cal);
+    //printf("Calibration Data: SYS: %i\tGYR: %i\tACC: %i\tMAG: %i\n",system_cal,gyro_cal,accel_cal,mag_cal);
+
+        vTaskDelay(50);
     }
 }
