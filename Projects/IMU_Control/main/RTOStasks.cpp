@@ -21,24 +21,25 @@ extern "C" void vReadAxisTask(void *pvParameters) {
     uint8_t mag_cal = 0;
 
     sensors_event_t event[4];
+
     //Adafruit_BNO055 imuRotunda (0,IMU_ADDRESS_ROTUNDA);
     Adafruit_BNO055 imuShoulder(0,IMU_ADDRESS_SHOULDER);
     //Adafruit_BNO055 imuElbow   (2,IMU_ADDRESS_ELBOW);
     //Adafruit_BNO055 imuWrist   (1,IMU_ADDRESS_WRIST);
 
-    i2c_scanner();
-    i2c_scanner();
+    //Scan I2C Bus for Device with specified Slave Address and then initialize device to IMU
+    while( !i2cScanAndInit(IMU_ADDRESS_SHOULDER) );
 
     //initIMU(IMU_ADDRESS_ROTUNDA , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
-    initIMU(IMU_ADDRESS_SHOULDER, Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+    //initIMU(IMU_ADDRESS_SHOULDER, Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
     //initIMU(IMU_ADDRESS_ELBOW   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
     //initIMU(IMU_ADDRESS_WRIST   , Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
 
     while(1){
-	// Euler Angles (Relative Position)
+	// Read Euler Angles (Relative Position) from IMUs
         imuShoulder.getEvent(&event[0]);
         //imuWrist.getEvent(&event[1]);
-	
+
 	for ( int i = 0; i < 1; i++ )
 	{
         	params->yaw[i]   = event[i].orientation.x;
