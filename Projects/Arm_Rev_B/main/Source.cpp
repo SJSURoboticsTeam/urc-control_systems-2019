@@ -12,12 +12,28 @@ using namespace std;
 
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
+
+    // Create addresses for network connections
+    char * ssid = "SJSURoboticsAP";
+    char * password = "cerberus2019";
+    IPAddress Ip(192, 168, 10, 61);
+    IPAddress Gateway(192, 168, 10, 100);
+    IPAddress NMask(255, 255, 255, 0);
+
     //Create Access Point
     WiFi.softAP("ZacksESP32AP", "testpassword");
     Serial.println();
     Serial.print("IP address: ");
     Serial.println(WiFi.softAPIP());
 
+    WiFi.config(Ip, Gateway, NMask);
+    WiFi.begin(ssid, password);
+    // while (WiFi.status() != WL_CONNECTED)
+    // {
+    //     delay(500);
+    //     printf("Connecting to WiFi... ");
+    // }
+    printf("\nConnected to %s\n", ssid);
     
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
@@ -56,12 +72,17 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
         if(request->hasArg("ShoulderTarget"))
         {
-            params->ShoulderTarget = atof(request->arg("ShoulderTarget").c_str());
-            if((params->ShoulderTarget <= 1) && (params->ShoulderTarget >= -1))
+            if(atof(request->arg("ShoulderTarget").c_str()) >= 10)
             {
-                params->ShoulderTarget = fmap(params->ShoulderTarget, -1, 1, kShoulderLimitMin, kShoulderLimitMax);
+                params->ShoulderTarget = atof(request->arg("ShoulderTarget").c_str());
+                printf("Shoulder Target: %f \n", params->ShoulderTarget);
             }
-            printf("Shoulder Target: %f \n", params->ShoulderTarget);
+            // printf("Shoulder Target Raw: %f \n", params->ShoulderTarget);
+
+            // if((params->ShoulderTarget <= 1) && (params->ShoulderTarget >= -1))
+            // {
+            //     params->ShoulderTarget = fmap(params->ShoulderTarget, -1, 1, kShoulderLimitMin, kShoulderLimitMax);
+            // }
         
 
 
@@ -77,25 +98,34 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
         if(request->hasArg("WristPitch"))
         {
-            params->WristPitch = atof(request->arg("WristPitch").c_str());
-            if((params->WristPitch <= 1) && (params->WristPitch >= -1))
+            if ((atof(request->arg("WristPitch").c_str()) > 10) || (atof(request->arg("WristRoll").c_str()) < -10))
             {
-                params->WristPitch = fmap(params->WristPitch, -1, 1, kWristPitchLimitMin, kWristPitchLimitMax);
+                params->WristPitch = atof(request->arg("WristPitch").c_str());
+                xSemaphoreGive(params->xWristPitchSemaphore);
+                printf("Wrist Pitch!: %f\n\n\n", params->WristPitch);
             }
-            printf("Wrist Pitch!: %f\n", params->WristPitch);
-            xSemaphoreGive(params->xWristPitchSemaphore);
+            // printf("Wrist Pitch Raw: %f \n", params->WristPitch);
+
+            // if((params->WristPitch <= 1) && (params->WristPitch >= -1))
+            // {
+            //     params->WristPitch = fmap(params->WristPitch, -1, 1, kWristPitchLimitMin, kWristPitchLimitMax);
+            // }
         }
         // printf("WristPitch Param\n");
 
         if(request->hasArg("WristRoll"))
         {
-            params->WristRoll = atoi((request->arg("WristRoll").c_str()));
-            if((params->WristRoll <= 1) && (params->WristRoll >= -1))
+            if((atof(request->arg("WristRoll").c_str()) > 10) || (atof(request->arg("WristRoll").c_str()) < -10))
             {
-                params->WristRoll = fmap(params->WristRoll, -1, 1, 0, 360);
+                params->WristRoll = atoi((request->arg("WristRoll").c_str()));
+                printf("WristRoll! : %f\n", params->WristRoll);
+                xSemaphoreGive(params->xWristRollSemaphore);
             }
-            printf("WristRoll! : %f\n", params->WristRoll);
-            xSemaphoreGive(params->xWristRollSemaphore);
+
+            // if((params->WristRoll <= 1) && (params->WristRoll >= -1))
+            // {
+            //     params->WristRoll = fmap(params->WristRoll, -1, 1, 0, 360);
+            // }
         }
         // printf("WristRoll Param\n");
 
