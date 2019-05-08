@@ -15,10 +15,10 @@ extern "C" void vReadAxisTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 
     // System Calibration Data
-    uint8_t system_cal = 0;
-    uint8_t gyro_cal = 0;
-    uint8_t accel_cal = 0;
-    uint8_t mag_cal = 0;
+    //uint8_t system_cal = 0;
+    //uint8_t gyro_cal = 0;
+    //uint8_t accel_cal = 0;
+    //uint8_t mag_cal = 0;
 
     sensors_event_t event[4];
 
@@ -60,12 +60,38 @@ extern "C" void vI2CScannerTask(void *pvParameters)
     ParamsStruct *params = (ParamsStruct*) pvParameters;
     while(1)
     {
-    
-        i2c_scanner();
+        //i2c_scanner();
 	for(int i = 0; i < 2; i++)
 	{
 		// printf("%i) YAW: %.2f\tPITCH: %.2f\tROLL: %.2f\n",i,params->yaw[i],params->pitch[i],params->roll[i]);
 	}
 	vTaskDelay(100);
     }
+}
+
+extern "C" void vMPU6050Task(void *pvParameters)
+{
+    ParamsStruct *params = (ParamsStruct*) pvParameters;
+    imu::Vector<3> shoulder_imu;
+    imu::Vector<3> wrist_imu;
+
+    while(1)
+    {
+	shoulder_imu = scanMPU6050(MPU6050_ADDR0);
+	wrist_imu    = scanMPU6050(MPU6050_ADDR1);
+
+	//Calculate Shoulder Pitch and Roll
+	params->pitch[0] = calculatePitch( shoulder_imu.x(), shoulder_imu.y(), shoulder_imu.z() );
+	params->roll[0]  = calculateRoll ( shoulder_imu.x(), shoulder_imu.y(), shoulder_imu.z() );
+
+	//Calculate Wrist Pitch and Roll
+	params->pitch[1] = calculatePitch( wrist_imu.x(), wrist_imu.y(), wrist_imu.z() );
+	params->roll[1]  = calculateRoll ( wrist_imu.x(), wrist_imu.y(), wrist_imu.z() );
+
+	printf("Shoulder...PITCH: %i\tROLL: %i\n",params->pitch[0], params->roll[0] );
+	printf("Wrist......PITCH: %i\tROLL: %i\n\n",params->pitch[1], params->roll[1] );
+	//scanMPU6050();
+	vTaskDelay(100);
+    }
+    
 }
