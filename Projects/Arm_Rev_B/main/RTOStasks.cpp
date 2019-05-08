@@ -305,15 +305,15 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
 
     // PID(double* Input, double* Output, double* Setpoint,
     //     double Kp, double Ki, double Kd, int ControllerDirection);
-    PID roll_pid(&params->IMU_WRIST_PITCH, &roll_pid_speed, &params->WRIST_PTICH_TARGET,
-        double Kp, double Ki, double Kd, int ControllerDirection);
+    // PID roll_pid(&params->IMU_WRIST_PITCH, &roll_pid_speed, &params->WRIST_PTICH_TARGET,
+    //     double Kp, double Ki, double Kd, int ControllerDirection);
 
-    PID pitch_pid(&params->IMU_WRIST_PITCH, &pitch_pid_speed, &params->WRIST_PTICH_TARGET,
-        double Kp, double Ki, double Kd, int ControllerDirection);
+    // PID pitch_pid(&params->IMU_WRIST_PITCH, &pitch_pid_speed, &params->WRIST_PTICH_TARGET,
+    //     double Kp, double Ki, double Kd, int ControllerDirection);
     while(1)
     {
 
-    /*
+    
         //if command from MS is diff;   the semaphore
         if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
         {
@@ -360,8 +360,9 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
             Wrist_Left.SetSpeed(0);
             Wrist_Right.SetSpeed(0);
         }
-    */
+    
 
+    /*
         if(abs(params->WristPitch - params->IMU_WRIST_PITCH) < kError) //if pitch needs adjustments 
         {
             if(params->IMU_WRIST_PITCH < params->WristPitch) //increase pitch
@@ -422,6 +423,7 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
             Wrist_Right.SetSpeed(0);
             Wrist_Left.SetSpeed(0);
         }
+    */
     }
 }
 
