@@ -21,7 +21,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     server->on("/imu", HTTP_POST, [=](AsyncWebServerRequest *request){
         char yaw_str[10];
 	itoa(params->yaw[0],yaw_str,10);
-	printf("Yaw for IMU %i: %f",atoi(request->arg("imu_address").c_str()),params->yaw[0]);
+	printf("Yaw for IMU %i: %i",atoi(request->arg("imu_address").c_str()),params->yaw[0]);
 	request->send(200,"text/plain",yaw_str);
     });
 
@@ -159,16 +159,50 @@ int16_t getAxis(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
     return bytes_val;
 }
 
-double calculatePitch(double xAxis, double yAxis, double zAxis)
+int32_t calculatePitch(int32_t accel_x, int32_t accel_y, int32_t accel_z)
 {
-    double pitch = atan2(-xAxis, sqrt(yAxis*yAxis + zAxis*zAxis)) * 180/PI;
+    int32_t pitch = 180 * atan( accel_y / sqrt ( accel_x * accel_x + accel_z * accel_z ))/PI;
     return pitch;
 }
 
-double calculateRoll(double xAxis, double yAxis, double zAxis)
+int32_t calculateRoll(int32_t accel_x, int32_t accel_y, int32_t accel_z)
 {
-    int sign = (zAxis > 0) ? 1 : -1;
-    float miu = 0.001;
-    double roll = atan2(yAxis, sign * sqrt(zAxis*zAxis + miu*xAxis*xAxis)) * 180/PI;
+    int32_t roll = 180 * atan( accel_x / sqrt ( accel_y * accel_y + accel_z * accel_z ))/PI;
     return roll;
+}
+
+imu::Vector<3> scanMPU6050(uint8_t IMU_ADDRESS)
+{
+    int16_t accel_x, accel_y, accel_z;
+    int16_t gyro_x, gyro_y, gyro_z;
+    int16_t temp;
+
+    //Initialize Device
+    Wire.begin();
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x6B);
+    Wire.write(0);
+    Wire.endTransmission(true);
+
+    //Read Accel, Gyro, Temp Registers
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(IMU_ADDRESS, 6*2, true);
+
+    accel_x = Wire.read()<<8 | Wire.read(); //ACCEL_X 3B (H) 3C (L)
+    accel_y = Wire.read()<<8 | Wire.read(); //ACCEL_Y 3D (H) 3E (L)
+    accel_z = Wire.read()<<8 | Wire.read(); //ACCEL_Z 3F (H) 40 (L)
+    temp    = Wire.read()<<8 | Wire.read(); //TEMP    41 (H) 42 (L)
+    gyro_x  = Wire.read()<<8 | Wire.read(); //GYRO_X  43 (H) 44 (L)
+    gyro_y  = Wire.read()<<8 | Wire.read(); //GYRO_Y  45 (H) 46 (L)
+    gyro_z  = Wire.read()<<8 | Wire.read(); //GYRO_Z  47 (H) 48 (L)
+
+    imu::Vector<3> accel(accel_x, accel_y, accel_z);
+    return accel;
+    //Convert To Euler
+    //int32_t roll = 180 * atan( accel_x / sqrt ( accel_y * accel_y + accel_z * accel_z ))/PI;
+    //int32_t pitch = 180 * atan( accel_y / sqrt ( accel_x * accel_x + accel_z * accel_z ))/PI;
+    //printf("GYRO_X: %i\tGYRO_Y: %i\tGYRO_Z: %i\n",gyro_x,gyro_y,gyro_z);
+    //printf("PITCH: %i\tROLL: %i\n",pitch,roll);
 }

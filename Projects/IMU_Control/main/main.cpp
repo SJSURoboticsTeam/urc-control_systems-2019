@@ -23,7 +23,8 @@ extern "C" void app_main()
     initServer(&server, &params);
 
     //Create freeRTOS tasks.
-    xTaskCreate(vReadAxisTask, "AXIS", 4096, &params, 1, NULL);
+    //xTaskCreate(vReadAxisTask, "AXIS", 4096, &params, 1, NULL);
     xTaskCreate(vI2CScannerTask, "SCAN", 4096, &params, 1, NULL);
+    xTaskCreate(vMPU6050Task   , "MPU" , 4094, &params, 1, NULL);
 }
 

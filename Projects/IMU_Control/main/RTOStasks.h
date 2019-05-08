@@ -14,6 +14,7 @@ extern "C" void vReadAxisTask(void *pvParameters);
 
 extern "C" void vI2CScannerTask(void *pvParameters);
 
+extern "C" void vMPU6050Task(void *pvParameters);
 #ifdef _cplusplus
 }
 #endif

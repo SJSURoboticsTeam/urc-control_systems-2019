@@ -2,6 +2,7 @@
 #include <ESPAsyncWebServer.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "Adafruit_BNO055.h"
 
 #ifndef PROTOPROJECT_H_
 #define PROTOPROJECT_H_
@@ -12,12 +13,14 @@ extern "C" {
 
 struct ParamsStruct {
     char name[40];
-    float yaw[4];
-    float pitch[4];
-    float roll[4];
+    int32_t yaw[4];
+    int32_t pitch[4];
+    int32_t roll[4];
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
+
+//BNO055 Functions
 
 uint8_t i2c_scanner();
 
@@ -31,12 +34,12 @@ uint8_t readByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS);
 
 int16_t getAxis(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS);
 
-double calculatePitch(double xAxis, double yAxis, double zAxis);
+//MPU6050 Functions
 
-double calculateRoll(double xAxis, double yAxis, double zAxis);
-#ifdef _cplusplus
-}
+int32_t calculatePitch(int32_t accel_x, int32_t accel_y, int32_t accel_z);
+
+int32_t calculateRoll(int32_t accel_x, int32_t accel_y, int32_t accel_z);
+
+imu::Vector<3> scanMPU6050(uint8_t IMU_ADDRESS);
+
 #endif
-
-#endif
-
