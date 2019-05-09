@@ -30,12 +30,15 @@ extern "C" void app_main()
 
 
     //Create freeRTOS tasks.
-    xTaskCreate(vElbowTask,   "Elbow",   4096, &params, 1, NULL);
-    // xTaskCreate(vRotundaTask, "Rotunda", 4096, &params, 1, NULL);
+    xTaskCreate(vElbowTask,    "Elbow",    4096, &params, 1, NULL);
+    xTaskCreate(vRotundaTask,  "Rotunda",  4096, &params, 1, NULL);
     xTaskCreate(vShoulderTask, "Shoulder", 4096, &params, 1, NULL);
     // xTaskCreate(vDiffGearboxTask, "Wrist", 4096, &params, 1, NULL);
-    // xTaskCreate(vClawTask, "Claw", 4096, &params, 1, NULL);
+    xTaskCreate(vClawTask, "Claw", 4096, &params, 1, NULL);
 
-    xTaskCreate(vReadAxisTask, "IMU", 4096, &params, 1, NULL);
+    
+    // xTaskCreate(vI2CScannerTask, "SCAN", 4096, &params, 1, NULL);
+    // xTaskCreate(vReadAxisTask, "IMU", 4096, &params, 1, NULL);
+    xTaskCreate(vMPU6050Task, "MPU" , 4094, &params, 1, NULL);
 }
 

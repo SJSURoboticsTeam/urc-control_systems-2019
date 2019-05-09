@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <Wire.h>
+#include "Adafruit_BNO055.h"
 
 #ifndef PROTOPROJECT_H_
 #define PROTOPROJECT_H_
@@ -30,9 +31,9 @@ struct ParamsStruct {
     uint32_t actuator_speed = 0;
     uint32_t update_speed = 0;
     
-    float yaw[4];
-    float pitch[4];
-    float roll[4];
+    int32_t yaw[4];
+    int32_t pitch[4];
+    int32_t roll[4];
 };
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
@@ -59,6 +60,12 @@ void initIMU(uint8_t IMU_ADDRESS, uint8_t MODE);
 void writeByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS, uint8_t VALUE);
 
 uint8_t readByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS);
+
+int32_t calculatePitch(int32_t accel_x, int32_t accel_y, int32_t accel_z);
+
+int32_t calculateRoll(int32_t accel_x, int32_t accel_y, int32_t accel_z);
+
+imu::Vector<3> scanMPU6050(uint8_t IMU_ADDRESS);
 
 #ifdef _cplusplus
 }

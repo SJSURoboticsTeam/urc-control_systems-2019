@@ -55,7 +55,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
             if((params->RotundaTarget <= 1) && (params->RotundaTarget >= -1))
             {
-                params->RotundaTarget = fmap(params->RotundaTarget, -0.1, 0.1, -180, 180);
+                params->RotundaTarget = fmap(params->RotundaTarget, -0.1, 0.1, -180, 179);
             }
             printf("RotundaTarget: %f\n", params->RotundaTarget);
         }
@@ -68,7 +68,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
             if((params->ElbowTarget <= 1) && (params->ElbowTarget >= -1))
             {
-                params->ElbowTarget = fmap(params->ElbowTarget, -1, .94, kElbowLimitMin, kElbowLimitMax);
+                params->ElbowTarget = (-1 + .72) - params->ElbowTarget;
+                params->ElbowTarget = fmap(params->ElbowTarget, -1, .72, 60, 240);
             }
             printf("ElbowTarget: %f\n", params->ElbowTarget);
         }
@@ -85,7 +86,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
             if((params->ShoulderTarget <= 1) && (params->ShoulderTarget >= -1))
             {
-                params->ShoulderTarget = fmap(params->ShoulderTarget, -.65, 1, kShoulderLimitMin, kShoulderLimitMax);
+                params->ShoulderTarget = fmap(params->ShoulderTarget, -.45, .46, 0, 90);
             }
             printf("ShoulderTarget: %f\n", params->ShoulderTarget);
         }
@@ -106,7 +107,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             {
                 params->WristPitch = fmap(params->WristPitch, -0.95, 1, kWristPitchLimitMin, kWristPitchLimitMax);
             }
-            printf("Wrist Pitch: %f \n\n\n\n", params->WristPitch);
+            printf("Wrist Pitch: %f \n\n", params->WristPitch);
         }
         // printf("WristPitch Param\n");
 
@@ -139,7 +140,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         {
             printf("Claw command recieved: %i\n", atoi(request->arg("command").c_str()));
             if(params->update_speed > 100) params->update_speed = 100;
-            params->actuator_speed = 50;
+            params->actuator_speed = 100;
 
             if(atoi(request->arg("command").c_str()) == 1){
                 params->current_direction = 1;
@@ -152,7 +153,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             else if(atoi(request->arg("command").c_str()) == 0){
                 params->current_direction = 2;
                 params->actuator_speed = 0;
-                printf("Claw stop\n");
+                printf("Claw stop\n\n\n");
             }   
             // printf("Command: %i\n", params->current_direction);
         }
@@ -263,7 +264,9 @@ double ExpMovingAvg(double Current, double Target, double Alpha)
 
 double fmap(double x, double in_min, double in_max, double out_min, double out_max)
 {
- 
+    if(x > in_max)  x = in_max;
+    else if(x < in_min)  x = in_min;
+
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
@@ -342,4 +345,53 @@ uint8_t readByte(uint8_t IMU_ADDRESS, uint8_t REGISTER_ADDRESS)
     Wire.endTransmission();
 
     return byte_val;
+}
+
+
+int32_t calculatePitch(int32_t accel_x, int32_t accel_y, int32_t accel_z)
+{
+    int32_t pitch = 180 * atan( accel_y / sqrt ( accel_x * accel_x + accel_z * accel_z ))/PI;
+    return pitch;
+}
+
+int32_t calculateRoll(int32_t accel_x, int32_t accel_y, int32_t accel_z)
+{
+    int32_t roll = 180 * atan( accel_x / sqrt ( accel_y * accel_y + accel_z * accel_z ))/PI;
+    return roll;
+}
+
+imu::Vector<3> scanMPU6050(uint8_t IMU_ADDRESS)
+{
+    int16_t accel_x, accel_y, accel_z;
+    int16_t gyro_x, gyro_y, gyro_z;
+    int16_t temp;
+
+    //Initialize Device
+    Wire.begin();
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x6B);
+    Wire.write(0);
+    Wire.endTransmission(true);
+
+    //Read Accel, Gyro, Temp Registers
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(IMU_ADDRESS, 6*2, true);
+
+    accel_x = Wire.read()<<8 | Wire.read(); //ACCEL_X 3B (H) 3C (L)
+    accel_y = Wire.read()<<8 | Wire.read(); //ACCEL_Y 3D (H) 3E (L)
+    accel_z = Wire.read()<<8 | Wire.read(); //ACCEL_Z 3F (H) 40 (L)
+    temp    = Wire.read()<<8 | Wire.read(); //TEMP    41 (H) 42 (L)
+    gyro_x  = Wire.read()<<8 | Wire.read(); //GYRO_X  43 (H) 44 (L)
+    gyro_y  = Wire.read()<<8 | Wire.read(); //GYRO_Y  45 (H) 46 (L)
+    gyro_z  = Wire.read()<<8 | Wire.read(); //GYRO_Z  47 (H) 48 (L)
+
+    imu::Vector<3> accel(accel_x, accel_y, accel_z);
+    return accel;
+    //Convert To Euler
+    //int32_t roll = 180 * atan( accel_x / sqrt ( accel_y * accel_y + accel_z * accel_z ))/PI;
+    //int32_t pitch = 180 * atan( accel_y / sqrt ( accel_x * accel_x + accel_z * accel_z ))/PI;
+    //printf("GYRO_X: %i\tGYRO_Y: %i\tGYRO_Z: %i\n",gyro_x,gyro_y,gyro_z);
+    //printf("PITCH: %i\tROLL: %i\n",pitch,roll);
 }

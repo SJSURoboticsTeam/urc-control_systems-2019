@@ -22,7 +22,11 @@ extern "C" void vDiffGearboxTask(void *pvParameters);
 
 extern "C" void vClawTask(void *pvPArameters);
 
+extern "C" void vI2CScannerTask(void *pvParameters);
+
 extern "C" void vReadAxisTask(void *pvParameters);
+
+extern "C" void vMPU6050Task(void *pvParameters);
 
 #ifdef _cplusplus
 }

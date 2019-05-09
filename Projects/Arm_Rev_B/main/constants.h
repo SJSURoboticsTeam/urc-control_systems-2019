@@ -35,8 +35,8 @@ constexpr double kRotundaPWMMin = 2.5;
 constexpr double kRotundaPWMMax = 12.5;
 
 constexpr int kElbowPin = 27;		//Servo 2
-constexpr int kElbowLimitMin = 0;
-constexpr int kElbowLimitMax = 300;
+constexpr int kElbowLimitMin = 100;
+constexpr int kElbowLimitMax = 250;
 constexpr double kElbowRange = 300;
 constexpr double kElbowStartPos = 150;
 constexpr double kElbowFreq = 50;
@@ -48,7 +48,7 @@ constexpr uint32_t kMotorFreq = 5000;
 constexpr uint32_t kShoulderSigPin = 25;
 constexpr uint32_t kShoulderDirPin = 26;
 constexpr double kShoulderLimitMin = 10;
-constexpr double kShoulderLimitMax = 80;
+constexpr double kShoulderLimitMax = 60;
 constexpr uint32_t kShoulderEnablePWMMin = 0;	//percentage
 constexpr uint32_t kShoulderEnablePWMMax = 100;	//percentage
 
@@ -83,3 +83,22 @@ constexpr double kWristPitchLimitMax = 90;
 #define BNO055_OPR_MODE       0x3D
 #define BNO055_PWR_MODE       0x3E
 #define BNO055_SYS_TRIGGER    0x3F
+
+#define MPU6050_ACCEL_XOUT_H 0x3B
+#define MPU6050_ACCEL_XOUT_L 0x3C
+#define MPU6050_ACCEL_YOUT_H 0x3D
+#define MPU6050_ACCEL_YOUT_L 0x3E
+#define MPU6050_ACCEL_ZOUT_H 0x3F
+#define MPU6050_ACCEL_ZOUT_L 0x40
+#define MPU6050_TEMP_OUT_H   0x41
+#define MPU6050_TEMP_OUT_L   0x42
+#define MPU6050_GYRO_XOUT_H  0x43
+#define MPU6050_GYRO_XOUT_L  0x44
+#define MPU6050_GYRO_YOUT_H  0x45
+#define MPU6050_GYRO_YOUT_L  0x46
+#define MPU6050_GYRO_ZOUT_H  0x47
+#define MPU6050_GYRO_ZOUT_L  0x48
+
+#define MPU6050_ADDR0        0x68
+#define MPU6050_ADDR1	     0x69
+#define MPU6050_PWR_MGMT_1   0x6B

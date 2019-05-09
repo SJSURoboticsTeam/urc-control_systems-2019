@@ -228,12 +228,10 @@ extern "C" void vShoulderTask(void *pvParameters)
         // vTaskDelay(100);
     */
 
-        if( (myParams->pitch[0] != 0.00) && 
-            (myParams->pitch[0] != myParams->roll[0]) &&
-            (myParams->pitch[0] != myParams->yaw[0]) )
+        if( (myParams->pitch[0] != 0.00))
         {
             if( (myParams->ShoulderTarget >= kShoulderLimitMin) 
-                && (myParams->ShoulderTarget >= kShoulderLimitMax)) //If target is in accepted range
+                && (myParams->ShoulderTarget <= kShoulderLimitMax)) //If target is in accepted range
             {
                 if((myParams->pitch[0] + kError) < myParams->ShoulderTarget)
                 {
@@ -250,32 +248,32 @@ extern "C" void vShoulderTask(void *pvParameters)
                 }
             }
         }
-        vTaskDelay(50);
+        vTaskDelay(5);
 
-        if(myParams->pitch[0] == 0.00)  //IF imu doesnt work
-        {
-            printf("\n\n\n!!!!!!!!!!!!!!!!\nENTERING NO IMU MODE\n!!!!!!!!!!!!!!!!!!!\n\n\n\n");
-            while(1)
-            {
-                if(myParams->ShoulderTarget != 0 )
-                {   
-                    duration = myParams->ShoulderTarget;
-                    // printf("Starting to move the thing!\n");
-                    // printf("Time: %f\n", duration);
+        // if(myParams->pitch[0] == 0.00)  //IF imu doesnt work
+        // {
+        //     printf("\n\n\n!!!!!!!!!!!!!!!!\nENTERING NO IMU MODE\n!!!!!!!!!!!!!!!!!!!\n\n\n\n");
+        //     while(1)
+        //     {
+        //         if(myParams->ShoulderTarget != 0 )
+        //         {   
+        //             duration = myParams->ShoulderTarget;
+        //             // printf("Starting to move the thing!\n");
+        //             // printf("Time: %f\n", duration);
 
-                    //assert motor @ 50%?
-                    shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
-                    //delay that duration
-                    vTaskDelay(abs(duration ) / 10);
-                    // printf("Finished moving the thing!\n\n\n");
-                    //deassrt the motor
-                    shoulder.SetSpeed(0);
+        //             //assert motor @ 50%?
+        //             shoulder.SetSpeedAndDirection(50, duration > 0 ? true : false);
+        //             //delay that duration
+        //             vTaskDelay(abs(duration ) / 10);
+        //             // printf("Finished moving the thing!\n\n\n");
+        //             //deassrt the motor
+        //             shoulder.SetSpeed(0);
 
-                    myParams->ShoulderTarget = 0;
-                }
-                vTaskDelay(5);
-            }
-        }
+        //             myParams->ShoulderTarget = 0;
+        //         }
+        //         vTaskDelay(5);
+        //     }
+        // }
 
         // printf("Looped\n");
     }
@@ -315,51 +313,51 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
 
     
         //if command from MS is diff;   the semaphore
-        if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
+        // if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
         {
             printf("Updating Pitch: %f\n\n", params->WristPitch);
-            if(params->WristPitch > 0)
+            // if(params->WristPitch > 0)
             {
                 Wrist_Left.SetDirection(true);
                 Wrist_Right.SetDirection(false);
             }
 
-            else if(params->WristPitch < 0)
-            {
-                Wrist_Left.SetDirection(false);
-                Wrist_Right.SetDirection(true);
-            }
+            // else if(params->WristPitch < 0)
+            // {
+            //     Wrist_Left.SetDirection(false);
+            //     Wrist_Right.SetDirection(true);
+            // }
 
             Wrist_Left.SetSpeed(50);
             Wrist_Right.SetSpeed(50);
-            vTaskDelay(abs(params->WristPitch) / 10);
-            Wrist_Left.SetSpeed(0);
-            Wrist_Right.SetSpeed(0);
+            // vTaskDelay(abs(params->WristPitch) / 10);
+            // Wrist_Left.SetSpeed(0);
+            // Wrist_Right.SetSpeed(0);
         }
         
             // Roll:
-        if(xSemaphoreTake(params->xWristRollSemaphore, 100))
-        {
-            printf("Updating Roll: %f\n\n", params->WristRoll);
-            if(params->WristRoll > 0)
-            {
-                Wrist_Left.SetDirection(true);
-                Wrist_Right.SetDirection(true);
-            }
+        // if(xSemaphoreTake(params->xWristRollSemaphore, 100))
+        // {
+        //     printf("Updating Roll: %f\n\n", params->WristRoll);
+        //     if(params->WristRoll > 0)
+        //     {
+        //         Wrist_Left.SetDirection(true);
+        //         Wrist_Right.SetDirection(true);
+        //     }
 
-            else if(params->WristRoll < 0)
-            {
-                Wrist_Left.SetDirection(false);
-                Wrist_Right.SetDirection(false);
-            }
-            // Set equal and constant speed for a const amount of time
-            //Later we can implement PID on this
-            Wrist_Left.SetSpeed(50);
-            Wrist_Right.SetSpeed(50);
-            vTaskDelay(abs(params->WristRoll) / 10);
-            Wrist_Left.SetSpeed(0);
-            Wrist_Right.SetSpeed(0);
-        }
+        //     else if(params->WristRoll < 0)
+        //     {
+        //         Wrist_Left.SetDirection(false);
+        //         Wrist_Right.SetDirection(false);
+        //     }
+        //     // Set equal and constant speed for a const amount of time
+        //     //Later we can implement PID on this
+        //     Wrist_Left.SetSpeed(50);
+        //     Wrist_Right.SetSpeed(50);
+        //     vTaskDelay(abs(params->WristRoll) / 10);
+        //     Wrist_Left.SetSpeed(0);
+        //     Wrist_Right.SetSpeed(0);
+        // }
     
 
     /*
@@ -434,7 +432,7 @@ extern "C" void vClawTask(void *pvParameters)
     ParamsStruct* myParams = (ParamsStruct*) pvParameters;
     bool task_complete = false;
     //Pin, Channel, Timer, Freq, max, min
-    Servo Claw(act_ENABLE,5,2,5000,40,0);
+    Servo Claw(act_ENABLE,5,2,5000,30,0);
     Claw.SetPositionPercent(0); //Set Duty Cycle to 0 at init
     initClaw();
     while(1) {
@@ -469,7 +467,7 @@ extern "C" void vClawTask(void *pvParameters)
     }
 }
 
-
+/*
 extern "C" void vReadAxisTask(void *pvParameters) 
 {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
@@ -511,5 +509,47 @@ extern "C" void vReadAxisTask(void *pvParameters)
     //printf("Calibration Data: SYS: %i\tGYR: %i\tACC: %i\tMAG: %i\n",system_cal,gyro_cal,accel_cal,mag_cal);
 
         vTaskDelay(50);
+    }
+}
+*/
+
+extern "C" void vMPU6050Task(void *pvParameters)
+{
+    ParamsStruct *params = (ParamsStruct*) pvParameters;
+    imu::Vector<3> shoulder_imu;
+    imu::Vector<3> wrist_imu;
+
+    while(1)
+    {
+    shoulder_imu = scanMPU6050(MPU6050_ADDR1);
+    wrist_imu    = scanMPU6050(MPU6050_ADDR0);
+
+    //Calculate Shoulder Pitch and Roll
+    params->pitch[0] = calculatePitch( shoulder_imu.x(), shoulder_imu.y(), shoulder_imu.z() );
+    params->roll[0]  = calculateRoll ( shoulder_imu.x(), shoulder_imu.y(), shoulder_imu.z() );
+
+    //Calculate Wrist Pitch and Roll
+    params->pitch[1] = calculatePitch( wrist_imu.x(), wrist_imu.y(), wrist_imu.z() );
+    params->roll[1]  = calculateRoll ( wrist_imu.x(), wrist_imu.y(), wrist_imu.z() );
+
+    printf("Shoulder...PITCH: %i\tROLL: %i\n",params->pitch[0], params->roll[0] );
+    printf("Wrist......PITCH: %i\tROLL: %i\n\n",params->pitch[1], params->roll[1] );
+    //scanMPU6050();
+    vTaskDelay(100);
+    }
+    
+}
+
+extern "C" void vI2CScannerTask(void *pvParameters)
+{
+    ParamsStruct *params = (ParamsStruct*) pvParameters;
+    while(1)
+    {
+        i2c_scanner();
+    for(int i = 0; i < 2; i++)
+    {
+        // printf("%i) YAW: %.2f\tPITCH: %.2f\tROLL: %.2f\n",i,params->yaw[i],params->pitch[i],params->roll[i]);
+    }
+    vTaskDelay(100);
     }
 }
