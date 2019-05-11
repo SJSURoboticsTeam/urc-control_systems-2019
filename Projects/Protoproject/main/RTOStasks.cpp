@@ -23,13 +23,15 @@ extern "C" void vSayHelloTask(void *pvParameters) {
 
 extern "C" void vPitchTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
-    
+
+    int pitch_position = 35;
+    int powermode = 0;
+
     vTaskDelay(500);
     initGimbal();
     initCameraLens();
     initPower();
-
-    int pitch_position = 35;
+    powerGimbal(powermode);
 
     while(1) {
         /*
@@ -98,6 +100,24 @@ extern "C" void vPitchTask(void *pvParameters) {
             printf("Arm mode\n");
             printf("----------------------.\n");
             downMovePitch(SERVO_DOWN);
+        }
+        /*
+            The gimbal switches on for camera movement operation.
+        */
+        else if (strcmp(params->mode, "on") == 0) {
+            printf("The gimbal is on\n");
+            printf("----------------------.\n");
+            powermode = 1;
+            powerGimbal(powermode);
+        }
+        /*
+            The gimbal turns off.
+        */
+        else if (strcmp(params->mode, "off") == 0) {
+            printf("The gimbal is off\n");
+            printf("----------------------.\n");
+            powermode = 0;
+            powerGimbal(powermode);
         }
         else {
             // printf("Mode not valid\n");

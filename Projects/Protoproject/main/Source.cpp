@@ -152,8 +152,13 @@ void initPower() {
     pinMode(MOSFET_PIN, OUTPUT);
 }
 
-void powerGimbal() {
-    digitalWrite(MOSFET_PIN, HIGH);
+void powerGimbal(int mode) {
+    if (mode == 0) {
+        digitalWrite(MOSFET_PIN, LOW);
+    }
+    else if (mode == 1) {
+        digitalWrite(MOSFET_PIN, HIGH);
+    }
 }
 
 void centerMovePitch() {

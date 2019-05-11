@@ -14,9 +14,9 @@ extern "C" {
 
 struct ParamsStruct {
     char name[20]; // test parameter
-    char mode[20]; // debug, manual, or arm control mode based on "debug", "manual", or "arm" keywords 
+    char mode[20]; // debug, manual, arm, or power control mode based on "debug", "manual", "arm", "on", or "off" 
     int manual_move; // changes the position of the gimbal manual, up, center, or down based on "0", "1", "2", or "3" respectively
-    double gimbal_position = 0; // current y axis value of the gimbal
+    double gimbal_position = 0; // current y axis value of the gimbal 
 };
 
 typedef enum CommandMoveMode {
@@ -40,7 +40,7 @@ void initCameraLens(); // Initialize the servo object of the DC Camera Lens
 
 void initPower(); // Initializes the kill switch object
 
-void gimbalPower(); // Sends a 3.3V signal to a MOSFET on the gimbal and Jetson PCB turn off the gimbal
+void powerGimbal(int mode); // Sends a 3.3V signal to a MOSFET on the gimbal and Jetson PCB turn off the gimbal
 
 void readIMU(); // Interprets values from the IMU underneath the gimbal
 
