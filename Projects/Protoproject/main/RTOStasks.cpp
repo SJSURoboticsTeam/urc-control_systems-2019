@@ -24,10 +24,10 @@ extern "C" void vSayHelloTask(void *pvParameters) {
 extern "C" void vPitchTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
     
-    // Delay to initalize pitch object to allow the gimbal to turn on first
     vTaskDelay(500);
     initGimbal();
     initCameraLens();
+    initPower();
 
     int pitch_position = 35;
 
@@ -44,9 +44,10 @@ extern "C" void vPitchTask(void *pvParameters) {
             Manual mode to allow mission control user to change camera pitch position
             by different command move modes. 
 
-            Case 0: CENTER mode makes the camera stay centered
-            Case 1: UP mode makes the camera face upwards
-            Case 2: DOWN mode makes the camera stay downwards
+            Case 0: CENTER mode makes the camera gimbal stay centered
+            Case 1: UP mode makes the camera gimbal face upwards
+            Case 2: DOWN mode makes the camera gimbal stay downwards
+            Case 3: STOP mode makes the camera gimbal stop moving and stay in one position
 
         */
         else if (strcmp(params->mode, "manual") == 0) {

@@ -38,6 +38,10 @@ void initGimbal(); // Initialize the servo object of the camera pitch
 
 void initCameraLens(); // Initialize the servo object of the DC Camera Lens
 
+void initPower(); // Initializes the kill switch object
+
+void gimbalPower(); // Sends a 3.3V signal to a MOSFET on the gimbal and Jetson PCB turn off the gimbal
+
 void readIMU(); // Interprets values from the IMU underneath the gimbal
 
 void centerMovePitch(); // Rotates gimbal where the camera aligns all the way to the center

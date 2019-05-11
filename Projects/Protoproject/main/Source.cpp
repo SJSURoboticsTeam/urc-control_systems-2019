@@ -143,9 +143,17 @@ void initGimbal() {
 
 }
 
-    void initCameraLens() {
+void initCameraLens() {
     Pitch_Servo.InitServo(LENS_SERVO_PIN, SERVO_CHANNEL, SERVO_TIMER, 
                       SERVO_FREQUENCY, LENS_SERVO_MIN, LENS_SERVO_MAX);
+}
+
+void initPower() {
+    pinMode(MOSFET_PIN, OUTPUT);
+}
+
+void powerGimbal() {
+    digitalWrite(MOSFET_PIN, HIGH);
 }
 
 void centerMovePitch() {
@@ -177,10 +185,8 @@ void stopMovePitch(int position) {
 }
 
 void sweepMovePitch() {
-
     upMovePitch(SERVO_UP);
     centerMovePitch();
     downMovePitch(SERVO_DOWN);
     printf("Sweeping has been enabled.\n");
-    
 }
