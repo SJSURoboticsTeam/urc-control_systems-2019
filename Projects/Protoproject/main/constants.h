@@ -42,7 +42,7 @@ constexpr float SERVO_DOWN = 60; // Pitch duty cycle to rotate camera up (50- 63
 
 constexpr float SERVO_UP = 40; // Pitch duty cycle to rotate camera down (50- 37 Limit) [40- 25]
 
-constexpr float SERVO_SHIFT = 2; // Pitch duty cycle value to increment or decrement when moving the gimbal up or down
+constexpr float SERVO_SHIFT = 1; // Pitch duty cycle value to increment or decrement when moving the gimbal up or down
 
 // Camera Lens Constants //
 

@@ -31,6 +31,7 @@ extern "C" void vPitchTask(void *pvParameters) {
     initGimbal();
     initCameraLens();
     initPower();
+    centerMovePitch();
     powerGimbal(powermode);
 
     while(1) {

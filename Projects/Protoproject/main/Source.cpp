@@ -165,28 +165,28 @@ void centerMovePitch() {
     Pitch_Servo.SetPositionPercent(SERVO_CENTER);
     printf("The camera is now centered.\n");
 
-    vTaskDelay(150);
+    vTaskDelay(300);
 }
 
 void upMovePitch(int position) {
     Pitch_Servo.SetPositionPercent(position);
     printf("The camera is rotating upwards.\n");
 
-    vTaskDelay(150);
+    vTaskDelay(300);
 }
 
 void downMovePitch(int position) {
     Pitch_Servo.SetPositionPercent(position);
     printf("The camera is rotating downwards.\n");
 
-    vTaskDelay(150);
+    vTaskDelay(300);
 }
 
 void stopMovePitch(int position) {
     Pitch_Servo.SetPositionPercent(position);
     printf("The camera stopped moving.\n");
 
-    vTaskDelay(150);
+    vTaskDelay(300);
 }
 
 void sweepMovePitch() {
