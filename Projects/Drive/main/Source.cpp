@@ -27,14 +27,14 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     Serial.println(WiFi.softAPIP());
 
     // Connect to the Rover's AP
-    /*WiFi.config(Ip, Gateway, NMask);
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(500);
-        printf("Connecting to WiFi... ");
-    }
-    printf("\nConnected to %s\n", ssid);*/
+    //WiFi.config(Ip, Gateway, NMask);
+    //WiFi.begin(ssid, password);
+    //while (WiFi.status() != WL_CONNECTED)
+    //{
+    //    delay(500);
+    //    printf("Connecting to WiFi... ");
+    //}
+    //printf("\nConnected to %s\n", ssid);
     
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
@@ -60,7 +60,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->MODE = request->arg("MODE").toInt();  
                 }
                 if (strcmp(vars[i], "T_MAX")) {
-                    params->T_MAX = request->arg("T_MAX").toInt();
+                    params->T_MAX = request->arg("T_MAX").toFloat() / 100;
                 }
                 if (strcmp(vars[i], "AXIS_X")) {
                     params->AXIS_X = 0 - (request->arg("AXIS_X").toFloat());
@@ -80,7 +80,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     //params->THROTTLE = params->THROTTLE * 0.3;    
                 }
                 if (strcmp(vars[i], "BRAKES")) {
-                    params->BRAKES = (request->arg("BRAKES").toFloat() + 1) / 2;    
+                    //params->BRAKES = (request->arg("BRAKES").toFloat() + 1) / 2;    
+                    params->BRAKES = (0 - (request->arg("BRAKES").toFloat()) + 1) / 2;
                 }
                 if (strcmp(vars[i], "MAST_POSITION")) {
                     params->MAST_POSITION = request->arg("MAST_POSITION").toFloat();    
@@ -106,10 +107,10 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 printf("ERROR. %s doesn't exist\n", vars[i]);
             }
         }
-        
+        /*
         printf("handle_update endpoint running\n");
         printf("    MODE: %i \n", params->MODE);
-        printf("    T_MAX: %i \n", params->T_MAX);
+        printf("    T_MAX: %f \n", params->T_MAX);
         printf("    AXIS_X: %f \n", params->AXIS_X);
         printf("    AXIS_Y: %f \n", params->AXIS_Y);
         printf("    YAW: %f \n", params->YAW);
@@ -122,7 +123,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("    WHEEL_B: %d \n", params->WHEEL_B);
         printf("    WHEEL_C: %d \n", params->WHEEL_C);
         printf("\n");
-        
+        */
         request->send(200, "text/plain", "Success");
     });
     /* SSE Example.
@@ -320,8 +321,13 @@ double fmap(double x, double in_min, double in_max, double out_min, double out_m
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-double driveModeMapping(double x, double y)
+double driveModeMapping(double x, double y, bool dir)
 {
+    // going beyond the x-axis doesnt change angle
+    if((dir && y > 0) || (!dir && y < 0))
+    {
+        y = 0;
+    }
     // convert raw data to target angle
     double target_angle = atan2(fabs(x), fabs(y));
     double param1 = (target_angle * 180/3.1416) / 90;

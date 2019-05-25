@@ -91,10 +91,11 @@ extern "C" void vMoveTask(void *pvParameters)
             printf("Debug MODE\n");
             // Convert AXIS_X to 0% - 100% scale
             target_heading = (1 + Params->AXIS_X) * 50;
+            heading = target_heading;
             // Exponential Moving Average
-            heading = (target_heading * 0.5) + (heading * (1 - 0.5));
+            //heading = (target_heading * 0.5) + (heading * (1 - 0.5));
             // Calculate speed based on AXIS_Y% of THROTTLE
-            target_speed = 100 * (Params->BRAKES) * Params->THROTTLE;
+            target_speed = 100 * (Params->BRAKES) * Params->THROTTLE * Params->T_MAX;
             // Exponential Moving Average
             speed = (target_speed * 0.5) + (speed * (1 - 0.5));
             if (heading != previous_heading)
@@ -206,12 +207,12 @@ extern "C" void vMoveTask(void *pvParameters)
             {
                 if(!Params->TRIGGER)
                 {
-                    while(speed != 0)
+                    while(speed != 0 && speed >= 0.000001)
                     {
                         // Exponential Moving Average
-                        speed = speed * (1 - 0.7);
+                        speed = speed * (1 - 0.2);
                         setSpeedAllWheels(speed);
-                        printf("speed: %f\n", speed);
+                        //printf("speed: %f\n", speed);
                     }
                 }
                 applyBrakes(Params->TRIGGER);
@@ -224,10 +225,10 @@ extern "C" void vMoveTask(void *pvParameters)
             }
             else
             {
-                target_speed = sqrt(pow(Params->AXIS_X, 2) + pow(Params->AXIS_Y, 2))/1.414124 * Params->THROTTLE *Params->BRAKES;
+                target_speed = sqrt(pow(Params->AXIS_X, 2) + pow(Params->AXIS_Y, 2))/1.414124 * Params->THROTTLE * Params->BRAKES;
             }
             // Exponential Moving Average
-            speed = (target_speed * 0.5) + (speed * (1 - 0.5));
+            speed = ((target_speed * 0.5) + (speed * (1 - 0.5))) * Params->T_MAX;
             // Adjust parameters for new instance of crab MODE
             if (cam_offset != Params->MAST_POSITION)
             {
@@ -269,13 +270,6 @@ extern "C" void vMoveTask(void *pvParameters)
                 // direction they rotate.
                 if (wheel_position < MIN_ROTATION)
                 {
-                    /*while(speed != 0)
-                    {
-                        speed = speed * (1 - 0.7);
-                        setSpeedAllWheels(100 * speed);
-                        printf("speed1: %f\n", speed);
-                    }
-                    applyBrakes(0);*/
                     wheel_A_heading = wheel_A_heading + 180;
                     wheel_A_dir = !wheel_A_dir;
                     wheel_B_heading = wheel_B_heading + 180;
@@ -286,24 +280,9 @@ extern "C" void vMoveTask(void *pvParameters)
                     motor_A.SetDirection(wheel_A_dir);
                     motor_B.SetDirection(wheel_B_dir);
                     motor_C.SetDirection(wheel_C_dir);
-                    /*vTaskDelay(100);
-                    applyBrakes(current_brakes);
-                    while(speed <= current_speed - 0.000001)
-                    {
-                        speed = (current_speed * 0.5) + (speed * (1 - 0.5));
-                        setSpeedAllWheels(100 * speed);
-                        printf("current_speed: %f, speed2: %f\n", current_speed, speed);
-                    }*/
                 }
                 else if (wheel_position > MAX_ROTATION)
                 {
-                    /*while(speed != 0)
-                    {
-                        speed = speed * (1 - 0.7);
-                        setSpeedAllWheels(100 * speed);
-                        printf("speed3: %f\n", speed);
-                    }
-                    applyBrakes(0);*/
                     wheel_A_heading = wheel_A_heading - 180;
                     wheel_A_dir = !wheel_A_dir;
                     wheel_B_heading = wheel_B_heading - 180;
@@ -314,15 +293,6 @@ extern "C" void vMoveTask(void *pvParameters)
                     motor_A.SetDirection(wheel_A_dir);
                     motor_B.SetDirection(wheel_B_dir);
                     motor_C.SetDirection(wheel_C_dir);
-                    /*vTaskDelay(100);
-                    applyBrakes(current_brakes);
-                    while(speed <= current_speed - 0.000001)
-                    {
-                        speed = (current_speed * 0.5) + (speed * (1 - 0.5));
-                        setSpeedAllWheels(100 * speed);
-                        printf("current_speed: %f, speed4: %f\n", current_speed, speed);
-                    }*/
-
                 }
 
                 // Update servo positions and speed
@@ -342,146 +312,6 @@ extern "C" void vMoveTask(void *pvParameters)
             // Delay 10 ms
             vTaskDelay(10);
         }
-        /*
-        while(Params->MODE == CRAB)
-        {
-            if (Params->MODE != CRAB)
-            {
-                continue;
-            }
-            if(previous_mode != CRAB)
-            {
-                applyBrakes(0);
-                wheel_A_heading = 90;
-                wheel_A_dir = 0;
-                wheel_B_heading = 210;
-                wheel_B_dir = 0;
-                wheel_C_heading = 150;
-                wheel_C_dir = 1;
-                previous_mode = CRAB;
-            }
-            printf("Crab MODE\n");
-            if (Params->TRIGGER != current_brakes)
-            {
-                applyBrakes(Params->TRIGGER);
-                current_brakes = Params->TRIGGER;
-            }
-            // Calculate current speed
-            if ((abs(Params->AXIS_X) == 1) | (abs(Params->AXIS_Y) == 1))
-            {
-                speed = Params->THROTTLE;
-            }
-            else
-            {
-                speed = sqrt(pow(Params->AXIS_X, 2) + pow(Params->AXIS_Y, 2))/1.414124 * Params->THROTTLE;
-            }
-            // Adjust parameters for new instance of crab MODE
-            if (cam_offset != Params->MAST_POSITION)
-            {
-                cam_offset = Params->MAST_POSITION;
-                wheel_A_heading = wheel_A_heading + cam_offset;
-                wheel_B_heading = wheel_B_heading + cam_offset;
-                wheel_C_heading = wheel_B_heading + cam_offset;
-            }
-            // Update parameters for new heading from mission control 
-            if ((heading_y != 0 - Params->AXIS_Y) | (heading_x != 0 - Params->AXIS_X))
-            {
-                heading_y = Params->AXIS_X;
-                heading_x = 0 - Params->AXIS_Y;
-                heading = atan2(heading_y, heading_x) * 180/3.1416;
-                wheel_A_heading = wheel_A_heading - (current_heading - heading);
-                wheel_B_heading = wheel_B_heading - (current_heading - heading);
-                wheel_C_heading = wheel_C_heading - (current_heading - heading);
-                //printf("Headings:\n");
-                //printf("    rover: %f\n    x: %f\n", heading, heading_x);
-                //printf("    y: %f\n    wheel A: %f\n", heading_y, wheel_A_heading);
-                //printf("    wheel B: %f\n    wheel C:    %f\n", wheel_B_heading, wheel_C_heading);
-                current_heading = heading;
-
-                // If wheels hit boundaries, flip them 180 degrees and switch 
-                // direction they rotate.
-                if (wheel_A_heading < MIN_ROTATION)
-                {
-                    applyBrakes(0);
-                    wheel_A_heading = wheel_A_heading + 180;
-                    wheel_A_dir = !wheel_A_dir;
-                    //printf("wheel A direction: %d\n", wheel_A_dir);
-                    motor_A.SetDirection(wheel_A_dir);
-                    //servo_A.SetPositionPercent(100 * wheel_A_heading/MAX_ROTATION);
-                    //delay(350);
-                    applyBrakes(current_brakes);
-                }
-                else if (wheel_A_heading > MAX_ROTATION)
-                {
-                    applyBrakes(0);
-                    wheel_A_heading = wheel_A_heading - 180;
-                    wheel_A_dir = !wheel_A_dir;
-                    //printf("wheel A direction: %d\n", wheel_A_dir);
-                    motor_A.SetDirection(wheel_A_dir);
-                    //servo_A.SetPositionPercent(100 * wheel_A_heading/MAX_ROTATION);
-                    //delay(1000);
-                    applyBrakes(current_brakes);
-                }
-                if (wheel_B_heading < MIN_ROTATION)
-                {
-                    applyBrakes(0);
-                    wheel_B_heading = wheel_B_heading + 180;
-                    wheel_B_dir = !wheel_B_dir;
-                    //printf("wheel B direction: %d\n", wheel_B_dir);
-                    motor_B.SetDirection(wheel_B_dir);
-                    //servo_B.SetPositionPercent(100 * wheel_B_heading/MAX_ROTATION);
-                    //delay(1000);
-                    applyBrakes(current_brakes);
-                }
-                else if (wheel_B_heading > MAX_ROTATION)
-                {
-                    applyBrakes(0);
-                    wheel_B_heading = wheel_B_heading - 180;
-                    wheel_B_dir = !wheel_B_dir;
-                    //printf("wheel B direction: %d\n", wheel_B_dir);
-                    motor_B.SetDirection(wheel_B_dir);
-                    //servo_B.SetPositionPercent(100 * wheel_B_heading/MAX_ROTATION);
-                    //delay(1000);
-                    applyBrakes(current_brakes);
-                }
-                if (wheel_C_heading < MIN_ROTATION)
-                {
-                    applyBrakes(0);
-                    wheel_C_heading = wheel_C_heading + 180;
-                    wheel_C_dir = !wheel_C_dir;
-                    //printf("wheel C direction: %d\n", wheel_C_dir);
-                    motor_C.SetDirection(wheel_C_dir);
-                    //servo_C.SetPositionPercent(100 * wheel_C_heading/MAX_ROTATION);
-                    //delay(1000);
-                    applyBrakes(current_brakes);
-                }
-                else if (wheel_C_heading > MAX_ROTATION)
-                {
-                    applyBrakes(0);
-                    wheel_C_heading = wheel_C_heading - 180;
-                    wheel_C_dir = !wheel_C_dir;
-                    //printf("wheel C direction: %d\n", wheel_C_dir);
-                    motor_C.SetDirection(wheel_C_dir);
-                    //servo_C.SetPositionPercent(100 * wheel_C_heading/MAX_ROTATION);
-                    //delay(1000);
-                    applyBrakes(current_brakes);
-                }
-
-                // Update servo positions and speed
-                servo_A.SetPositionPercent(100 * wheel_A_heading/MAX_ROTATION);
-                servo_B.SetPositionPercent(100 * wheel_B_heading/MAX_ROTATION);
-                servo_C.SetPositionPercent(100 * wheel_C_heading/MAX_ROTATION);
-            }
-            if (speed != current_speed)
-            {
-                //printf("speed: %f\n", speed);
-                setSpeedAllWheels(100 * speed);
-                current_speed = speed;
-            }
-            // Delay 10 ms
-            vTaskDelay(10);
-        }
-        */
 
         while(Params->MODE == SPIN)
         {
@@ -497,7 +327,7 @@ extern "C" void vMoveTask(void *pvParameters)
             }
             printf("Spin MODE\n");
             //initSpinMode(0);
-            target_speed = 100 * Params->BRAKES * Params->THROTTLE * Params->YAW;
+            target_speed = 100 * Params->BRAKES * Params->THROTTLE * Params->YAW * Params->T_MAX;
             if (target_speed != current_speed)
             {
                 
@@ -514,8 +344,8 @@ extern "C" void vMoveTask(void *pvParameters)
             {
                 if(!Params->TRIGGER)
                 {
-                    while(current_speed != 0)
-                    {
+                    while(current_speed != 0 && current_speed >= 0.001)
+                    {   
                         // Exponential Moving Average
                         current_speed = current_speed * (1 - 0.7);
                         setSpeedAllWheels(current_speed);
@@ -553,14 +383,25 @@ extern "C" void vMoveTask(void *pvParameters)
             // Set the brakes
             if (current_brakes != Params->TRIGGER)
             {
+                // use an exponential moving average to "slowly" apply the brakes
                 if(!Params->TRIGGER)
                 {
-                    while(speed_left !=0 && speed_right != 0 && speed_back != 0)
+                    bool condition_a = false;
+                    bool condition_b = false;
+                    if(speed_left >= 0.00001 || speed_back >= 0.0000001 || speed_right >= 0.0000001)
+                    {
+                        condition_a = true;
+                    }
+                    if(speed_left != 0 || speed_right != 0 || speed_back != 0)
+                    {
+                        condition_b = true;
+                    }
+                    while(condition_a && condition_b)
                     {
                         // Exponential Moving Average
-                        speed_left = speed_left * (1 - 0.75);
-                        speed_right = speed_right * (1 - 0.75);
-                        speed_back = speed_back * (1 - 0.75);
+                        speed_left = speed_left * (1 - 0.2);
+                        speed_right = speed_right * (1 - 0.2);
+                        speed_back = speed_back * (1 - 0.2);
                         printf("speed left: %f\n", speed_left);
                         printf("speed right: %f\n", speed_right);
                         printf("speed back: %f\n", speed_back);
@@ -569,6 +410,15 @@ extern "C" void vMoveTask(void *pvParameters)
                         left_motor.SetSpeed(100 * speed_left);
                         right_motor.SetSpeed(100 * speed_right);
                         back_motor.SetSpeed(100 * speed_back);
+
+                        if(speed_left <= 0.0000001 || speed_back <= 0.0000001 || speed_right <= 0.0000001)
+                        {
+                            condition_a = false;
+                        }
+                        if(speed_left == 0 || speed_right == 0 || speed_back == 0)
+                        {
+                            condition_b = false;
+                        }
                     }
                 }
                 applyBrakes(Params->TRIGGER);
@@ -637,14 +487,14 @@ extern "C" void vMoveTask(void *pvParameters)
                 previous_front = front;
             }
             
-            target_speed = Params->BRAKES * Params->THROTTLE;
+            target_speed = Params->BRAKES * Params->THROTTLE * Params->T_MAX;
             // Exponential Moving Average
             current_speed = (target_speed * 0.5) + (current_speed * (1 - 0.5));
 
-            target_angle = driveModeMapping(Params->AXIS_X, Params->AXIS_Y);
+            target_angle = driveModeMapping(Params->AXIS_X, Params->AXIS_Y, Params->REVERSE);
             // Exponential Moving Average
-            current_angle = (target_angle * 0.5) + (current_angle * (1 - 0.5));
-
+            //current_angle = (target_angle * 0.5) + (current_angle * (1 - 0.5));
+            current_angle = target_angle;
             // Calculate parameters for turning left
             if (Params->AXIS_X < 0)
             {
@@ -704,7 +554,17 @@ extern "C" void vMoveTask(void *pvParameters)
                     left_motor.SetDirection((Params->REVERSE > 0) ? 1:0);
                     right_motor.SetDirection((Params->REVERSE > 0) ? 1:0);
                     back_motor.SetDirection((Params->REVERSE > 0) ? 0:1);
-                    setSpeedAllWheels(100 * fabs(current_speed));
+                    if(current_speed == 0)
+                    {
+                        applyBrakes(0);
+                        current_brakes = 0;
+                    }
+                    else if(current_speed != 0)
+                    {
+                        applyBrakes(current_brakes);
+                        setSpeedAllWheels(100 * fabs(current_speed));
+
+                    }
                     previous_speed = current_speed;
                 }
                 // following angle values for actual motors //
@@ -713,7 +573,7 @@ extern "C" void vMoveTask(void *pvParameters)
                 angle_back = 150;
                 
             }
-            else if ((current_heading != Params->AXIS_X) | 
+            else if ((current_heading != Params->AXIS_X) || 
                     (current_speed != previous_speed))
             {
                 
@@ -729,7 +589,7 @@ extern "C" void vMoveTask(void *pvParameters)
                     back_servo.SetPositionPercent(back_servo.GetPercentage(300,
                                                 (150 - fabs(angle_back))));
                 }
-                else
+                else if(Params->AXIS_X < 0)
                 {
                     //printf("turning right\n");
                     left_servo.SetPositionPercent(left_servo.GetPercentage(300,
@@ -746,13 +606,32 @@ extern "C" void vMoveTask(void *pvParameters)
                 right_motor.SetDirection((Params->REVERSE > 0) ? 1:0);
                 back_motor.SetDirection((Params->REVERSE > 0) ? 0:1);
                 
-                left_motor.SetSpeed(100 * speed_left);
-                //printf("speed left after adjustment: %f\n", speed_left);
-                right_motor.SetSpeed(100 * speed_right);
-                //printf("speed right after adjustment: %f\n", speed_right);
-                back_motor.SetSpeed(100 * speed_back);
-                //printf("speed back after adjustment: %f\n", speed_back);
 
+                if(current_speed == 0)
+                {
+                    applyBrakes(0);
+                    current_brakes = 0;
+                }
+                else
+                {
+                    applyBrakes(current_brakes);
+                    left_motor.SetSpeed(100 * speed_left);
+                    //printf("speed left after adjustment: %f\n", speed_left);
+                    right_motor.SetSpeed(100 * speed_right);
+                    //printf("speed right after adjustment: %f\n", speed_right);
+                    back_motor.SetSpeed(100 * speed_back);
+                    //printf("speed back after adjustment: %f\n", speed_back);
+                }
+                /*
+                if(current_speed == 0 && previous_speed != 0)
+                {
+                    applyBrakes(0);
+                }
+                else if(current_speed != 0 && previous_speed == 0)
+                {
+                    applyBrakes(current_brakes);
+                }*/
+                printf("current_speed: %f\n", current_speed);
                 previous_speed = current_speed;
 
                 current_angle_left = angle_left;

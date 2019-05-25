@@ -32,7 +32,7 @@ extern "C" {
  */
 struct ParamsStruct {
     int MODE;
-    int T_MAX;
+    double T_MAX;
     double AXIS_X;
     double AXIS_Y;
     double YAW;
@@ -123,7 +123,7 @@ double fmap(double x, double in_min, double in_max, double out_min, double out_m
 /**
  * Processes raw joystic data to drive mode steering angles
  */
-double driveModeMapping(double x, double y);
+double driveModeMapping(double x, double y, bool dir);
 
 /**
  * Sets wheel angles for current mast position.
