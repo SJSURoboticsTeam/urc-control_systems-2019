@@ -5,7 +5,7 @@
 #include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "Arduino.h"
-//#include "HardwareSerial.h"
+#include "HardwareSerial.h"
 #include "SoftwareSerial.h"
 #include "TinyGPS++.h"
 #include "Source.h"
@@ -24,13 +24,10 @@ extern "C" void vGPSTask(void *pvParameters)
         while(ss.available() > 0)
         {
             gps.encode(ss.read());
-            if(gps.location.isValid())
-            {
-                printf("\nLatitude:\n    ");
-                Serial.print(gps.location.lat(), 6);
-                printf("\nLongitude:\n    ");
-                Serial.print(gps.location.lng(), 6);
-            }
+            printf("\nLatitude:\n    ");
+            Serial.print(gps.location.lat(), 6);
+            printf("\nLongitude:\n    ");
+            Serial.print(gps.location.lng(), 6);
         }
         if (millis() > 5000 && gps.charsProcessed() < 10)
         {
