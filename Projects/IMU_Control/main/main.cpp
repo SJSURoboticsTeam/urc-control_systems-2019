@@ -24,7 +24,8 @@ extern "C" void app_main()
 
     //Create freeRTOS tasks.
     //xTaskCreate(vReadAxisTask, "AXIS", 4096, &params, 1, NULL);
-    xTaskCreate(vI2CScannerTask, "SCAN", 4096, &params, 1, NULL);
+    //xTaskCreate(vI2CScannerTask, "SCAN", 4096, &params, 1, NULL);
     xTaskCreate(vMPU6050Task   , "MPU" , 4094, &params, 1, NULL);
+    //xTaskCreate(vArmTask       , "ARM" , 4094, &params, 1, NULL);
 }
 
