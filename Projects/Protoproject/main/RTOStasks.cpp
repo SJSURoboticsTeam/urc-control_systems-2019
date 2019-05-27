@@ -13,7 +13,6 @@
 #include <string>
 #include <Wire.h>
 
-
 extern "C" void vSayHelloTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
 

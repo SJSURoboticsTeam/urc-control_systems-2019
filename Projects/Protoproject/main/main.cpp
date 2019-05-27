@@ -11,7 +11,6 @@
 #include "RTOStasks.h"
 #include "Source.h"
 #include "constants.h"
-#include "vector.hpp"
 
 ParamsStruct params;
 //Server used to listen for XHRs, and send SSEs.

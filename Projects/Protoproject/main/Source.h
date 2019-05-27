@@ -1,3 +1,4 @@
+#pragma once
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <stdlib.h>
@@ -6,9 +7,6 @@
 #include "Servo_Control.hpp"
 #include "constants.h"
 #include "vector.hpp"
-
-#ifndef PROTOPROJECT_H_
-#define PROTOPROJECT_H_
 
 #ifdef _cplusplus
 extern "C" {
@@ -63,15 +61,8 @@ void stopMovePitch(int position); // Keeps the gimbal at the position the user w
 
 void sweepMovePitch(); // Test function to make sure the gimbal works
 
-imu::Vector<3> scanAccel(uint8_t IMU_ADDRESS);
-
-imu::Vector<3> scanGyro(uint8_t IMU_ADDRESS);
-
-
-
 #ifdef _cplusplus
 }
 #endif
 
-#endif
 
