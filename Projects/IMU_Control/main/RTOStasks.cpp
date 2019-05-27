@@ -9,7 +9,7 @@
 #include "Source.h"
 #include "constants.h"
 #include <string>
-#include "Adafruit_BNO055.h"
+#include "vector.h"
 
 extern "C" void vReadAxisTask(void *pvParameters) {
     ParamsStruct* params = (ParamsStruct*) pvParameters;
@@ -60,7 +60,7 @@ extern "C" void vI2CScannerTask(void *pvParameters)
     ParamsStruct *params = (ParamsStruct*) pvParameters;
     while(1)
     {
-        //i2c_scanner();
+        i2c_scanner();
 	for(int i = 0; i < 2; i++)
 	{
 		// printf("%i) YAW: %.2f\tPITCH: %.2f\tROLL: %.2f\n",i,params->yaw[i],params->pitch[i],params->roll[i]);
@@ -69,7 +69,7 @@ extern "C" void vI2CScannerTask(void *pvParameters)
     }
 }
 
-extern "C" void vMPU6050Task(void *pvParameters)
+extern "C" void vArmTask(void *pvParameters)
 {
     ParamsStruct *params = (ParamsStruct*) pvParameters;
     imu::Vector<3> shoulder_imu;
@@ -94,4 +94,21 @@ extern "C" void vMPU6050Task(void *pvParameters)
 	vTaskDelay(100);
     }
     
+}
+
+extern "C" void vMPU6050Task(void *pvParameters)
+{
+    ParamsStruct *params = (ParamsStruct*) pvParameters;
+    imu::Vector<3> accel;
+    imu::Vector<3> gyro;
+
+    while(1)
+    {
+	accel = scanAccel(MPU6050_ADDR0);
+	gyro  = scanGyro(MPU6050_ADDR0);
+
+        printf("ACCEL...X: %01f\tY: %01f\tZ: %01f\n", accel.x(), accel.y(), accel.z());
+	printf("GYRO....X: %01f\tY: %01f\tZ: %01f\n", gyro.x() , gyro.y() , gyro.z());
+	vTaskDelay(100);
+    }
 }

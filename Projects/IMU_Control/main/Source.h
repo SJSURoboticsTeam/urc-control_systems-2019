@@ -42,4 +42,10 @@ int32_t calculateRoll(int32_t accel_x, int32_t accel_y, int32_t accel_z);
 
 imu::Vector<3> scanMPU6050(uint8_t IMU_ADDRESS);
 
+imu::Vector<3> scanAccel(uint8_t IMU_ADDRESS);
+
+imu::Vector<3> scanGyro(uint8_t IMU_ADDRESS);
+
+void initMPU6050(uint8_t IMU_ADDRESS);
+
 #endif
