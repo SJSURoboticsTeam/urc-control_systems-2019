@@ -26,7 +26,7 @@ constexpr uint32_t SERVO_FREQUENCY = 50; //Frequency = 50 Hz
 
 // Kill Switch MOSFET Constants //
 
-constexpr uint32_t MOSFET_PIN = 33;
+constexpr uint32_t MOSFET_PIN = 23;
 
 // Pitch Servo Constants //
 
@@ -52,7 +52,26 @@ constexpr float LENS_SERVO_MIN = 2.5; // Placeholder min duty cycle
 
 constexpr float LENS_SERVO_MAX = 12.5; // Placeholder max duty cycle
 
-// Pitch Servo Variables //
+// IMU Constants //
+
+#define MPU6050_ACCEL_XOUT_H 0x3B
+#define MPU6050_ACCEL_XOUT_L 0x3C
+#define MPU6050_ACCEL_YOUT_H 0x3D
+#define MPU6050_ACCEL_YOUT_L 0x3E
+#define MPU6050_ACCEL_ZOUT_H 0x3F
+#define MPU6050_ACCEL_ZOUT_L 0x40
+#define MPU6050_TEMP_OUT_H   0x41
+#define MPU6050_TEMP_OUT_L   0x42
+#define MPU6050_GYRO_XOUT_H  0x43
+#define MPU6050_GYRO_XOUT_L  0x44
+#define MPU6050_GYRO_YOUT_H  0x45
+#define MPU6050_GYRO_YOUT_L  0x46
+#define MPU6050_GYRO_ZOUT_H  0x47
+#define MPU6050_GYRO_ZOUT_L  0x48
+
+#define MPU6050_ADDR0        0x68
+#define MPU6050_ADDR1	     0x69
+#define MPU6050_PWR_MGMT_1   0x6B
 
 // Pitch Servo //
 extern Servo Pitch_Servo;

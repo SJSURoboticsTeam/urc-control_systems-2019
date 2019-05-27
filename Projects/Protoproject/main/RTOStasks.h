@@ -27,6 +27,12 @@ extern "C" void vPitchTask(void *pvParameters);
     ESP.
 */
 
+extern "C" void vMPU6050Task(void *pvParameters);
+
+/*
+    This task reads IMU positional data from the MPU6050
+*/
+
 extern "C" void vCountTask(void *pvPArameters);
 
 #ifdef _cplusplus

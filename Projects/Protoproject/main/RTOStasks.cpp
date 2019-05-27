@@ -7,9 +7,11 @@
 #include "Arduino.h"
 #include "EEPROM.h"
 #include "Source.h"
+#include "Source.cpp"
 #include "constants.h"
+#include "vector.hpp"
 #include <string>
-
+#include <Wire.h>
 
 
 extern "C" void vSayHelloTask(void *pvParameters) {
@@ -127,6 +129,31 @@ extern "C" void vPitchTask(void *pvParameters) {
 
         // sweepMovePitch();
     }   
+}
+
+extern "C" void vMPU6050Task(void *pvParameters)
+{
+    ParamsStruct *params = (ParamsStruct*) pvParameters;
+    imu::Vector<3> accel;
+    imu::Vector<3> gyro;
+
+    while(1)
+    {
+	    accel = scanAccel(MPU6050_ADDR0);
+	    gyro  = scanGyro(MPU6050_ADDR0);
+
+        printf("ACCEL...X: %01f\tY: %01f\tZ: %01f\n", accel.x(), accel.y(), accel.z());
+	    printf("GYRO....X: %01f\tY: %01f\tZ: %01f\n", gyro.x() , gyro.y() , gyro.z());
+        if (strcmp(params->imu_mode, "data") == 0){
+            params->accelx = accel.x();
+            params->accely = accel.y();
+            params->accelz = accel.z();
+            params->gyrox = gyro.x();
+            params->gyroy = gyro.y();
+            params->gyroz = gyro.z();
+        }
+	    vTaskDelay(100);
+    }
 }
 
 extern "C" void vCountTask(void *pvParameters)

@@ -8,9 +8,6 @@
 #include "constants.h"
 #include "Servo_Control.hpp"
 
-// Current position of the gimbal pitch
-float move_pitch_position = 0;
-
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
      // Create addresses for network connections
     char * ssid = "SJSURoboticsAP";
@@ -60,6 +57,26 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         printf("    mode: %s \n", params->mode);
         printf("    manual move: %i \n", params->manual_move);
         printf("    gimbal_position: %f \n", params->gimbal_position);
+        request->send(200, "text/plain", "Success");
+    }); 
+
+    server->on("/imu_update", HTTP_POST, [=](AsyncWebServerRequest *request){
+        strcpy(params->imu_mode, request->arg("imu_mode").c_str());
+        params->accelx = request->arg("accelx").toFloat();
+        params->accely = request->arg("accely").toFloat();
+        params->accelz = request->arg("accelz").toFloat();
+        params->gyrox = request->arg("gyrox").toFloat();
+        params->gyroy = request->arg("gyroy").toFloat();
+        params->gyrox = request->arg("gyroz").toFloat();
+
+        printf("handle_update endpoint running\n");
+        printf("    imu_mode: %s \n", params->imu_mode);
+        printf("    accelx: %f \n", params->accelx);
+        printf("    accely: %f \n", params->accely);
+        printf("    accelz: %f \n", params->accelz);
+        printf("    gyrox: %f \n", params->gyrox);
+        printf("    gyroy: %f \n", params->gyroy);
+        printf("    gyro: %f \n", params->gyroz);
         request->send(200, "text/plain", "Success");
     }); 
     
@@ -194,4 +211,54 @@ void sweepMovePitch() {
     centerMovePitch();
     downMovePitch(SERVO_DOWN);
     printf("Sweeping has been enabled.\n");
+}
+
+imu::Vector<3> scanAccel(uint8_t IMU_ADDRESS)
+{
+    int16_t accel_x, accel_y, accel_z;
+
+    //Initialize Device
+    Wire.begin();
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x6B);
+    Wire.write(0);
+    Wire.endTransmission(true);
+
+    //Read Accel Registers
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(IMU_ADDRESS, 3*2, true);
+
+    accel_x = Wire.read()<<8 | Wire.read(); //ACCEL_X 3B (H) 3C (L)
+    accel_y = Wire.read()<<8 | Wire.read(); //ACCEL_Y 3D (H) 3E (L)
+    accel_z = Wire.read()<<8 | Wire.read(); //ACCEL_Z 3F (H) 40 (L)
+
+    imu::Vector<3> accel(accel_x, accel_y, accel_z);
+    return accel;
+}
+
+imu::Vector<3> scanGyro(uint8_t IMU_ADDRESS)
+{
+    int16_t gyro_x, gyro_y, gyro_z;
+
+    //Initialize Device
+    Wire.begin();
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x6B);
+    Wire.write(0);
+    Wire.endTransmission(true);
+
+    //Read Accel, Gyro, Temp Registers
+    Wire.beginTransmission(IMU_ADDRESS);
+    Wire.write(0x43);
+    Wire.endTransmission(false);
+    Wire.requestFrom(IMU_ADDRESS, 3*2, true);
+
+    gyro_x  = Wire.read()<<8 | Wire.read(); //GYRO_X  43 (H) 44 (L)
+    gyro_y  = Wire.read()<<8 | Wire.read(); //GYRO_Y  45 (H) 46 (L)
+    gyro_z  = Wire.read()<<8 | Wire.read(); //GYRO_Z  47 (H) 48 (L)
+
+    imu::Vector<3> gyro(gyro_x, gyro_y, gyro_z);
+    return gyro;
 }
