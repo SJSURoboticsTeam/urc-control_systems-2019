@@ -139,18 +139,19 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         if(request->hasArg("command"))
         {
             printf("Claw command recieved: %i\n", atoi(request->arg("command").c_str()));
+            printf("%s\n",request->arg("command").c_str());
             if(params->update_speed > 100) params->update_speed = 100;
             params->actuator_speed = 100;
 
-            if(atoi(request->arg("command").c_str()) == 1){
+            if((atoi(request->arg("command").c_str()) == 1) || (strcmp(request->arg("command").c_str(), "open")==0)){
                 params->current_direction = 1;
                 printf("Claw open\n");
             }
-            else if(atoi(request->arg("command").c_str()) == -1){
+            else if((atoi(request->arg("command").c_str()) == -1) || (strcmp(request->arg("command").c_str(), "close")==0)){
                 params->current_direction = -1;
                 printf("Claw close\n");
             }
-            else if(atoi(request->arg("command").c_str()) == 0){
+            else if((atoi(request->arg("command").c_str()) == 0) || (strcmp(request->arg("command").c_str(), "stop")==0)){
                 params->current_direction = 2;
                 params->actuator_speed = 0;
                 printf("Claw stop\n\n\n");
