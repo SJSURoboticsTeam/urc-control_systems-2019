@@ -21,6 +21,4 @@ struct ParamsStruct {
 
 void initServer(AsyncWebServer* server, ParamsStruct* params);
 
-uint8_t i2c_scanner();
-
 #endif

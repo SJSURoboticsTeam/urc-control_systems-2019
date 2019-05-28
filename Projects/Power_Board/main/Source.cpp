@@ -64,33 +64,3 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Start server.
     server->begin();
 }
-
-uint8_t  i2c_scanner()
-{
-    Wire.begin();
-    uint8_t error = 0, address = 0, device_address = 0;
-    uint8_t nDevices = 0;
-
-    printf("Scanning...\n");
-
-    for(address = 1; address < 127; address++)
-    {
-	Wire.beginTransmission(address);
-	error = Wire.endTransmission();
-	if(error == 0)
-	{
-	    printf("I2C device found at address 0x%x\n",address);
-	    device_address = address;
-	    nDevices++;
-	}
-	else if(error == 4)
-	{
-	    printf("Unknown error at address 0x%x\n",address);
-	}
-    }
-    if(nDevices == 0) printf("No I2C devices found\n");
-    else       	      printf("done\n");
-
-    return device_address;
-}
-

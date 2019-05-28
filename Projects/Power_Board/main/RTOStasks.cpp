@@ -44,7 +44,6 @@ extern "C" void vPowerBoardTask(void *pvParameters)
     adc1_config_channel_atten(CH4_ISNS_U13, ADC_ATTEN_DB_11);
     while(1)
     {
-        i2c_scanner();
 	params->ch1_isns = adc1_get_raw(CH1_ISNS_U5);
 	params->ch2_isns = adc1_get_raw(CH2_ISNS_U3);
 	params->ch3_isns = adc1_get_raw(CH3_ISNS_U8);
