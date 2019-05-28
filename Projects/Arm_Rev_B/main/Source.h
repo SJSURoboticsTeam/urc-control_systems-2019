@@ -32,7 +32,7 @@ struct ParamsStruct {
     uint32_t update_speed = 0;
     
     int32_t yaw[4];
-    int32_t pitch[4];
+    double pitch[4];
     int32_t roll[4];
 };
 
