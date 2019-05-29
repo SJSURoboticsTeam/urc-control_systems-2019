@@ -21,6 +21,13 @@ constexpr double CORNER_2_MID = 23.238;
 //constexpr double MAX_DIST = 685.777; // Distance where out wheel turns 1 degree
 //constexpr double MAX_DIST = 500;
 
+// LIDAR constants
+constexpr uint32_t LIDAR1_RX = 16;
+constexpr uint32_t LIDAR1_TX = 17;
+constexpr uint32_t LIDAR2_RX = 18;
+constexpr uint32_t LIDAR2_TX = 19;
+constexpr uint32_t DETECT_THRESHOLD = 60; //measured in CM
+
 // Constants for the steering servos //
 constexpr uint32_t SERVO_A_PIN = 27;
 constexpr uint32_t SERVO_B_PIN = 26;
@@ -70,7 +77,7 @@ constexpr float DEAD_MIN = 7.67;
 constexpr float DEAD_MAX = 7.71;
 
 // Initial positions for Car Mode (percent)
-/* Test servos 
+/* Test servos
 // Left = A, Right = B, Back = C
 constexpr float DRIVE_POSITION_0[3] = {83.33, 16.67, 50};
 // Left = B, Right = C, Back = A
@@ -104,7 +111,7 @@ constexpr float MIN_ROTATION = -90.00;
 // Create the Steering Servos //
 extern Servo servo_A;
 extern Servo servo_B;
-extern Servo servo_C; 
+extern Servo servo_C;
 
 // Create the Drive Motors //
 extern Motor motor_A;

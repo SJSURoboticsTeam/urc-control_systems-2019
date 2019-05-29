@@ -23,7 +23,7 @@ extern "C" {
  * AXIS_X, AXIS_Y, THROTTLE, and button_0 correspond to the raw inputs from the
  * joystick (AXIS_0, AXIS_1, AXIS_3 and button_0 respectively on Windows/Linux
  * machines).
- * 
+ *
  * The wheel booleans are used to test individual or multiple wheels in Debug
  * mode, or refer to the rear wheel in Drive mode.
  *
@@ -61,8 +61,10 @@ void initServer(AsyncWebServer* server, ParamsStruct* params);
 /**
  * Ths function initializes the motor and servo class objects responsible for
  * controlling the movement of the rover.
- */ 
+ */
 void initComponents();
+
+void initLiDar();
 
 /**
  * This function sets the wheels facing the same direction the mas is pointed so
@@ -82,12 +84,12 @@ void initCrabMode();
 
 /**
  * This function determines which direction all the wheels should spin. And sets
- * the corresponding pins to the appropriate level. 
+ * the corresponding pins to the appropriate level.
  */
 void setDirectionAllWheels(bool direction);
 
 /*
- * This function determines which direction the stated wheel should spin and 
+ * This function determines which direction the stated wheel should spin and
  * sets the corresponding pin to that level;
  */
 void setDirection(uint32_t wheel, bool direction);
@@ -99,13 +101,13 @@ void setDirection(uint32_t wheel, bool direction);
 void setSpeedAllWheels(double speed);
 
 /**
- * This function sets the speed at which the stated wheel should rotate. Speed 
+ * This function sets the speed at which the stated wheel should rotate. Speed
  * the percentage of the maximum speed the hubmotor can spin at.
  */
 void setSpeed(uint32_t wheel, uint32_t speed);
 
 /**
- * This function sets the heading of the specified wheel to the specified 
+ * This function sets the heading of the specified wheel to the specified
  * percent of the range of the servo..
  */
 void setHeading(uint32_t wheel, double percentage);

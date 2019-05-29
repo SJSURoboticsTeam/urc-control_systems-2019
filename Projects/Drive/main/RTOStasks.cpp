@@ -11,6 +11,50 @@
 #include "math.h"
 #include <cmath>
 #include <string>
+#include "driver/uart.h"
+
+extern "C" void vLiDarTask(void *pvParameters)
+{
+  while (1) {
+        while(Serial2.available()>=9)
+        {
+              if((0x59 == Serial2.read()) && (0x59 == Serial2.read())) //Byte1 & Byte2
+              {
+                  unsigned int t1 = Serial2.read(); //Byte3
+                  unsigned int t2 = Serial2.read(); //Byte4
+
+                  t2 <<= 8;
+                  t2 += t1;
+                  bool distance = t2 < DETECT_THRESHOLD;
+                  printf("Serial 1: Distance: %d Within Threshold: %d\n", t2, distance);
+
+                  for(int i=0; i<5; i++)
+                  {
+                      Serial2.read(); ////Byte5,6,7,8,9
+                  }
+            }
+        }
+        while(Serial1.available()>=9)
+        {
+              if((0x59 == Serial1.read()) && (0x59 == Serial1.read())) //Byte1 & Byte2
+              {
+                  unsigned int t1 = Serial1.read(); //Byte3
+                  unsigned int t2 = Serial1.read(); //Byte4
+
+                  t2 <<= 8;
+                  t2 += t1;
+                  bool distance = t2 < DETECT_THRESHOLDgi;
+                  printf("Serial 2: Distance: %d Within Threshold: %d\n", t2, distance);
+
+                  for(int i=0; i<5; i++)
+                  {
+                      Serial1.read(); ////Byte5,6,7,8,9
+                  }
+            }
+        }
+        vTaskDelay(100);
+  }
+}
 
 extern "C" void vMoveTask(void *pvParameters)
 {
@@ -23,7 +67,7 @@ extern "C" void vMoveTask(void *pvParameters)
     double radius_left = 0;
     double radius_right = 0;
     double radius_back = 0;
-    
+
     double angle_left = 0;
     double angle_right = 0;
     double angle_back = 0;
@@ -37,7 +81,7 @@ extern "C" void vMoveTask(void *pvParameters)
     double speed_left = 0;
     double speed_right = 0;
     double speed_back = 0;
-    
+
     Servo left_servo;
     Servo right_servo;
     Servo back_servo;
@@ -54,7 +98,7 @@ extern "C" void vMoveTask(void *pvParameters)
     double current_brakes = 1;
     uint32_t front = 0;
     uint32_t previous_front = 3;
-    
+
 
     // Crab/Spin MODE variables //
     double wheel_arr[6] = {0};
@@ -86,7 +130,7 @@ extern "C" void vMoveTask(void *pvParameters)
             if(previous_mode != DEBUG)
             {
                 previous_mode = DEBUG;
-                applyBrakes(0);    
+                applyBrakes(0);
             }
             printf("Debug MODE\n");
             // Convert AXIS_X to 0% - 100% scale
@@ -108,7 +152,7 @@ extern "C" void vMoveTask(void *pvParameters)
                 if (Params->WHEEL_B)
                 {
                     servo_B.SetPositionPercent(heading);
-                    printf("Wheel B set to: %f deg.\n", heading/100 * 300);                
+                    printf("Wheel B set to: %f deg.\n", heading/100 * 300);
                 }
                 if (Params->WHEEL_C)
                 {
@@ -248,8 +292,8 @@ extern "C" void vMoveTask(void *pvParameters)
             // Update parameters for new heading from mission control
             heading_y = Params->AXIS_X;
             heading_x = 0 - Params->AXIS_Y;
-            target_heading = atan2(heading_y, heading_x) * 180/3.1416; 
-            
+            target_heading = atan2(heading_y, heading_x) * 180/3.1416;
+
             if (current_heading != target_heading)
             {
                 // Exponential Moving Average
@@ -266,7 +310,7 @@ extern "C" void vMoveTask(void *pvParameters)
                 //printf("wheel_position: %f\n", wheel_position);
                 current_heading = heading;
 
-                // If wheels hit boundaries, flip them 180 degrees and switch 
+                // If wheels hit boundaries, flip them 180 degrees and switch
                 // direction they rotate.
                 if (wheel_position < MIN_ROTATION)
                 {
@@ -330,7 +374,7 @@ extern "C" void vMoveTask(void *pvParameters)
             target_speed = 100 * Params->BRAKES * Params->THROTTLE * Params->YAW * Params->T_MAX;
             if (target_speed != current_speed)
             {
-                
+
                 //target_speed = 100 * Params->AXIS_X * Params->THROTTLE;
                 // Exponential Moving Average
                 current_speed = (target_speed * 0.5) + (current_speed * (1 - 0.5));
@@ -345,7 +389,7 @@ extern "C" void vMoveTask(void *pvParameters)
                 if(!Params->TRIGGER)
                 {
                     while(current_speed != 0 && current_speed >= 0.001)
-                    {   
+                    {
                         // Exponential Moving Average
                         current_speed = current_speed * (1 - 0.7);
                         setSpeedAllWheels(current_speed);
@@ -453,7 +497,7 @@ extern "C" void vMoveTask(void *pvParameters)
                         right_motor = motor_B;
                         back_motor = motor_C;
                         break;
-                    case 1: //Left = B, Right = C, Back = A 
+                    case 1: //Left = B, Right = C, Back = A
                         left_servo = servo_B;
                         right_servo = servo_C;
                         back_servo = servo_A;
@@ -483,10 +527,10 @@ extern "C" void vMoveTask(void *pvParameters)
                 angle_left = 210;
                 angle_right = 90;
                 angle_back = 150;
-                
+
                 previous_front = front;
             }
-            
+
             target_speed = Params->BRAKES * Params->THROTTLE * Params->T_MAX;
             // Exponential Moving Average
             current_speed = (target_speed * 0.5) + (current_speed * (1 - 0.5));
@@ -571,12 +615,12 @@ extern "C" void vMoveTask(void *pvParameters)
                 angle_left = 210;
                 angle_right = 90;
                 angle_back = 150;
-                
+
             }
-            else if ((current_heading != Params->AXIS_X) || 
+            else if ((current_heading != Params->AXIS_X) ||
                     (current_speed != previous_speed))
             {
-                
+
                 if (Params->AXIS_X > 0)
                 {
                     //printf("turning left\n");
@@ -605,7 +649,7 @@ extern "C" void vMoveTask(void *pvParameters)
                 left_motor.SetDirection((Params->REVERSE > 0) ? 1:0);
                 right_motor.SetDirection((Params->REVERSE > 0) ? 1:0);
                 back_motor.SetDirection((Params->REVERSE > 0) ? 0:1);
-                
+
 
                 if(current_speed == 0)
                 {
@@ -645,4 +689,3 @@ extern "C" void vMoveTask(void *pvParameters)
         }
     }
 }
-

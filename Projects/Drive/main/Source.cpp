@@ -10,6 +10,8 @@
 #include "constants.h"
 #include "Servo_Control.hpp"
 #include "Motor_Control_rev1.hpp"
+#include "driver/uart.h"
+#include "soc/uart_struct.h"
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     // Create addresses for network connections
@@ -18,9 +20,9 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     IPAddress Ip(192, 168, 10, 19);
     IPAddress Gateway(192, 168, 10, 100);
     IPAddress NMask(255, 255, 255, 0);
-    
+
     // Configure the soft AP
-    WiFi.mode(WIFI_AP_STA);    
+    WiFi.mode(WIFI_AP_STA);
     WiFi.softAP("Drive", "drive1234");
     Serial.println();
     Serial.print("AP IP address: ");
@@ -35,7 +37,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //    printf("Connecting to WiFi... ");
     //}
     //printf("\nConnected to %s\n", ssid);
-    
+
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
@@ -45,7 +47,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         - params object is then passed to vSayHelloTask - see main.cpp
         - vSayHello task then accesses name directly.
         Note: for ANY parameters you want to use, you must add them to
-        the paramsStruct struct located in Source.h first. 
+        the paramsStruct struct located in Source.h first.
     */
 
 
@@ -57,7 +59,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         for (int i=0; i<13; i++) {
             if (request->hasArg(vars[i])) {
                 if (strcmp(vars[i], "MODE")) {
-                    params->MODE = request->arg("MODE").toInt();  
+                    params->MODE = request->arg("MODE").toInt();
                 }
                 if (strcmp(vars[i], "T_MAX")) {
                     params->T_MAX = request->arg("T_MAX").toFloat() / 100;
@@ -67,24 +69,24 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     if (params->AXIS_X == -1)
                     {
                         params->AXIS_X = -0.99;
-                    }   
+                    }
                 }
                 if (strcmp(vars[i], "AXIS_Y")) {
-                    params->AXIS_Y = request->arg("AXIS_Y").toFloat();    
+                    params->AXIS_Y = request->arg("AXIS_Y").toFloat();
                 }
                 if (strcmp(vars[i], "YAW")) {
                     params->YAW = request->arg("YAW").toFloat();
                 }
                 if (strcmp(vars[i], "THROTTLE")) {
                     params->THROTTLE = (0 - (request->arg("THROTTLE").toFloat()) + 1)/2;
-                    //params->THROTTLE = params->THROTTLE * 0.3;    
+                    //params->THROTTLE = params->THROTTLE * 0.3;
                 }
                 if (strcmp(vars[i], "BRAKES")) {
-                    //params->BRAKES = (request->arg("BRAKES").toFloat() + 1) / 2;    
+                    //params->BRAKES = (request->arg("BRAKES").toFloat() + 1) / 2;
                     params->BRAKES = (0 - (request->arg("BRAKES").toFloat()) + 1) / 2;
                 }
                 if (strcmp(vars[i], "MAST_POSITION")) {
-                    params->MAST_POSITION = request->arg("MAST_POSITION").toFloat();    
+                    params->MAST_POSITION = request->arg("MAST_POSITION").toFloat();
                 }
                 if (strcmp(vars[i], "TRIGGER")) {
                     params->TRIGGER = request->arg("TRIGGER").toInt();
@@ -93,16 +95,16 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                     params->REVERSE = request->arg("REVERSE").toInt();
                 }
                 if (strcmp(vars[i], "WHEEL_A")) {
-                    params->WHEEL_A = request->arg("WHEEL_A").toInt();  
+                    params->WHEEL_A = request->arg("WHEEL_A").toInt();
                 }
                 if (strcmp(vars[i], "WHEEL_B")) {
-                    params->WHEEL_B = request->arg("WHEEL_B").toInt();  
+                    params->WHEEL_B = request->arg("WHEEL_B").toInt();
                 }
                 if (strcmp(vars[i], "WHEEL_C")) {
-                    params->WHEEL_C = request->arg("WHEEL_C").toInt();  
+                    params->WHEEL_C = request->arg("WHEEL_C").toInt();
                 }
             }
-            else 
+            else
             {
                 printf("ERROR. %s doesn't exist\n", vars[i]);
             }
@@ -130,20 +132,20 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         - SSEs will be used to continuously send data that was
         not necessarily requested by mission control
         (e.g. temperature, something we should send periodically)
-        - Once mission control declares the ESPs IP address at a certain 
+        - Once mission control declares the ESPs IP address at a certain
         endpoint to be an EventSource, the ESP can trigger events on the web
         interface, which the web interface can attach event listeners to
         (similar to how we are attaching event listeners for when we recieve
-        XHRs to /update_name above, allowing us to do things when we recieve an 
+        XHRs to /update_name above, allowing us to do things when we recieve an
         XHR).
         - Below's example is an example of sending SSEs when mission control
         declares our ip address and endpoint (e.g. 192.168.4.1/events) to be
         an event source.
-        - More info on this concept here: 
+        - More info on this concept here:
             https://developer.mozilla.org/en-US/docs/Web/API/EventSource
     */
-    
-    events.onConnect([](AsyncEventSourceClient *client) 
+
+    events.onConnect([](AsyncEventSourceClient *client)
     {
         if(client->lastId())
         {
@@ -173,7 +175,7 @@ void initComponents()
 {
     ledc_fade_func_install(ESP_INTR_FLAG_LEVEL1);
 
-    servo_A.InitServo(SERVO_A_PIN, SERVO_A_CHANNEL, SERVO_TIMER, 
+    servo_A.InitServo(SERVO_A_PIN, SERVO_A_CHANNEL, SERVO_TIMER,
                       SERVO_FREQUENCY, SERVO_MAX, SERVO_MIN);
 
     servo_B.InitServo(SERVO_B_PIN, SERVO_B_CHANNEL, SERVO_TIMER,
@@ -188,10 +190,17 @@ void initComponents()
 
     motor_B.InitMotor(MOTOR_B_PIN, MOTOR_B_BRAKE, MOTOR_B_DIR, MOTOR_B_CHANNEL,
                       MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
-    
+
     motor_C.InitMotor(MOTOR_C_PIN, MOTOR_C_BRAKE, MOTOR_C_DIR, MOTOR_C_CHANNEL,
                       MOTOR_TIMER, MOTOR_FREQUENCY, MOTOR_MIN, MOTOR_MAX);
 
+    initLiDar();
+}
+
+void initLiDar()
+{
+    Serial1.begin(115200, SERIAL_8N1, LIDAR1_RX, LIDAR1_TX);
+    Serial2.begin(115200, SERIAL_8N1, LIDAR2_RX, LIDAR2_TX);
 }
 
 void initDriveMode(uint32_t heading)
@@ -203,7 +212,7 @@ void initDriveMode(uint32_t heading)
             servo_B.SetPositionPercent(DRIVE_POSITION_0[1]);
             servo_C.SetPositionPercent(DRIVE_POSITION_0[2]);
             break;
-        case 1:            
+        case 1:
             servo_A.SetPositionPercent(DRIVE_POSITION_1[0]);
             servo_B.SetPositionPercent(DRIVE_POSITION_1[1]);
             servo_C.SetPositionPercent(DRIVE_POSITION_1[2]);
@@ -254,7 +263,7 @@ void setDirection(uint32_t wheel, bool direction)
 {
     switch(wheel)
     {
-        case 0: 
+        case 0:
             motor_A.SetDirection(direction);
             break;
         case 1:
@@ -278,7 +287,7 @@ void setSpeed(uint32_t wheel, uint32_t speed)
 {
     switch(wheel)
     {
-        case 0: 
+        case 0:
             motor_A.SetSpeed(speed);
             break;
         case 1:
@@ -295,7 +304,7 @@ void setHeading(uint32_t wheel, double percentage)
 {
     switch(wheel)
     {
-        case 0: 
+        case 0:
             servo_A.SetPositionPercent(percentage);
             break;
         case 1:
@@ -350,10 +359,10 @@ double driveModeMapping(double x, double y, bool dir)
 
 void SetForward(double offset, double array[])
 {
-    double wheels[6] = {0}; 
+    double wheels[6] = {0};
 
     if(offset > -15 && offset < 15)
-    { 
+    {
         wheels[0] = 90 + offset;
         wheels[1] = 0;
         wheels[2] = 210 + offset;
@@ -377,7 +386,7 @@ void SetForward(double offset, double array[])
         wheels[2] = 210 + offset - 120;
         wheels[3] = 0;
         wheels[4] = 210 + offset - 120;
-        wheels[5] = 1;   
+        wheels[5] = 1;
     }
     else if(offset > 105 && offset < 135)
     {
