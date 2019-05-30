@@ -31,7 +31,8 @@ extern "C" {
  * whel_A - wheel_B plane in degrees from -180 to 180.
  */
 struct ParamsStruct {
-    int data;
+    char* longitude;
+    char* latitude;
 };
 
 enum DriveMode {

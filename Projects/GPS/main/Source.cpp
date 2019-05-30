@@ -4,12 +4,17 @@
 #include <WiFi.h>
 #include <string.h>
 #include <math.h>
+#include <ctime>
+#include <sstream>
+#include <vector>
 #include "Source.h"
 #include "Arduino.h"
 #include "EEPROM.h"
 #include "constants.h"
 #include "Servo_Control.hpp"
 #include "Motor_Control_rev1.hpp"
+
+String makeJsonString(vector<String>& keys, vector<String>& vals);
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
     // Create addresses for network connections
@@ -39,34 +44,40 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
-    /* XHR Example.
-        - Param "name" is sent from mission control.
-        - "name" is copied to the params object
-        - params object is then passed to vSayHelloTask - see main.cpp
-        - vSayHello task then accesses name directly.
-        Note: for ANY parameters you want to use, you must add them to
-        the paramsStruct struct located in Source.h first. 
-    */
+    server->on("/getPositionalData", HTTP_POST, [=](AsyncWebServerRequest *request) {
+        //current format: [longitude],[latitude],[epoch]
+        char* output_str;
 
+        std::time_t time_obj = std::time(nullptr);
 
-    server->on("/handle_update", HTTP_POST, [=](AsyncWebServerRequest *request){
-        const char *vars[1] = {
-            "data"
-        };
-        for (int i=0; i<13; i++) {
-            if (request->hasArg(vars[i])) {
-                if (strcmp(vars[i], "data")) {
-                    params->data = request->arg("data").toInt();  
-                }
-            }
-            else 
-            {
-                printf("ERROR. %s doesn't exist\n", vars[i]);
-            }
-        }
-        
-        request->send(200, "text/plain", "Success");
+        std::stringstream ss;
+        ss << params->longitude << ',' << params->latitude << ',' << time_obj;
+
+        //send
+        request->send(200, "text/plain", ss.str().c_str());
     });
+
+    server->on("/getPositionalDataJSON", HTTP_POST, [=](AsyncWebServerRequest *request) {
+        //declare individual vectors for your keys and values. 
+        vector <String> keys, vals;
+        keys.push_back("longitude");
+        keys.push_back("latitude");
+        keys.push_back("epoch");
+
+
+        //even if the values are ints, please convert them to strings (hacky, sorry.)
+        vals.push_back(params->longitude);
+        vals.push_back(params->latitude);
+
+        std:time_t time_obj = std::time(nullptr);
+        vals.push_back(std::to_string(time_obj));
+
+        String json = makeJsonString(keys, vals);
+        std::cout <<  json << std::endl;
+
+        request->send(200, "application/json", json);
+    })
+
     /* SSE Example.
         - SSEs will be used to continuously send data that was
         not necessarily requested by mission control
@@ -110,3 +121,16 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //printf("initServer done\n");
 }
 
+String makeJsonString(vector<String>& keys, vector<String>& vals) {
+    String json = "{";
+    
+    for (int i=0; i<keys.size(); i++) {
+      if (i) json += ",";
+      json += ("\"" + keys[i] + "\":");
+      json += ("\"" + vals[i] + "\"");
+    }
+    
+    json += "}";
+
+    return json;
+}
