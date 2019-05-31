@@ -408,14 +408,14 @@ extern "C" void vClawTask(void *pvParameters)
     while(1) 
     {
 
-        //Code to always assert motor for testing purposes
-        Claw.SetPositionPercent(100);
-        task_complete = openClaw();
-        if(task_complete) printf("Opening\n");
-        task_complete = false;
-        myParams->current_direction = 0;
+        // //Code to always assert motor for testing purposes
+        // Claw.SetPositionPercent(100);
+        // task_complete = openClaw();
+        // if(task_complete) printf("Opening\n");
+        // task_complete = false;
+        // myParams->current_direction = 0;
 
-    /*
+
         if(myParams->current_direction == 0)
         {
             //Do Nothing
@@ -444,7 +444,7 @@ extern "C" void vClawTask(void *pvParameters)
         }
         // printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
         vTaskDelay(300);
-    */
+
     }
 }
 
