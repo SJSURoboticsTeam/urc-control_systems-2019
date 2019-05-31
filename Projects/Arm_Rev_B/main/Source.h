@@ -20,8 +20,8 @@ struct ParamsStruct {
 	double RotundaTarget = -180.0; //range of -180 to 180
 	double ElbowTarget = kElbowStartPos;
 	double ShoulderTarget = 45;
-	double WristPitch = 90;
-	double WristRoll = 90;   
+	double WristPitch = 0;
+	double WristRoll = 0;   
 	SemaphoreHandle_t xWristPitchSemaphore;
 	SemaphoreHandle_t xWristRollSemaphore;
 

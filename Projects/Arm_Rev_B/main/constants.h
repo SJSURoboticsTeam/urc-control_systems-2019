@@ -36,19 +36,18 @@ constexpr double kRotundaPWMMax = 12.5;
 
 constexpr int kElbowPin = 27;		//Servo 2
 constexpr int kElbowLimitMin = 100;
-constexpr int kElbowLimitMax = 250;
+constexpr int kElbowLimitMax = 290;
 constexpr double kElbowRange = 300;
 constexpr double kElbowStartPos = 150;
 constexpr double kElbowFreq = 50;
 constexpr double kElbowPWMMin = 2.5;
 constexpr double kElbowPWMMax = 12.5;
 
-
 constexpr uint32_t kMotorFreq = 5000;
 constexpr uint32_t kShoulderSigPin = 25;
 constexpr uint32_t kShoulderDirPin = 26;
-constexpr double kShoulderLimitMin = 10;
-constexpr double kShoulderLimitMax = 60;
+constexpr double kShoulderLimitMin = 5;
+constexpr double kShoulderLimitMax = 70;
 constexpr uint32_t kShoulderEnablePWMMin = 0;	//percentage
 constexpr uint32_t kShoulderEnablePWMMax = 100;	//percentage
 
@@ -58,6 +57,8 @@ constexpr uint32_t kWristRightSigPin = 16;
 constexpr uint32_t kWristRightDirPin = 4;	//port 2
 constexpr double kWristPitchLimitMin = -90;
 constexpr double kWristPitchLimitMax = 90;
+constexpr uint32_t kWristEnablePWMMin = 0;	    //percentage
+constexpr uint32_t kWristEnablePWMMax = 100;	//percentage
 
 
 //#define IMU_ADDRESS_ROTUNDA   0x2B

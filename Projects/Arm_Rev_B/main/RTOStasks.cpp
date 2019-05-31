@@ -203,7 +203,7 @@ extern "C" void vShoulderTask(void *pvParameters)
 
     while(1)
     {
-       // if((myParams->pitch[0] != 0.00))
+       if((myParams->pitch[0] != 2147483647))
         {
             if( (myParams->ShoulderTarget >= kShoulderLimitMin) 
                 && (myParams->ShoulderTarget <= kShoulderLimitMax)) //If target is in accepted range
@@ -238,30 +238,37 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
 
                         // pin_sig,  pin_brake,dir, s_channel, timer, freq, min, max
     Wrist_Left.InitMotor(kWristLeftSigPin, 19, kWristLeftDirPin, 3, 2, 
-                        5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
+                        5000, kWristEnablePWMMin, kWristEnablePWMMax);
 
     Wrist_Right.InitMotor(kWristRightSigPin, 19, kWristRightDirPin, 4, 2, 
-                        5000, kShoulderEnablePWMMin, kShoulderEnablePWMMax);
+                        5000, kWristEnablePWMMin, kWristEnablePWMMax);
     
-    double roll_pid_speed, pitch_pid_speed, rollTarget;
+    double roll_pid_speed, pitch_pid_speed, rollTarget, WristPitchMirror;
+    unsigned long currentTime;
+    double rollTime;
+    bool reverse;
 
     // PID(double* Input, double* Output, double* Setpoint,
     //     double Kp, double Ki, double Kd, int ControllerDirection);
     PID roll_pid(&params->pitch[1], &roll_pid_speed, &params->WristPitch,
-                1.0, 0.0, 0.0, 0);
+                1.25, 0.0, 0.0, 0);
+    roll_pid.SetMode(1);
 
-    PID pitch_pid(&params->pitch[1], &pitch_pid_speed, &params->WristPitch,
-        1.0, 0.0, 0.0, 0);
+    PID pitch_pid(&WristPitchMirror, &pitch_pid_speed, &params->WristPitch,
+        0.8, 0.055, 0.01, 0);
+    pitch_pid.SetMode(1); //Automatic mode
+
     while(1)
     {
         vTaskDelay(1);
-    
+    /*
         //if command from MS is diff;   the semaphore
         // if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
         {
             // printf("Updating Pitch: %f\n\n", params->WristPitch);
             // if(params->WristPitch > 0)
             {
+                //Increase pitch
                 Wrist_Left.SetDirection(true);
                 Wrist_Right.SetDirection(false);
             }
@@ -302,71 +309,90 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
         //     Wrist_Left.SetSpeed(0);
         //     Wrist_Right.SetSpeed(0);
         // }
-    
-/*
-        if(abs(params->WristPitch - params->pitch[1]) > kError) //if pitch needs adjustments 
+    */
+        int error = abs(params->WristPitch - params->pitch[1]);
+        // printf("Error: %i\n", error);
+
+        if((params->pitch[1] != 2147483647) && (params->pitch[0] != params->pitch[1]))
         {
-            if(params->pitch[1] < params->WristPitch) //increase pitch
-            {
-                // set dir pins to increase pitch
-                //hope this is the correct direction!
-                Wrist_Left.SetDirection(true);
-                Wrist_Right.SetDirection(false);
-            }   
-            else if (params->pitch[1]  > params->WristPitch)    //decrease pitch
-            {
-                // set dir pins to increase pitch
-                //hope this is the correct direction!
-                Wrist_Left.SetDirection(false);
-                Wrist_Right.SetDirection(true);
-            }
 
-            while(abs(params->WristPitch - params->pitch[1]) < kError)  //while pitch is off
+    /*
+            if(abs((int) params->WristPitch - params->pitch[1]) > kError) //if pitch needs adjustments 
             {
-                printf("Computing PID");
-                pitch_pid.Compute();
-                Wrist_Right.SetSpeed(pitch_pid_speed);
-                Wrist_Left.SetSpeed(pitch_pid_speed);
+                // printf("Error larger than threshold\n");
+
+                while(abs(params->WristPitch - params->pitch[1]) > kError)  //while pitch is off
+                {
+                    if(params->pitch[1] < params->WristPitch) //increase pitch
+                    {
+                        printf("Increasing pitch\n");
+                        // set dir pins to increase pitch
+                        Wrist_Left.SetDirection(true);
+                        Wrist_Right.SetDirection(false);
+                        pitch_pid.SetControllerDirection(0);
+                    }   
+                    else if (params->pitch[1]  > params->WristPitch)    //decrease pitch
+                    {
+                        printf("Decresing pitch\n");
+                        // set dir pins to decrease pitch
+                        Wrist_Left.SetDirection(false);
+                        Wrist_Right.SetDirection(true);
+                        pitch_pid.SetControllerDirection(1);
+                    }
+
+                    WristPitchMirror = (params->pitch[1]);
+                    printf("WristPitchMirror : %f", WristPitchMirror);
+                    bool status = pitch_pid.Compute();
+                    printf("Computing PID, Speed: %f\n", pitch_pid_speed);
+                    printf("Compute status: %i\n", status);
+                    Wrist_Right.SetSpeed(pitch_pid_speed);
+                    Wrist_Left.SetSpeed(pitch_pid_speed);
+                    vTaskDelay(3);
+                }
+                Wrist_Right.SetSpeed(0);
+                Wrist_Left.SetSpeed(0);
             }
-            Wrist_Right.SetSpeed(0);
-            Wrist_Left.SetSpeed(0);
+    */
+            
+            //ROLL
+            if(xSemaphoreTake(params->xWristRollSemaphore, 5))
+            {
+                currentTime = millis();
+                rollTime = abs(params->WristRoll);
+                reverse = false;
+
+                if (params->WristRoll > 0)
+                {
+                    Wrist_Left.SetDirection(true);
+                    Wrist_Right.SetDirection(true);
+                    roll_pid.SetControllerDirection(0);
+                    // reverse = false;
+                }
+                else if (params->WristRoll < 0)
+                {
+                    Wrist_Left.SetDirection(false);
+                    Wrist_Right.SetDirection(false);
+                    roll_pid.SetControllerDirection(1);
+                    // reverse = true;
+                }
+
+                Wrist_Right.SetSpeed(50);
+                while( (millis() - currentTime) < rollTime)
+                {
+                    bool status = roll_pid.Compute();
+                    printf("Status: %i\n", status);
+
+                    // if(reverse)     roll_pid_speed = 0 - roll_pid_speed;
+                    Wrist_Left.SetSpeed(50 + roll_pid_speed);
+                    printf("roll_pid_speed : %f\n", roll_pid_speed);
+                    vTaskDelay(3);
+                }
+                Wrist_Right.SetSpeed(0);
+                Wrist_Left.SetSpeed(0);
+
+            }
         }
-*/
 
-/*
-        //Now onto adjusting Roll
-        if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
-        {
-                        //rollTarget = (Delata + currentPos) % 360
-            rollTarget = (params->WristRoll + params->pitch[1]) % 360;
-            printf("rollTarget: %f", rollTarget);
-
-            if(Will rotate left)
-            {
-                // Set one motor to 50% power;
-                Wrist_Left.SetSpeedAndDirection(50, true);
-                //PID the power on other motor, monitoring pitch
-                Wrist_Right.SetDirection(true);
-            }
-            else if(Will rotate right)
-            {
-                // Set one motor to 50% power;
-                Wrist_Left.SetSpeedAndDirection(50, false);
-                //PID the power on other motor, monitoring pitch
-                Wrist_Right.SetDirection(false);                
-            }
-
-            while( ((params->pitch[1] + kError) < rollTarget)
-                    || ((params->pitch[1] - kError) > rollTarget) )
-            {
-                roll_pid.Compute();
-                Wrist_Right.SetSpeed(roll_pid_speed);
-                vTaskDelay(5);
-            }
-            Wrist_Right.SetSpeed(0);
-            Wrist_Left.SetSpeed(0);
-        }
-        */
     }
 }
 
@@ -379,7 +405,17 @@ extern "C" void vClawTask(void *pvParameters)
     Servo Claw(act_ENABLE,5,2,5000,30,0);
     Claw.SetPositionPercent(0); //Set Duty Cycle to 0 at init
     initClaw();
-    while(1) {
+    while(1) 
+    {
+
+        //Code to always assert motor for testing purposes
+        Claw.SetPositionPercent(100);
+        task_complete = openClaw();
+        if(task_complete) printf("Opening\n");
+        task_complete = false;
+        myParams->current_direction = 0;
+
+    /*
         if(myParams->current_direction == 0)
         {
             //Do Nothing
@@ -408,6 +444,7 @@ extern "C" void vClawTask(void *pvParameters)
         }
         // printf("PHASE = %i  ENABLE = %i\n", digitalRead(act_PHASE),myParams->actuator_speed);
         vTaskDelay(300);
+    */
     }
 }
 

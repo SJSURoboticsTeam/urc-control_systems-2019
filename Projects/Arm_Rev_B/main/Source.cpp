@@ -13,27 +13,27 @@ using namespace std;
 
 void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
-    // // Create addresses for network connections
-    // char * ssid = "SJSURoboticsAP";
-    // char * password = "cerberus2019";
-    // IPAddress Ip(192, 168, 10, 61);
-    // IPAddress Gateway(192, 168, 10, 100);
-    // IPAddress NMask(255, 255, 255, 0);
+    // Create addresses for network connections
+    char * ssid = "SJSURoboticsAP";
+    char * password = "cerberus2019";
+    IPAddress Ip(192, 168, 10, 52);
+    IPAddress Gateway(192, 168, 10, 100);
+    IPAddress NMask(255, 255, 255, 0);
 
     //Create Access Point
     WiFi.softAP("ZacksESP32AP", "testpassword");
     Serial.println();
     Serial.print("IP address: ");
-    Serial.println(WiFi.softAPIP());
+    Serial.println(WiFi.localIP());
 
-    // WiFi.config(Ip, Gateway, NMask);
-    // WiFi.begin(ssid, password);
+    WiFi.config(Ip, Gateway, NMask);
+    WiFi.begin(ssid, password);
     // while (WiFi.status() != WL_CONNECTED)
     // {
     //     delay(500);
     //     printf("Connecting to WiFi... ");
     // }
-    // printf("\nConnected to %s\n", ssid);
+    printf("\nConnected to %s\n", ssid);
     
     AsyncEventSource events("/events");
     DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
@@ -55,7 +55,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
             if((params->RotundaTarget <= 1) && (params->RotundaTarget >= -1))
             {
-                params->RotundaTarget = fmap(params->RotundaTarget, -0.1, 0.1, -180, 179);
+                params->RotundaTarget = fmap(params->RotundaTarget, -0.1, 0.1, -180, 179);  //axis 5
             }
             printf("RotundaTarget: %f\n", params->RotundaTarget);
         }
@@ -69,7 +69,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             if((params->ElbowTarget <= 1) && (params->ElbowTarget >= -1))
             {
                 params->ElbowTarget = (-1 + .72) - params->ElbowTarget;
-                params->ElbowTarget = fmap(params->ElbowTarget, -1, .72, 60, 240);
+                params->ElbowTarget = fmap(params->ElbowTarget, -.98, .88, 60, 240); //axis 1
             }
             printf("ElbowTarget: %f\n", params->ElbowTarget);
         }
@@ -86,7 +86,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
             if((params->ShoulderTarget <= 1) && (params->ShoulderTarget >= -1))
             {
-                params->ShoulderTarget = fmap(params->ShoulderTarget, -.45, .46, 0, 90);
+                params->ShoulderTarget = fmap(params->ShoulderTarget, -.5, 1, 0, 90);    //axis 2
             }
             printf("ShoulderTarget: %f\n", params->ShoulderTarget);
         }
@@ -103,10 +103,11 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
             printf("Wrist Pitch Raw: %f \n", params->WristPitch);
 
-            if((params->WristPitch <= 1) && (params->WristPitch >= -1))
-            {
-                params->WristPitch = fmap(params->WristPitch, -0.95, 1, kWristPitchLimitMin, kWristPitchLimitMax);
-            }
+            // if((params->WristPitch <= 1) && (params->WristPitch >= -1))
+            // {
+            //     //axis 0 on mimic
+            //     params->WristPitch = fmap(params->WristPitch, -0.78, 1, kWristPitchLimitMin, kWristPitchLimitMax);
+            // }
             printf("Wrist Pitch: %f \n\n", params->WristPitch);
         }
         // printf("WristPitch Param\n");
@@ -117,7 +118,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             // {
                 params->WristRoll = atoi((request->arg("WristRoll").c_str()));
             //     printf("WristRoll! : %f\n", params->WristRoll);
-            //     xSemaphoreGive(params->xWristRollSemaphore);
+                xSemaphoreGive(params->xWristRollSemaphore);
             // }
             printf("Wrist Roll Raw: %f \n", params->WristRoll);
             if((params->WristRoll <= 1) && (params->WristRoll >= -1))
@@ -153,7 +154,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             }
             else if((atoi(request->arg("command").c_str()) == 0) || (strcmp(request->arg("command").c_str(), "stop")==0)){
                 params->current_direction = 2;
-                params->actuator_speed = 0;
+                params->actuator_speed                                                                                                                                                           = 0;
                 printf("Claw stop\n\n\n");
             }   
             // printf("Command: %i\n", params->current_direction);
@@ -270,9 +271,6 @@ double fmap(double x, double in_min, double in_max, double out_min, double out_m
 
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-
-
-
 
 uint8_t  i2c_scanner()
 {
