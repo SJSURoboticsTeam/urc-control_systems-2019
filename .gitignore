@@ -2,5 +2,9 @@
 Build/
 sdkconfig.old
 sdkconfig
+plugged
+notplugged
 **/*.o
 **/*.d
+**/build
+xtensa-esp32-elf/

@@ -1,12 +1,3 @@
 [submodule "esp-idf"]
 	path = esp-idf
-	url = https://github.com/espressif/esp-idf
-[submodule "Projects/Arduino_sample/components/arduino"]
-	path = Projects/Arduino_sample/components/arduino
-	url = https://github.com/espressif/arduino-esp32.git
-[submodule "Projects/Examples/Arduino_sample/components/arduino"]
-	path = Projects/Examples/Arduino_sample/components/arduino
-	url = https://github.com/espressif/arduino-esp32.git
-[submodule "Projects/Templates/Protoduino/components/arduino"]
-	path = Projects/Templates/Protoduino/components/arduino
-	url = https://github.com/espressif/arduino-esp32.git
+	url = https://github.com/espressif/esp-idf.git
