@@ -26,8 +26,13 @@ extern "C" void vGPSTask(void *pvParameters)
             gps.encode(ss.read());
             printf("\nLatitude:\n    ");
             Serial.print(gps.location.lat(), 6);
+            auto lat = gps.location.lat();
+            memcpy(Params->latitude, &lat, sizeof(lat));
+
             printf("\nLongitude:\n    ");
             Serial.print(gps.location.lng(), 6);
+            auto lng = gps.location.lng();
+            memcpy(Params->latitude, &lng, sizeof(lng));
         }
         if (millis() > 5000 && gps.charsProcessed() < 10)
         {
