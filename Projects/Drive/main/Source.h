@@ -5,6 +5,8 @@
 #include <ESPAsyncWebServer.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
+#include <vector.h>
 #include "Servo_Control.hpp"
 #include "constants.h"
 
@@ -46,6 +48,25 @@ struct ParamsStruct {
     bool WHEEL_C;
 };
 
+struct LiDarStruct {
+    uint left_dist;
+    bool left_thresh;
+    uint right_dist;
+    bool right_thresh;
+};
+
+struct OldStruct {
+    int mode;
+    double AXIS_X;
+    double AXIS_Y;
+    double THROTTLE;
+    bool button_0;
+    bool wheel_A;
+    bool wheel_B;
+    bool wheel_C;
+    double mast_position;
+};
+
 enum DriveMode {
     DEBUG,
     CRAB,
@@ -56,7 +77,9 @@ enum DriveMode {
 /**
  * See Source.cpp comments for explaination of functionality.
  */
-void initServer(AsyncWebServer* server, ParamsStruct* params);
+void initServer(AsyncWebServer* server, ParamsStruct* params, LiDarStruct* LIDAR, OldStruct* old);
+
+String makeJsonString(std::vector<String>& keys, std::vector<String>& vals);
 
 /**
  * Ths function initializes the motor and servo class objects responsible for

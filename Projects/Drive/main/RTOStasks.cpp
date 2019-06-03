@@ -15,45 +15,51 @@
 
 extern "C" void vLiDarTask(void *pvParameters)
 {
-  while (1) {
+    LiDarStruct *LIDAR = (LiDarStruct *)pvParameters;
+    initLiDar();
+    while (1) {
         while(Serial2.available()>=9)
         {
-              if((0x59 == Serial2.read()) && (0x59 == Serial2.read())) //Byte1 & Byte2
-              {
-                  unsigned int t1 = Serial2.read(); //Byte3
-                  unsigned int t2 = Serial2.read(); //Byte4
+            if((0x59 == Serial2.read()) && (0x59 == Serial2.read())) //Byte1 & Byte2
+            {
+                uint t1 = Serial2.read(); //Byte3
+                LIDAR->right_dist = Serial2.read(); //Byte4
 
-                  t2 <<= 8;
-                  t2 += t1;
-                  bool distance = t2 < DETECT_THRESHOLD;
-                  printf("Serial 1: Distance: %d Within Threshold: %d\n", t2, distance);
+                LIDAR->right_dist <<= 8;
+                LIDAR->right_dist += t1;
+                LIDAR->right_thresh = LIDAR->right_dist < DETECT_THRESHOLD;
+                //printf("Serial 1: Distance: %d Within Threshold: %d\n", LIDAR->right_dist, LIDAR->right_thresh);
 
-                  for(int i=0; i<5; i++)
-                  {
-                      Serial2.read(); ////Byte5,6,7,8,9
-                  }
+                for(int i=0; i<5; i++)
+                {
+                    Serial2.read(); ////Byte5,6,7,8,9
+                }
             }
         }
         while(Serial1.available()>=9)
         {
-              if((0x59 == Serial1.read()) && (0x59 == Serial1.read())) //Byte1 & Byte2
-              {
-                  unsigned int t1 = Serial1.read(); //Byte3
-                  unsigned int t2 = Serial1.read(); //Byte4
+            if((0x59 == Serial1.read()) && (0x59 == Serial1.read())) //Byte1 & Byte2
+            {
+                uint t1 = Serial2.read(); //Byte3
+                LIDAR->left_dist = Serial2.read(); //Byte4
 
-                  t2 <<= 8;
-                  t2 += t1;
-                  bool distance = t2 < DETECT_THRESHOLDgi;
-                  printf("Serial 2: Distance: %d Within Threshold: %d\n", t2, distance);
+                LIDAR->left_dist <<= 8;
+                LIDAR->left_dist += t1;
+                LIDAR->left_thresh = LIDAR->left_dist < DETECT_THRESHOLD;
+                //printf("Serial 1: Distance: %d Within Threshold: %d\n", LIDAR->left_dist, LIDAR->left_thresh);
 
-                  for(int i=0; i<5; i++)
-                  {
-                      Serial1.read(); ////Byte5,6,7,8,9
-                  }
+                for(int i=0; i<5; i++)
+                {
+                    Serial1.read(); ////Byte5,6,7,8,9
+                }
             }
         }
-        vTaskDelay(100);
-  }
+        if(!Serial1.available() && !Serial2.available())
+        {
+            printf("No LiDar connected.\n");
+        }
+        vTaskDelay(50);
+    }
 }
 
 extern "C" void vMoveTask(void *pvParameters)

@@ -22,10 +22,10 @@ constexpr double CORNER_2_MID = 23.238;
 //constexpr double MAX_DIST = 500;
 
 // LIDAR constants
-constexpr uint32_t LIDAR1_RX = 16;
-constexpr uint32_t LIDAR1_TX = 17;
-constexpr uint32_t LIDAR2_RX = 18;
-constexpr uint32_t LIDAR2_TX = 19;
+constexpr uint32_t LIDARL_RX = 16;
+constexpr uint32_t LIDARL_TX = 17;
+constexpr uint32_t LIDARR_RX = 1;
+constexpr uint32_t LIDARR_TX = 3;
 constexpr uint32_t DETECT_THRESHOLD = 60; //measured in CM
 
 // Constants for the steering servos //

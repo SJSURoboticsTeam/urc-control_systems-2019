@@ -4,6 +4,8 @@
 #include <WiFi.h>
 #include <string.h>
 #include <math.h>
+#include <vector>
+#include <iostream>
 #include "Source.h"
 #include "Arduino.h"
 #include "EEPROM.h"
@@ -13,11 +15,11 @@
 #include "driver/uart.h"
 #include "soc/uart_struct.h"
 
-void initServer(AsyncWebServer* server, ParamsStruct* params) {
+void initServer(AsyncWebServer* server, ParamsStruct* params, LiDarStruct *LIDAR, OldStruct* old) {
     // Create addresses for network connections
     char * ssid = "SJSURoboticsAP";
     char * password = "cerberus2019";
-    IPAddress Ip(192, 168, 10, 19);
+    IPAddress Ip(192, 168, 10, 51);
     IPAddress Gateway(192, 168, 10, 100);
     IPAddress NMask(255, 255, 255, 0);
 
@@ -29,8 +31,8 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     Serial.println(WiFi.softAPIP());
 
     // Connect to the Rover's AP
-    //WiFi.config(Ip, Gateway, NMask);
-    //WiFi.begin(ssid, password);
+    WiFi.config(Ip, Gateway, NMask);
+    //WiFi.begin(ssid, password, 6);
     //while (WiFi.status() != WL_CONNECTED)
     //{
     //    delay(500);
@@ -128,40 +130,107 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
         */
         request->send(200, "text/plain", "Success");
     });
-    /* SSE Example.
-        - SSEs will be used to continuously send data that was
-        not necessarily requested by mission control
-        (e.g. temperature, something we should send periodically)
-        - Once mission control declares the ESPs IP address at a certain
-        endpoint to be an EventSource, the ESP can trigger events on the web
-        interface, which the web interface can attach event listeners to
-        (similar to how we are attaching event listeners for when we recieve
-        XHRs to /update_name above, allowing us to do things when we recieve an
-        XHR).
-        - Below's example is an example of sending SSEs when mission control
-        declares our ip address and endpoint (e.g. 192.168.4.1/events) to be
-        an event source.
-        - More info on this concept here:
-            https://developer.mozilla.org/en-US/docs/Web/API/EventSource
-    */
 
-    events.onConnect([](AsyncEventSourceClient *client)
-    {
-        if(client->lastId())
-        {
-         Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
+    server->on("/old", HTTP_POST, [=](AsyncWebServerRequest *request){
+        const char *vars[9] = {
+            "mode", "AXIS_X", "AXIS_Y", "THROTTLE", 
+            "button_0", "wheel_A", "wheel_B", "wheel_C", "mast_position"
+        };
+        for (int i=0; i<9; i++) {
+            if (request->hasArg(vars[i])) {
+                if (strcmp(vars[i], "mode")) {
+                    old->mode = request->arg("mode").toInt();  
+                }
+                if (strcmp(vars[i], "AXIS_X")) {
+                    old->AXIS_X = 0 - (request->arg("AXIS_X").toFloat());
+                    if (old->AXIS_X == -1)
+                    {
+                        old->AXIS_X = -0.99;
+                    }   
+                }
+                if (strcmp(vars[i], "AXIS_Y")) {
+                    old->AXIS_Y = request->arg("AXIS_Y").toFloat();    
+                }
+                if (strcmp(vars[i], "THROTTLE")) {
+                    old->THROTTLE = (0 - (request->arg("THROTTLE").toFloat()) + 1)/2;
+                    //old->THROTTLE = old->THROTTLE * 0.3;    
+                }
+                if (strcmp(vars[i], "button_0")) {
+                    old->button_0 = request->arg("button_0").toInt();    
+                }
+                if (strcmp(vars[i], "wheel_A")) {
+                    old->wheel_A = request->arg("wheel_A").toInt();  
+                }
+                if (strcmp(vars[i], "wheel_B")) {
+                    old->wheel_B = request->arg("wheel_B").toInt();  
+                }
+                if (strcmp(vars[i], "wheel_C")) {
+                    old->wheel_C = request->arg("wheel_C").toInt();  
+                }
+                if (strcmp(vars[i], "mast_position")) {
+                    old->mast_position = request->arg("mast_position").toFloat();    
+                }
+            }
+            else 
+            {
+                printf("ERROR. %s doesn't exist\n", vars[i]);
+            }
         }
-        // send event with message "hello!", id current millis
-        // and set reconnect delay to 1 second
-        client->send("hello!", NULL, millis(), 1000);
-        delay(1000);
-        client->send("hello!", NULL, millis(), 1000);
-        delay(1000);
-        client->send("hello!", NULL, millis(), 1000);
-        delay(1000);
-        client->send("hello!", NULL, millis(), 1000);
-        delay(1000);
-    });
+
+        // convert old values to new values
+        params->MODE = old->mode;
+        params->T_MAX = 1;
+        params->AXIS_X = old->AXIS_X;
+        params->AXIS_Y = old->AXIS_Y;
+        params->YAW = old->AXIS_X;
+        params->THROTTLE = old->THROTTLE;
+        params->BRAKES = 1;
+        params->MAST_POSITION = old->mast_position;
+        params->TRIGGER = old->button_0;
+        params->REVERSE = (old->AXIS_Y > 0) ? 1:0;
+        params->WHEEL_A = old->wheel_A;
+        params->WHEEL_B = old->wheel_B;
+        params->WHEEL_C = old->wheel_C;
+
+        switch(old->mode)
+        {
+            case 1: //CRAB
+                params->T_MAX = 0.3;
+                break;
+            case 3: //DRIVE
+                params->THROTTLE = old->THROTTLE * fabs(old->AXIS_Y);
+                break;
+            default:
+                break;
+        }
+
+        request->send(200, "text/plain", "Success");
+    });    
+
+    server->on("/lidar", HTTP_POST, [=](AsyncWebServerRequest *request) {
+        //declare individual vectors for your keys and values. 
+        std::vector <String> keys, vals;
+        keys.push_back("left distance");
+        keys.push_back("left threshold");
+        keys.push_back("right distance");
+        keys.push_back("right threshold");
+        //even if the values are ints, please convert them to strings (hacky, sorry.)
+        char**vals_arr = {0};
+        itoa(LIDAR->left_dist, vals_arr[0], 10);
+        itoa(LIDAR->left_thresh, vals_arr[1], 10);
+        itoa(LIDAR->right_dist, vals_arr[2], 10);
+        itoa(LIDAR->right_thresh, vals_arr[3], 10);
+        vals.push_back(vals_arr[0]);
+        vals.push_back(vals_arr[1]);
+        vals.push_back(vals_arr[2]);
+        vals.push_back(vals_arr[3]);
+
+        //call the helper
+        String json = makeJsonString(keys, vals);
+
+        //send
+        request->send(200, "application/json", json);
+});
 
     //Attach event source to the server.
     server->addHandler(&events);
@@ -169,6 +238,20 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     //Start server.
     server->begin();
     //printf("initServer done\n");
+}
+
+String makeJsonString(std::vector<String>& keys, std::vector<String>& vals) {
+    String json = "{";
+    
+    for (int i=0; i<keys.size(); i++) {
+      if (i) json += ",";
+      json += ("\"" + keys[i] + "\":");
+      json += ("\"" + vals[i] + "\"");
+    }
+    
+    json += "}";
+
+    return json;
 }
 
 void initComponents()
@@ -199,8 +282,8 @@ void initComponents()
 
 void initLiDar()
 {
-    Serial1.begin(115200, SERIAL_8N1, LIDAR1_RX, LIDAR1_TX);
-    Serial2.begin(115200, SERIAL_8N1, LIDAR2_RX, LIDAR2_TX);
+    Serial1.begin(115200, SERIAL_8N1, LIDARL_RX, LIDARL_TX);
+    Serial2.begin(115200, SERIAL_8N1, LIDARR_RX, LIDARR_TX);
 }
 
 void initDriveMode(uint32_t heading)
@@ -448,29 +531,3 @@ void SetForward(double offset, double array[])
         array[i] = wheels[i];
     }
 }
-/*
-char *getHeading(double gps_data);
-{
-
-}
-*/
-/*bool getCurrentDirection(uint32_t wheel)
-{
-    bool direction;
-    switch(wheel)
-    {
-        case 0:
-            direction = motor_A->direction;
-            break;
-        case 1:
-            direction = motor_B->direction;
-            break;
-        case 2:
-            direction = motor_C->direction;
-            break;
-        default:
-            direction = false;
-            break;
-    }
-    return direction;
-}*/

@@ -14,6 +14,8 @@
 
 // Parameters to be updated by mission control
 ParamsStruct params;
+LiDarStruct LiDar;
+OldStruct old;
 
 // Server used to listen for XHRs, and send SSEs.
 AsyncWebServer server(80);
@@ -33,12 +35,11 @@ extern "C" void app_main() {
     // Initialize peripheralsand services
     Serial.begin(115200);
     initArduino();
-    initServer(&server, &params);
+    initServer(&server, &params, &LiDar, &old);
     initComponents();
     //delay(100);
 
     //Create freeRTOS tasks.
-    xTaskCreate(vMoveTask, "Move", 4096, (void *) &params, 1, NULL);
-    xTaskCreate(vLiDarTask, "Lidar", 4096, (void *) &params, 1, NULL);
-
+    xTaskCreate(vMoveTask, "Move", 4096, (void *) &params, 2, NULL);
+    //xTaskCreate(vLiDarTask, "Lidar", 4096, (void *) &LiDar, 1, NULL);
 }
