@@ -27,7 +27,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
     Serial.println(WiFi.localIP());
 
     WiFi.config(Ip, Gateway, NMask);
-    WiFi.begin(ssid, password);
+    WiFi.begin(ssid, password, 5);
     // while (WiFi.status() != WL_CONNECTED)
     // {
     //     delay(500);
@@ -86,7 +86,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
 
             if((params->ShoulderTarget <= 1) && (params->ShoulderTarget >= -1))
             {
-                params->ShoulderTarget = fmap(params->ShoulderTarget, -.5, 1, 0, 90);    //axis 2
+                params->ShoulderTarget = fmap(params->ShoulderTarget, .5, 1, 0, 90);    //axis 2
             }
             printf("ShoulderTarget: %f\n", params->ShoulderTarget);
         }
@@ -97,7 +97,7 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
             // if ((atof(request->arg("WristPitch").c_str()) > 10) || (atof(request->arg("WristPitch").c_str()) < -10))
             // {
                 params->WristPitch = atof(request->arg("WristPitch").c_str());
-            //     xSemaphoreGive(params->xWristPitchSemaphore);
+                xSemaphoreGive(params->xWristPitchSemaphore);
             //     printf("Wrist Pitch!: %f\n\n\n", params->WristPitch);
             // }
 
@@ -121,10 +121,10 @@ void initServer(AsyncWebServer* server, ParamsStruct* params) {
                 xSemaphoreGive(params->xWristRollSemaphore);
             // }
             printf("Wrist Roll Raw: %f \n", params->WristRoll);
-            if((params->WristRoll <= 1) && (params->WristRoll >= -1))
-            {
-                params->WristRoll = fmap(params->WristRoll, -1, 1, 0, 360);
-            }
+            // if((params->WristRoll <= 1) && (params->WristRoll >= -1))
+            // {
+            //     params->WristRoll = fmap(params->WristRoll, -1, 1, 0, 360);
+            // }
             printf("Wrist Roll: %f \n\n", params->WristRoll);
         }
         // printf("WristRoll Param\n");

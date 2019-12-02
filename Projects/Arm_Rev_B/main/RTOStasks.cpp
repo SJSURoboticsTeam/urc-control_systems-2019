@@ -258,65 +258,68 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
         0.8, 0.055, 0.01, 0);
     pitch_pid.SetMode(1); //Automatic mode
 
+    Wrist_Left.SetSpeed(0);
+    Wrist_Right.SetSpeed(0);
+
     while(1)
     {
         vTaskDelay(1);
-    /*
-        //if command from MS is diff;   the semaphore
-        // if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
+    
+        // if command from MS is diff;   the semaphore
+        if(xSemaphoreTake(params->xWristPitchSemaphore, 100))
         {
-            // printf("Updating Pitch: %f\n\n", params->WristPitch);
-            // if(params->WristPitch > 0)
+            printf("Updating Pitch: %f\n\n", params->WristPitch);
+            if(params->WristPitch > 0)
             {
-                //Increase pitch
+                // Increase pitch
                 Wrist_Left.SetDirection(true);
                 Wrist_Right.SetDirection(false);
             }
 
-            // else if(params->WristPitch < 0)
-            // {
-            //     Wrist_Left.SetDirection(false);
-            //     Wrist_Right.SetDirection(true);
-            // }
+            else if(params->WristPitch < 0)
+            {
+                Wrist_Left.SetDirection(false);
+                Wrist_Right.SetDirection(true);
+            }
 
             Wrist_Left.SetSpeed(50);
             Wrist_Right.SetSpeed(50);
-            // vTaskDelay(abs(params->WristPitch) / 10);
-            // Wrist_Left.SetSpeed(0);
-            // Wrist_Right.SetSpeed(0);
+            vTaskDelay(abs(params->WristPitch) / 10);
+            Wrist_Left.SetSpeed(0);
+            Wrist_Right.SetSpeed(0);
         }
         
             // Roll:
-        // if(xSemaphoreTake(params->xWristRollSemaphore, 100))
-        // {
-        //     printf("Updating Roll: %f\n\n", params->WristRoll);
-        //     if(params->WristRoll > 0)
-        //     {
-        //         Wrist_Left.SetDirection(true);
-        //         Wrist_Right.SetDirection(true);
-        //     }
+        if(xSemaphoreTake(params->xWristRollSemaphore, 100))
+        {
+            printf("Updating Roll: %f\n\n", params->WristRoll);
+            if(params->WristRoll > 0)
+            {
+                Wrist_Left.SetDirection(true);
+                Wrist_Right.SetDirection(true);
+            }
 
-        //     else if(params->WristRoll < 0)
-        //     {
-        //         Wrist_Left.SetDirection(false);
-        //         Wrist_Right.SetDirection(false);
-        //     }
-        //     // Set equal and constant speed for a const amount of time
-        //     //Later we can implement PID on this
-        //     Wrist_Left.SetSpeed(50);
-        //     Wrist_Right.SetSpeed(50);
-        //     vTaskDelay(abs(params->WristRoll) / 10);
-        //     Wrist_Left.SetSpeed(0);
-        //     Wrist_Right.SetSpeed(0);
-        // }
-    */
+            else if(params->WristRoll < 0)
+            {
+                Wrist_Left.SetDirection(false);
+                Wrist_Right.SetDirection(false);
+            }
+            // Set equal and constant speed for a const amount of time
+            //Later we can implement PID on this
+            Wrist_Left.SetSpeed(50);
+            Wrist_Right.SetSpeed(50);
+            vTaskDelay(abs(params->WristRoll) / 10);
+            Wrist_Left.SetSpeed(0);
+            Wrist_Right.SetSpeed(0);
+        }
+    
+/*    
         int error = abs(params->WristPitch - params->pitch[1]);
         // printf("Error: %i\n", error);
 
         if((params->pitch[1] != 2147483647) && (params->pitch[0] != params->pitch[1]))
         {
 
-    /*
             if(abs((int) params->WristPitch - params->pitch[1]) > kError) //if pitch needs adjustments 
             {
                 // printf("Error larger than threshold\n");
@@ -352,7 +355,7 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
                 Wrist_Right.SetSpeed(0);
                 Wrist_Left.SetSpeed(0);
             }
-    */
+    
             
             //ROLL
             if(xSemaphoreTake(params->xWristRollSemaphore, 5))
@@ -361,6 +364,8 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
                 rollTime = abs(params->WristRoll);
                 reverse = false;
 
+                while( (millis() - currentTime) < rollTime)
+                {
                 if (params->WristRoll > 0)
                 {
                     Wrist_Left.SetDirection(true);
@@ -377,8 +382,6 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
                 }
 
                 Wrist_Right.SetSpeed(50);
-                while( (millis() - currentTime) < rollTime)
-                {
                     bool status = roll_pid.Compute();
                     printf("Status: %i\n", status);
 
@@ -392,7 +395,7 @@ extern "C" void vDiffGearboxTask(void *pvParameters)
 
             }
         }
-
+*/
     }
 }
 
